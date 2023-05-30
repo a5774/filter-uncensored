@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>filter-uncensored</title>
+    <script src="/vue.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            text-decoration: none;
+            color: #000;
+        }
+
+        #box {
+            margin: 10px 0px;
+            height: 100vh;
+            position: relative;
+            overflow-y: scroll;
+        }
+
+        .search {
+            height: 30px;
+            line-height: 30px;
+            padding: 5px 5px;
+            margin: 10px 0;
+            text-align: left;
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .search input {
+            font-size: 15px;
+            padding: 0 5px;
+            height: 100%;
+            outline: none;
+        }
+
+        .search button
+        {
+            margin: 0px 5px;
+            height: 100%;
+            outline: none;
+        }
+        .radio {
+            display: flex;
+            justify-content: space-evenly;
+            margin: 5px 0px;
+        }
+
+        .radio input,
+        .include,
+        .scrachStars,
+        .scrachGenre {
+            vertical-align: middle;
+            width: 15px;
+            margin-left: 5px;
+        }
+
+        .item-content {
+            display: flex;
+            flex-direction: column;
+            border-top: 1px #a0a4a8 solid;
+            margin-top: 5px;
+        }
+
+        .item-content li {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            border-bottom: 1px #a0a4a8 solid;
+            text-align: left;
+        }
+
+        .item-content li .pics,
+        .item-content li .pics img {
+            vertical-align: middle;
+        }
+
+        .item-content li .info {
+            font-size: 15px;
+            vertical-align: middle;
+            padding: 10px 5px;
+            /* width: 100%; */
+        }
+
+        .total {
+            font-size: 15px;
+            text-align: right;
+            padding: 0px 10px;
+        }
+
+        h2 {
+            text-align: left;
+        }
+
+        .filter {
+            height: 30px;
+            line-height: 30px;
+            padding: 5px 5px;
+            text-align: left;
+        }
+
+        .filter input,
+        .filter select,
+        .filter span {
+            font-size: 14px;
+            padding: 0 5px;
+            height: 100%;
+            outline: none;
+            vertical-align: middle;
+        }
+
+        .lazy-loaded {
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        .lazy-loaded.loaded {
+            opacity: 1;
+        }
+
+        .side-nav{
+            position: fixed;
+            top: 50%;
+            right: 5%;
+            display:flex;
+            flex-flow: column nowrap;
+            align-items: center;
+        }
+        .side-nav button {
+            width: 2.5rem;
+            height: 2.5rem;
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="box" ref="box" @scroll.passive="loadMorePage">
+        <div class="option">
+            <div class="search">
+                <input type="text" style="width: 35%;" :placeholder="template" v-model=keyWord>
+                <label for="stars">stars</label><input id="stars" class="scrachStars" type="checkbox" v-model=stars>
+                <label for="genre">genre</label><input id="genre" class="scrachGenre" type="checkbox" v-model=genre>
+                <button @click="scrach">search</button>
+                <button @click="save">save</button>
+                <!-- <button @click="stop">stop</button> -->
+                <button @click="clear">clear</button>
+            </div>
+            <div class="radio">
+                uncensored <input type="radio" name="mode" value="uncensored" v-model=mode>
+                censored <input type="radio" name="mode" value="censored" v-model=mode>
+                <!-- <label for="view">view</label><input id="view" class="include" type="checkbox" v-model=view> -->
+            </div>
+            <h2>current:{{this.log}}</h2>
+            <p class="total">total:{{dynamiclist.length}}</p>
+            <div class="filter">
+                <select v-model="select">
+                    <option value="0x01">常规</option>
+                    <option value="0x02">时间</option>
+                    <option value="0x03">热度</option>
+                </select>
+                <input type="text" style="width: 35%;" v-model="requirement">
+                <span>{{this.state}}</span>
+            </div>
+        </div>
+        <ul class="item-content">
+            <li v-for="(item,index) in filterRule" @touchstart="startTimer" @touchend="cancelTimer" :key="index">
+                <a class="pics" target="_blank" :href="`https://www.javbus.com/${item.n}`">
+                    <img class="lazy-loaded" height="150px" :data-src="`${item.p}`" :data-n="item.n" alt="">
+                </a>
+                <a class="info" target="_blank">{{item.n}}</a>
+                <a class="info" :href="`https://www4.javhdporn.net/video/${item.n}/`" target="_blank">预览-1</a>
+                <a class="info" :class="item.n" target="_blank"> -1 </a>
+                <a class="info" target="_blank">{{item.d}}</a>
+            </li>
+        </ul>
+        <div class="side-nav">
+        <button @click="loadNext" >NEXT</button>
+        <button  @click="scrollToTop">TOP</button>
+    </div>
+    </div>
+    <script>
+
+        let needReconnect = true;
+        let reconnectTimeout = 100; // 重连间隔时间，单位毫秒
+        let vm = new Vue({
+            el: '#box',
+            data: {
+                requirement: '',
+                pressTimer: null,
+                keyWord: '',
+                select: '0x01',
+                template: "关键词",
+                stars: '',
+                genre: '',
+                dynamiclist: [],
+                log: '暂无条目',
+                socket: null,
+                mode: 'censored',
+                state: '',
+                observer: null,
+                page: '',
+                sconf: null,
+                throttle: null,
+                isdone: true,
+            },
+            methods: {
+                scrach() {
+                    if (!(this.socket.readyState == this.socket.OPEN)) {
+                        this.connect()
+                    }
+                    if (this.keyWord.includes('$')) {
+                        this.socket.send(JSON.stringify({ type: 'scrach', keyWord: this.keyWord, stars: this.stars, genre: this.genre, mode: this.mode }))
+                        return null;
+                    }
+                    this.page = 1;
+                    // backUp
+                    this.sconf = { type: 'scrach', keyWord: this.keyWord, stars: this.stars, genre: this.genre, mode: this.mode };
+                    this.socket.send(JSON.stringify({ ...this.sconf, keyWord: `${this.sconf.keyWord}\$${this.page}` }))
+                },
+                stop() {
+                    this.socket.send(JSON.stringify({ type: 'abort' }))
+                },
+                clear() {
+                    this.dynamiclist = []
+                    // this.filterRule = []
+                    // this.keyWord = ''
+                    this.socket.close()
+                },
+                save() {
+                    let page = document.documentElement.outerHTML
+                    let url = URL.createObjectURL(new Blob([page], { type: 'text/html' }))
+                    let dl = document.createElement('a')
+                    dl.href = url
+                    dl.download = this.keyWord
+                    document.body.appendChild(dl)
+                    dl.click()
+                    document.removeChild(dl)
+                },
+                startTimer(evt) {
+                    this.pressTimer = setTimeout(() => {
+                        let el = evt.target.style
+                        let color = '#0bd3f1';
+                        if (el.backgroundColor == color) {
+                            console.log('has');
+                            el.backgroundColor = '#fff'
+                        } else {
+                            console.log('not');
+                            el.backgroundColor = color
+                        }
+                        // el.backgroundColor =''
+                    }, 500);
+                },
+                cancelTimer() {
+                    clearTimeout(this.pressTimer);
+                },
+                loadMorePage(event) {
+                    let scrollContainer = event.target
+                    let c_height = scrollContainer.clientHeight
+                    let diif = scrollContainer.scrollHeight - Math.ceil(scrollContainer.scrollTop)
+                    if (diif == c_height && !this.throttle && this.isdone) {
+                        this.page++
+                        this.socket.send(JSON.stringify({ ...this.sconf, keyWord: `${this.sconf.keyWord}\$${this.page}` }))
+                        this.isdone = false
+                        this.throttle = setTimeout(() => {
+                            this.throttle = null
+                        }, 1000)
+                    }
+                },
+                connect() {
+                    this.socket = new WebSocket('ws://101.132.236.100:80')
+                    this.socket.onopen = () => {
+                        console.log('WebSocket OPEN');
+                        this.socket.addEventListener('message', ({ data }) => {
+                            message = JSON.parse(data)
+                            switch (message.type) {
+                                case 'log':
+                                    this.log = `${message.data.n}<==>${message.data.c}`
+                                    break;
+                                case 'done':
+                                    this.log = message.data.m
+                                    this.isdone = true
+                                    break;
+                                case 'err':
+                                    this.log = message.data.err
+                                    break;
+                                case 'start':
+                                    this.log = message.data.m
+                                    break;
+                                case 'censored':
+                                    this.dynamiclist.push(message.data)
+                                    break;
+                                case 'uncensored':
+                                    this.dynamiclist.push(message.data)
+                                    break;
+                            }
+                        })
+                    };
+                    this.socket.onclose = () => {
+                        console.log('WebSocket CLOSE');
+                        if (needReconnect) {
+                            setTimeout(this.connect, reconnectTimeout);
+                        }
+                    };
+                    this.socket.onerror = (evt) => {
+                        console.log('WebSocket ERROR');
+                        //   needReconnect = false;
+                        this.socket.close();
+                    };
+                },
+                scrollToTop() {
+                    this.$refs.box.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+                },
+                loadNext(){
+                    if(this.isdone){
+                        this.page++
+                        this.socket.send(JSON.stringify({ ...this.sconf, keyWord: `${this.sconf.keyWord}\$${this.page}` }))
+                        this.isdone = false;
+                    }else{
+                        alert('点你妈逼！')
+                    }
+                }
+            },
+
+            watch: {
+                dynamiclist: {
+                    async handler() {
+                        // return;
+                        await this.$nextTick(() => {
+                            let images = document.querySelectorAll('.item-content img[data-src]')
+                            this.observer.observe(images[images.length - 1])
+                        })
+                    },
+                    deep: false
+                },
+                filterRule: {
+                    async handler() {
+                        await this.$nextTick(() => {
+                            let images = document.querySelectorAll('.item-content img[data-src]')
+                            images.forEach(img=>this.observer.observe(img))
+                        })
+                    }
+                }
+            },
+            computed: {
+                // render list
+                filterRule() {  
+                    if (this.select == '0x01') {
+                        return this.dynamiclist
+                    }
+                    if (this.select == '0x02') {
+                        if (this.requirement.includes('-')) {
+                            let temp = this.requirement.split('-')
+                            if (temp[0] != '' && temp[1] != '') {
+                                return this.dynamiclist.filter(i => (temp[0] <= i.d.slice(0, 4)) && (temp[1] >= i.d.slice(0, 4)))
+                            }
+                            if (temp[0] != '' && temp[1] == '') {
+                                return this.dynamiclist.filter(i => temp[0] <= (i.d.slice(0, 4)))
+                            }
+                            if (temp[0] == '' && temp[1] != '') {
+                                return this.dynamiclist.filter(i => temp[1] >= (i.d.slice(0, 4)))
+                            }
+                        }
+                        return this.dynamiclist
+                    }
+                    if (this.select == '0x03') {
+                        if (this.requirement.includes('-')) {
+                            let temp = this.requirement.split('-')
+                            if (temp[0] != '' && temp[1] != '') {
+                                return this.dynamiclist.filter(i => (temp[0] <= i.v) && (temp[1] >= i.v))
+                            }
+                            if (temp[0] != '' && temp[1] == '') {
+                                return this.dynamiclist.filter(i => temp[0] <= i.v)
+                            }
+                            if (temp[0] == '' && temp[1] != '') {
+                                return this.dynamiclist.filter(i => temp[1] >= i.v)
+                            }
+                        }
+                        return this.dynamiclist
+                    }
+                },
+
+            },
+            created() {
+                this.observer = new IntersectionObserver((entries, observer) => {
+                    entries.forEach(async entry => {
+                        let img = entry.target
+                        if (entry.isIntersecting) {
+                            img.setAttribute('src', img.dataset.src);
+                            img.classList.add('loaded');
+                            await new Promise(r => {
+                                setTimeout(() => {
+                                    r(null)
+                                }, 1000);
+                            })
+                            let view = await fetch(`/views/${img.dataset.n}`).then(resp => resp.text());
+                            document.querySelector(`.${img.dataset.n}`).innerText = view
+                            observer.unobserve(img);
+                        }
+                    });
+                }, {
+                    rootMargin: '0px 0px 0px 0px',
+                    threshold: 0.5
+                })
+                this.connect();
+                setInterval(() => {
+                    switch (this.socket.readyState) {
+                        case this.socket.CONNECTING:
+                            this.state = "CONNECTING"
+                            break;
+                        case this.socket.OPEN:
+                            this.state = "OPEN"
+                            break;
+                        case this.socket.CLOSING:
+                            this.state = "CLOSING"
+                            break;
+                        case this.socket.CLOSED:
+                            this.state = "CLOSED"
+                            break;
+                    }
+                }, 100);
+            }
+        })
+        window.addEventListener('error', err => {
+            if (err) console.log(err);
+        })
+    </script>
+</body>
+
+</html>
