@@ -5,435 +5,638 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>filter-uncensored</title>
+    <title>util</title>
+    <script src="/debugger.js"></script>
     <script src="/vue.js"></script>
+    <!-- <script src="/debugger.js"></script> -->
+    <link rel="stylesheet" href="/index.css">
+    <!-- <link rel="stylesheet" href="/photoswipe.css"> -->
+    <!-- <script type="module" src="/photoswipe.esm.min.js"></script> -->
+    <!-- <script type="module" src="/photoswipe-lightbox.esm.min.js"></script> -->
+    <!-- <script src="/flexible.js"></script> -->
+    <!-- <script defer src="/index.min.js"></script> -->
+    <!-- <script src="/cdn.socket.io_4.4.1_socket.io.min.js"></script> -->
+    <!-- <link rel="stylesheet" href="./bootstrap.min.css"> -->
+    <!-- <script src="/bootstrap.bundle.min.js"></script> -->
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            list-style: none;
-            text-decoration: none;
-            color: #000;
-        }
-
-        #box {
-            margin: 10px 0px;
-            height: 100vh;
-            position: relative;
-            overflow-y: scroll;
-        }
-
-        .search {
-            height: 30px;
-            line-height: 30px;
-            padding: 5px 5px;
-            margin: 10px 0;
-            text-align: left;
-            display: flex;
-            justify-content: space-around;
-        }
-
-        .search input {
-            font-size: 15px;
-            padding: 0 5px;
-            height: 100%;
-            outline: none;
-        }
-
-        .search button
-        {
-            margin: 0px 5px;
-            height: 100%;
-            outline: none;
-        }
-        .radio {
-            display: flex;
-            justify-content: space-evenly;
-            margin: 5px 0px;
-        }
-
-        .radio input,
-        .include,
-        .scrachStars,
-        .scrachGenre {
-            vertical-align: middle;
-            width: 15px;
-            margin-left: 5px;
-        }
-
-        .item-content {
-            display: flex;
-            flex-direction: column;
-            border-top: 1px #a0a4a8 solid;
-            margin-top: 5px;
-        }
-
-        .item-content li {
-            display: flex;
-            align-items: flex-end;
-            justify-content: space-around;
-            border-bottom: 1px #a0a4a8 solid;
-            text-align: left;
-        }
-
-        .item-content li .pics,
-        .item-content li .pics img {
-            vertical-align: middle;
-        }
-
-        .item-content li .info {
-            font-size: 15px;
-            vertical-align: middle;
-            padding: 10px 5px;
-            /* width: 100%; */
-        }
-
-        .total {
-            font-size: 15px;
-            text-align: right;
-            padding: 0px 10px;
-        }
-
-        h2 {
-            text-align: left;
-        }
-
-        .filter {
-            height: 30px;
-            line-height: 30px;
-            padding: 5px 5px;
-            text-align: left;
-        }
-
-        .filter input,
-        .filter select,
-        .filter span {
-            font-size: 14px;
-            padding: 0 5px;
-            height: 100%;
-            outline: none;
-            vertical-align: middle;
-        }
-
-        .lazy-loaded {
-            opacity: 0;
-            transition: opacity 0.5s;
-        }
-
-        .lazy-loaded.loaded {
-            opacity: 1;
-        }
-
-        .side-nav{
+        .nav {
+            width: 100%;
+            height: 3rem;
             position: fixed;
-            top: 50%;
-            right: 5%;
-            display:flex;
-            flex-flow: column nowrap;
+            top: 0;
+            border: 1px red solid;
+            background-color: #e40a94;
+        }
+
+        .show {
+            margin-top: 3rem;
+            border: 1px blue solid;
+        }
+
+        .show .msg {
+            /* width: 50%; */
+            display: flex;
+            height: 4rem;
+            background-color: #bfa;
+            align-items: center;
+            margin-bottom: .5rem;
+        }
+
+        .msg .img {
+            width: 4rem;
+            height: 100%;
+            background-color: rgb(23, 148, 225);
+            border-radius: 8px;
+        }
+
+        .msg .text_speech {
+            margin: 0 1rem;
+            width: 12rem;
+            height: 2rem;
+        }
+
+        .msg_reverse {
+            flex-direction: row-reverse;
+        }
+
+        .send {
+            user-select: none;
+            width: 100%;
+            position: fixed;
+            bottom: 0;
+            height: 4rem;
+            border: 1px greenyellow solid;
+            background-color: #ec620c;
+            text-align: center;
+            font-size: 2rem;
+        }
+
+        .bgc {
+            background-color: green;
+        }
+
+        .over-lay-chat {
+            box-sizing: border-box;
+            border: 1px red solid;
+            height: 100vh;
+            width: 100%;
+            transform: translateX(100%);
+            transition: transform var(--timing) ease-in-out;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            right: 0;
+            left: 0;
+            /* background-color: #fff; */
+            z-index: 9;
+        }
+
+        .over-lay-chat-tranfer {
+            transform: translateX(0%);
+        }
+
+        .chat-message-content {}
+
+        .chat-topnav-module {
+            background-color: #bfa;
+            box-sizing: border-box;
+            display: flex;
+            position: fixed;
+            top: 0;
+            border-top: 1px solid hsla(0, 0%, 100%, .2);
+            justify-content: space-between;
             align-items: center;
         }
-        .side-nav button {
-            width: 2.5rem;
-            height: 2.5rem;
-            margin-bottom: 2rem;
+
+
+        .text-speech-switch,
+        .more-options-box,
+        .sticker-message-box {
+            box-sizing: border-box;
+            height: 2rem;
+            width: 2rem;
+            margin: 0px 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            align-self: flex-end;
+            vertical-align: middle;
+            /* border: 1px red solid; */
+        }
+
+        .chat-post-module button {
+            box-sizing: border-box;
+            border: none;
+            /* outline: ; */
+        }
+
+        .chat-post-module svg {
+            vertical-align: middle;
+            align-self: flex-end;
+        }
+
+        .more-options-box {
+            width: 1.5rem;
+            transition: width .3s ease;
+        }
+
+        .post-message-box {
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            vertical-align: middle;
+            height: 2rem;
+            align-self: flex-end;
+            flex-shrink: 0;
+            /* border: 1px red solid; */
+            overflow: hidden;
+            /* opacity: 0; */
+            /* transform: translateX(100%);  */
+            transition: transform .5s ease-out, opacity .5s ease-out;
+            /* margin: 1px; */
+        }
+
+        .post-message-box-tranfer {
+            opacity: 1;
+            transform: translateX(0%);
+        }
+
+        .post-message-box .post-message-btn {
+            box-sizing: border-box;
+            /* background-color: #76EF54; */
+            background-color: #01C353;
+            vertical-align: middle;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+
+        .text-message-box {
+            width: 100%;
+            box-sizing: border-box;
+            vertical-align: middle;
+            align-self: flex-end;
+        }
+
+        .text-message-box .text-message-textare {
+            white-space: pre-line;
+            color: #000;
+            box-sizing: border-box;
+            width: 100%;
+            height: 2rem;
+            /* line-height: 1.5rem; */
+            /* font-size: 16px; */
+            padding: 8px;
+            overflow: hidden;
+            outline: none;
+            border: none;
+            background-color: #fff;
+            border-radius: 4px;
+            resize: none;
+            vertical-align: middle;
+
+        }
+
+        .speech-message-box {
+            width: 100%;
+            box-sizing: border-box;
+            vertical-align: middle;
+            align-self: flex-end;
+        }
+
+        .speech-message-btn {
+            box-sizing: border-box;
+            color: #000;
+            width: 100%;
+            height: 2rem;
+            line-height: 1.5rem;
+            font-size: 16px;
+            padding: 4px;
+            overflow: hidden;
+            outline: none;
+            border: none;
+            background-color: #fff;
+            border-radius: 4px;
+            resize: none;
+            vertical-align: middle;
+
+        }
+
+
+        .chat-post-module * {
+            background-color: initial;
+        }
+
+        .chat-post-module {
+            box-sizing: border-box;
+            /* box-sizing: content-box; */
+            overflow: hidden;
+            /* margin : 0.25rem; */
+            padding: .25rem;
+            background-color: #a39090;
+            width: 100%;
+            /* height: 3rem; */
+            display: flex;
+            position: fixed;
+            bottom: 0;
+            justify-content: space-between;
+            align-items: center;
         }
     </style>
 </head>
 
 <body>
-    <div id="box" ref="box" @scroll.passive="loadMorePage">
-        <div class="option">
-            <div class="search">
-                <input type="text" style="width: 35%;" :placeholder="template" v-model=keyWord>
-                <label for="stars">stars</label><input id="stars" class="scrachStars" type="checkbox" v-model=stars>
-                <label for="genre">genre</label><input id="genre" class="scrachGenre" type="checkbox" v-model=genre>
-                <button @click="scrach">search</button>
-                <button @click="save">save</button>
-                <!-- <button @click="stop">stop</button> -->
-                <button @click="clear">clear</button>
+    <div id="box" ref="box" @click="visibNav" @dblclick="manual.bookmark=!manual.bookmark"
+        @scroll.passive="loadMorePage">
+        {{switchTheme}}
+        <div v-if="!filterRule.length" class="instruction-box">
+            <li v-for="({title,details,expand},idx) in instruction" @click="toggleItem(idx)"
+                class="instruction-title-box" :key="idx">
+                <span :style="expand?{'border-bottom':'1px solid #07faca'}:null">{{title}}</span>
+                <div class="instruction-details-box">
+                    <p v-if="expand" class="instruction-details-entry" v-for="(ct,ix) in details">
+                        {{ix + 1}}:{{ct}}
+                    </p>
+                </div>
+            </li>
+        </div>
+        <div v-if="chat.enable || true" :class="{'over-lay-chat-tranfer':chat.enable}" class="over-lay-chat">
+            <!-- {{chatDeviceRequest}} -->
+            <div class="chat-topnav-module">
+                <button style="vertical-align: middle;" @click="chat.enable=!chat.enable">
+                    <svg style="vertical-align: middle;" xmlns="http://www.w3.org/2000/svg" width="1.5rem"
+                        height="1.5rem" viewBox="0 0 24 24">
+                        <!-- <path d="M0 0h24v24H0z" /> -->
+                        <path fill="" d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
+                    </svg>
+                </button>
+                <span>
+                    {{chat.session}}
+                </span>
+                <button>...</button>
             </div>
-            <div class="radio">
-                uncensored <input type="radio" name="mode" value="uncensored" v-model=mode>
-                censored <input type="radio" name="mode" value="censored" v-model=mode>
-                <!-- <label for="view">view</label><input id="view" class="include" type="checkbox" v-model=view> -->
+            <div class="chat-message-content">
+                <li class="msg" v-for="i in 10" :class="i % 2 == 0 && 'msg_reverse'">
+                    <p class="img">
+                        avater
+                    </p>
+                    <span class="text_speech">text_speech</span>
+                </li>
             </div>
-            <h2>current:{{this.log}}</h2>
-            <p class="total">total:{{dynamiclist.length}}</p>
-            <div class="filter">
-                <select v-model="select">
-                    <option value="0x01">常规</option>
-                    <option value="0x02">时间</option>
-                    <option value="0x03">热度</option>
-                </select>
-                <input type="text" style="width: 35%;" v-model="requirement">
-                <span>{{this.state}}</span>
+            <div class="chat-post-module" @touchstart.self="recordStart($event)" @touchend.self="recordStop($event)">
+                <div class="text-speech-switch">
+
+                    <button class="text-speech-btn" @click="chat.overlay.textSwitch=!chat.overlay.textSwitch">
+                        <svg v-if="!chat.overlay.textSwitch" viewBox="0 0  1024 1024" width="1.5rem" height="1.5rem"
+                            fill="#000">
+                            <path
+                                d="M512.127968 1023.744064c-282.297426 0-511.872032-229.574606-511.872032-511.872032s229.574606-511.872032 511.872032-511.872032 511.872032 229.574606 511.872032 511.872032-229.574606 511.872032-511.872032 511.872032z m0-965.646588C261.822544 58.097476 58.097476 261.822544 58.097476 512.127968s203.725069 454.030492 454.030492 454.030492S966.15846 762.433392 966.15846 512.127968 762.433392 58.097476 512.127968 58.097476z">
+                            </path>
+                            <path
+                                d="M378.529368 415.384154l-94.696326 97.511622 96.743814 97.511622c50.931267-53.490627 50.931267-141.532617-2.047488-195.023244z m0 0">
+                            </path>
+                            <path
+                                d="M475.017246 319.664084l-47.348163 47.860035c79.596101 80.363909 79.596101 210.379405 0 290.743314l47.348163 47.860035a274.184254 274.184254 0 0 0 0-386.463384z m0 0">
+                            </path>
+                            <path
+                                d="M569.969508 222.152462l-47.348163 47.860035c132.574856 133.854536 132.574856 349.864534 0 483.975006l47.348163 47.860035c159.192202-158.936266 159.192202-418.967258 0-579.695076z m0 0">
+                            </path>
+                        </svg>
+                        <svg v-else viewBox="0 0 1024 1024" fill="#000" width="1.5rem" height="1.5rem">
+                            <path
+                                d="M512 65c246.319 0 446 199.681 446 446S758.319 957 512 957 66 757.319 66 511 265.681 65 512 65z m0 59.773c-213.307 0-386.227 172.92-386.227 386.227S298.693 897.227 512 897.227 898.227 724.307 898.227 511 725.307 124.773 512 124.773z m140.227 549.454c12.702 0 23 10.297 23 23v34.464c0 12.702-10.298 23-23 23H374.072c-12.702 0-23-10.298-23-23v-34.464c0-12.703 10.298-23 23-23h278.155zM466.01 500.655c12.703 0 23 10.297 23 23v64.35c0 12.703-10.297 23-23 23h-66.65c-12.702 0-23-10.297-23-23v-64.35c0-12.703 10.298-23 23-23h66.65z m160.928 0c12.703 0 23 10.297 23 23v64.35c0 12.703-10.297 23-23 23h-66.65c-12.702 0-23-10.297-23-23v-64.35c0-12.703 10.298-23 23-23h66.65z m-324.154-1.15c12.702 0 23 10.298 23 23v64.35c0 12.703-10.298 23-23 23h-66.65c-12.703 0-23-10.297-23-23v-64.35c0-12.702 10.297-23 23-23h66.65z m487.38 0c12.703 0 23 10.298 23 23v64.35c0 12.703-10.297 23-23 23h-66.649c-12.702 0-23-10.297-23-23v-64.35c0-12.702 10.298-23 23-23h66.65zM466.01 339.727c12.703 0 23 10.297 23 23v64.35c0 12.703-10.297 23-23 23h-66.65c-12.702 0-23-10.297-23-23v-64.35c0-12.703 10.298-23 23-23h66.65z m160.928 0c12.703 0 23 10.297 23 23v64.35c0 12.703-10.297 23-23 23h-66.65c-12.702 0-23-10.297-23-23v-64.35c0-12.703 10.298-23 23-23h66.65z m-324.154-1.15c12.702 0 23 10.298 23 23v64.35c0 12.703-10.298 23-23 23h-66.65c-12.703 0-23-10.297-23-23v-64.35c0-12.702 10.297-23 23-23h66.65z m487.38 0c12.703 0 23 10.298 23 23v64.35c0 12.703-10.297 23-23 23h-66.649c-12.702 0-23-10.297-23-23v-64.35c0-12.702 10.298-23 23-23h66.65z">
+                            </path>
+                        </svg>
+                        </svg>
+                    </button>
+
+                </div>
+                <!-- <transition name="fade" mode="out-in"> -->
+                <div v-if="chat.overlay.textSwitch" class="speech-message-box">
+                    <button class="speech-message-btn">speech</button>
+                </div>
+
+                <!-- </transition> -->
+                <div v-else class="text-message-box">
+                    <textarea class="text-message-textare" autofocus type="text" rows="1"
+                        v-model="chat.textMessage"></textarea>
+                </div>
+
+                <div class="sticker-message-box">
+                    <button class="sticker-message-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="1.5rem" height="1.5rem" fill="#000"
+                            viewBox="0 0 16 16">
+                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
+                            <path
+                                d="M4.285 9.567a.5.5 0 0 1 .683.183A3.498 3.498 0 0 0 8 11.5a3.498 3.498 0 0 0 3.032-1.75.5.5 0 1 1 .866.5A4.498 4.498 0 0 1 8 12.5a4.498 4.498 0 0 1-3.898-2.25.5.5 0 0 1 .183-.683zM7 6.5C7 7.328 6.552 8 6 8s-1-.672-1-1.5S5.448 5 6 5s1 .672 1 1.5zm4 0c0 .828-.448 1.5-1 1.5s-1-.672-1-1.5S9.448 5 10 5s1 .672 1 1.5z" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- <div v-if="!chat.textMessage" class="more-options-box"> -->
+                <div class="more-options-box" :style="chat.textMessage && {'width':'32px'}">
+                    <button v-if="!chat.textMessage" class="more-options-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="1.5rem" height="1.5rem" fill="#000"
+                            viewBox="0 0 16 16">
+                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
+                            <path
+                                d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z" />
+                        </svg>
+                    </button>
+                    <div v-else class="post-message-box">
+                        <button class="post-message-btn">发送</button>
+                    </div>
+                </div>
+
+
             </div>
         </div>
-        <ul class="item-content">
-            <li v-for="(item,index) in filterRule" @touchstart="startTimer" @touchend="cancelTimer" :key="index">
-                <a class="pics" target="_blank" :href="`https://www.javbus.com/${item.n}`">
-                    <img class="lazy-loaded" height="150px" :data-src="`${item.p}`" :data-n="item.n" alt="">
-                </a>
-                <a class="info" target="_blank">{{item.n}}</a>
-                <a class="info" :href="`https://www4.javhdporn.net/video/${item.n}/`" target="_blank">预览-1</a>
-                <a class="info" :class="item.n" target="_blank"> -1 </a>
-                <a class="info" target="_blank">{{item.d}}</a>
+
+
+        <transition name="fade" mode="out-in">
+            <div v-if="overlay.serial" @click.self="overlay.serial=!overlay.serial" class="over-lay-serial">
+                <div class="serial-box">
+                    <textarea class="serial-textarea" placeholder="serial" v-model.trim="main.serial"></textarea>
+                    <p class="serial-action">
+                        <button @click="import_" class="serial-import">import</button>
+                        <button @click="main.serial = ''" class="serial-clear">clear</button>
+                    </p>
+                </div>
+            </div>
+        </transition>
+
+
+        <transition name="fade" mode="out-in">
+            <div v-if="overlay.magnet" @click.slef="overlay.magnet=!overlay.magnet" class="over-lay-magnet">
+                <div class="magnet-box">
+                    <a class="magnet-wake" v-for="(m,idx) in magnet" :key="idx" :href="m.href">
+                        <span class="magnet-text" v-for="(t,idx) in m.text">{{t}}</span>
+                    </a>
+                </div>
+            </div>
+        </transition>
+
+
+        <div :class="{'over-lay-option-transfer':overlay.dashboard && overlay.reflow}" class="over-lay-option">
+            <p class="caption-control">THEME</p>
+            <span class="status-control">
+                <label for="theme-day">day</label> <input type="radio" name="theme" id="theme-day" value="day"
+                    v-model="theme">
+                <label for="theme-night">night</label> <input type="radio" name="theme" id="theme-night" value="night"
+                    v-model="theme">
+                <label for="theme-normal">normal</label> <input type="radio" name="theme" id="theme-normal"
+                    value="normal" v-model="theme">
+            </span>
+            <p class="caption-control">STATUS</p>
+            <span class="status-control">
+                <label for="isDone">isDone</label><input id="isDone" type="checkbox" v-model="status.isdone">
+                <label for="vthumb">vthumb</label><input id="vthumb" type="checkbox" v-model="status.vthumb">
+                <label for="single">single</label><input id="single" type="checkbox" v-model="status.single">
+                <label for="origin">origin</label><input id="origin" type="checkbox" v-model="manual.origin">
+            </span>
+            <span class="status-control">
+                <label for="chat">chat</label><input id="chat" type="checkbox" v-model="chat.enable">
+                <label for="onsunc">onsunc</label><input id="onsunc" type="checkbox" v-model="status.onsunc">
+                <label for="pageMonitor">page</label><input id="pageMonitor" class="input-text-control"
+                    :disabled="!sconf" style="width: 1.2rem;" type="text" v-model="main.page">
+                <!-- <label for="bookmark">bookmark</label><input id="bookmark" type="checkbox" v-model="manual.bookmark"> -->
+                <label for="slideSpeed">slideSpeed</label><input id="slideSpeed" class="input-text-control"
+                    style="width: 1.2rem;" type="text" v-model.number="main.slideSpeed">
+            </span>
+            <p class="caption-control">OTHER</p>
+            <span class="status-control">
+                <label for="reconnectTime">reconnectTime</label><input id="reconnectTime" class="input-text-control"
+                    style="width: 2.5rem;" type="text" v-model="main.reconnectTimeout">
+                <label for="needReconnect">needReconnect</label><input id="needReconnect" type="checkbox"
+                    v-model="main.needReconnect">
+            </span>
+            <span class="status-control ">
+                <label for="heartbeat">heartbeat</label><span id="heartbeat">{{this.main.heartbeat}}</span>
+                <label for="readyState">readyState</label><span id="readyState">{{main.state}}</span>
+            </span>
+            <span class="status-control ">
+                <button @click="overlay.serial=!overlay.serial">import</button>
+                <button @click="export_">export</button>
+                <button @click="connect">connect</button>
+                <button @click="main.socket.close()">disconnect</button>
+            </span>
+            <span class="status-control">
+                <button @click="reset">reset</button>
+                <button @click="overlay.proxies=!overlay.proxies">toggleProxy</button>
+                <button @click="updateProxy">updateProxy</button>
+            </span>
+        <!--     <div :class="(overlay.proxies && overlay.reflow && overlay.dashboard ) && 'proxies-container-tranfer'" class="proxies-container">
+                <li class="proxy-switch" v-if="idx >= 3" v-for="(p,idx) in proxies" :key="idx">
+                    <span v-if="p.selected" class="proxy-selected"></span>
+                    <button @click="!p.selected && selectProxy(idx)">{{p.name}}</button>
+                </li>
+            </div> -->
+        </div>
+        
+
+        <div :class="overlay.proxies && 'proxies-container-tranfer'" @click.self="overlay.proxies=!overlay.proxies" class="proxies-container">
+            <table class="proxy-table">
+                <tr v-for="(e,idx) in proxies" :key="idx">
+                    <td class="proxy-switch-td" v-for="(p,idx_) in e" :key="idx_">
+                        <span v-if="p.selected" class="proxy-selected-td"></span>
+                        <button class="proxy-btn-td" @click="!p.selected && selectProxy(idx * e.length + idx_)" >
+                            {{p.name}}
+                        </button>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <transition name="fade" mode="out-in">
+            <ul v-if="overlay.reflow" :style="!reflow.length && {'min-height':'245px'}" class="over-lay-reflow"
+                @click.self="overlay.reflow=!overlay.reflow">
+                <div class="reflow-action">
+                    <button @click="reflowList">reflow</button>
+                    <button @click="clearList">remove</button>
+                    <label for="dashboard">dashboard</label><input id="dashboard" type="checkbox"
+                        v-model="overlay.dashboard">
+                </div>
+                <button class="cancel-menu" @click="overlay.reflow=!overlay.reflow">x</button>
+                <div class="reflow-genre">
+                    <span style="flex-shrink: 0;">plate</span>
+                    <span>signal</span>
+                    <span>error</span>
+                    <span>reflow</span>
+                    <span>option</span>
+                </div>
+                <li class="reflow-item" v-for="({value:{n,s,t,extra}}, idx) in sliceReflow" :key="idx">
+                    <span style="flex-shrink: 0;">{{n}}</span>
+                    <span>{{s}}</span>
+                    <span>{{t}}</span>
+                    <span><button @click="reflowBack(n,idx)">reflow</button></span>
+                    <span><button @click="onlyPush(n,extra,idx)">push</button></span>
+                </li>
+
+                <div class="fragment-control">
+                    <span style="float:left;">offset:{{offset || 0}}</span>
+                    <button class="fragment-prev" @click="fragment.idx--">prev</button>
+                    <span>{{fragment.idx}}of{{pageTotal}}</span>
+                    <button class="fragment-next" @click="fragment.idx++">next</button>
+                </div>
+            </ul>
+        </transition>
+
+        <ul :class="{'over-lay-genre-transfer':status.genre && !main.keyWord}" class="over-lay-genre">
+            <li class="genre-key" v-for="(v,k,i) in taglist" @click="main.keyWord = k" :key="i">{{v}}</li>
+        </ul>
+
+        <div :class="{'over-lay-pics-transfer':overlay.pics}" @click.self="overlay.pics=!overlay.pics"
+            class="over-lay-pics">
+            <transition name="fade" mode="out-in">
+                <!-- swipe component -->
+                <div v-if="preview.picsSwipe" @click.self="closeSwipe" class="pics-swipe-control">
+                    <button class="previous" @click="preview.picsIndex--"></button>
+                    <button class="next" @click="preview.picsIndex++"></button>
+                    <div class="pics-contains">
+                        <!-- <img style="display: none;" v-for="(item,index) in preview.pics" @load="item['loaded'] = true" -->
+                        <!-- :src="item['pt']" :key="index" alt=""> -->
+                        <img class="img-preview-swipe" :src="preview.pics[preview.picsIndex]?.['pt']" alt="">
+                        <span class="pics-indicator">{{preview.picsIndex +1 }}of{{preview.pics.length}}</span>
+                    </div>
+                </div>
+            </transition>
+            <transition name="fade" mode="out-in">
+                <div v-if="overlay.pics" class="pics-contains-expand">
+                    <a class="pics-preview-expand" v-for="(item,index) in preview.pics">
+                        <img :class="index % 2 == 0 ? 'swipe-zoomed-origin-left':'swipe-zoomed-origin-right'"
+                            @click="openSwipe(index,$event)" class="img-preview-expand" @load="item['loaded'] = true"
+                            :src="item['pt']" :key="index" alt="">
+                    </a>
+                </div>
+            </transition>
+        </div>
+
+        <div class="info-option">
+            <div class="info-search">
+                <input type="text" @keydown.enter="search" @dblclick.stop="main.keyWord = ''" @focus="flushHistory"
+                    @blur="overlay.history=''" placeholder="keyWord" v-model=main.keyWord>
+                <button @click="search">search</button>
+                <label for="stars">stars</label><input id="stars" type="checkbox" v-model="status.stars">
+                <label for="genre">genre</label><input id="genre" type="checkbox" v-model="status.genre">
+                <button @click="home">home</button>
+                <transition name="fade" mode="out-in">
+                    <p v-if="overlay.history" class="search-history">
+                        <span v-for="(key,idx) in history" :key="idx" @click="loadHistory(key)" class="history-key">
+                            {{key | purgeSuffix}}
+                        </span>
+                    </p>
+                </transition>
+            </div>
+
+            <div class="mode-switch">
+                <label for="mode-uncensored">uncensored</label> <input id="mode-uncensored" type="radio" name="mode"
+                    value="uncensored" v-model=main.mode>
+                <label for="mode-censored">censored</label> <input id="mode-censored" type="radio" name="mode"
+                    value="censored" v-model=main.mode>
+            </div>
+
+
+
+            <h2 ref="log" class="fixed-log">
+                <span> current:{{this.main.log}}</span>
+                <span v-if="status.isdone" class="reflow"> reflow:{{reflow.length}}
+                </span>
+                <p v-if="overlay.error" class="error-full-log">
+                    {{main.error}}
+                </p>
+            </h2>
+
+            <h2 v-if="overlay.isfloat" class="float-log">
+                <span> current:{{this.main.log}}</span>
+                <span v-if="status.isdone" class="reflow"> reflow:{{reflow.length}}</span>
+                <p v-if="overlay.error" class="error-full-log">
+                    {{main.error}}
+                </p>
+            </h2>
+
+
+            <p class="info-total">total:{{this.filterRule.length}}</p>
+            <div class="info-filter">
+                <select class="select-filter" v-model="main.select">
+                    <option value="NONE">NONE</option>
+                    <option value="TIME">TIME</option>
+                    <option value="VIEW">VIEW</option>
+                </select>
+                <input type="text" v-model="main.factor">
+                <span>{{main.state}}</span>
+                <label for="autoView">autoView</label>
+                <input id="autoView" type="checkbox" v-model=status.autoview>
+            </div>
+        </div>
+        <ul class="info-content" @touchstart="autoScroll($event)" @touchmove="stopScroll" @touchend="stopScroll">
+            <li v-for="(item,index) in filterRule" class="info-iterator" :key="index">
+                <div class="thumb-item">
+                    <!-- v-lazy-load-oberver -->
+                    <img @click="zoomPics(item)" @load="thumbSucess($event)" class="lazy-loaded thumb" ref="monitor"
+                        :data-src="!status.vthumb?'':`${item.p}`" :data-i="index" :data-n="item.n">
+                </div>
+                <div class="info-item">
+                    <transition name="fade" mode="out-in">
+                        <p v-if="item.gs" @click.self="item.gs=!item.gs" class="info-genre">
+                            <a class="info info-gs" v-for="(g,idx) in item.g" @touchstart.slef="jumpTag(g)"
+                                @touchend.self="cancelJump" :key="idx">{{g | extract(taglist)}}</a>
+                        </p>
+                    </transition>
+
+                    <transition name="fade" mode="out-in">
+                        <p v-if="item.vs" @click.self="item.vs=!item.vs" class="info-vendor">
+                            <a class="info info-vs" v-for="(b,idx) in item.b" @touchstart.slef="jumpTag(b.href)"
+                                @touchend.self="cancelJump" :key="idx">{{b.text}}</a>
+                        </p>
+                    </transition>
+
+                    <p class="info-base">
+                        <a class="info" target="_blank" @click="item.gs=!item.gs">{{item.n}}</a>
+                        <a class="info" target="_blank">{{item.d}}</a>
+                        <!-- :class="`view-${item.n}`" -->
+                        <button class="info load-view" @click="loadView(item)" target="_blank">{{item.v ||
+                            'LOADING'}}</button>
+                    </p>
+
+                    <p class="info-product">
+                        <a class="info" target="_blank" @click.self="expandMagnet(item.m)">MAGNET</a>
+                        <a class="info" target="_blank" @click.self="item.vs=!item.vs">VENDOR</a>
+                        <button class="info info-svg-btn" target="_blank"
+                            @click.self="!item.inserted && updateBookmark($event,item,!manual.bookmark?'insert':'remove')">
+                            {{!manual.bookmark?'COLLECT':'REMOVE'}}
+                            <svg width="1.2rem" height="1.2rem" viewBox="0 0 100 100">
+                                <polygon v-if="!item.inserted" stroke="#fff" stroke-width="1" fill="#fff"
+                                    points="50,10 61.8,35.4 90,42 69.1,61.8 74.6,90 50,75 25.4,90 30.9,61.8 10,42 38.2,35.4" />
+                            </svg>
+                        </button>
+                    </p>
+                    <p class="info-detail">
+                        <a class="info" :href="`${manual.origin?originDomain:thirdDomain}/${item.n}/`"
+                            target="_blank">PREVIEW</a>
+                        <a class="info" target="_blank">ACTORS:{{item.s | actorTotal}}</a>
+                        <a v-if="item.s?.length == 1" class="info" :href="item.s[0]" target="_blank"
+                            @touchstart.self="jumpTag(item.s[0])" @touchend.self="cancelJump">{{item.s[0]
+                            | extract}}</a>
+                        <a v-else class="info">null</a>
+                        <a class="info info-progress" style="font-weight: bold;">{{ item.i | getProgress}}/{{
+                            item.i?.length || -1}}</a>
+                        <a class="info info-index" style=" font-weight: bold;">{{index >= filterRule.length - 5 ?
+                            `${index}-end`:index}}</a>
+                    </p>
+                </div>
             </li>
         </ul>
-        <div class="side-nav">
-        <button @click="loadNext" >NEXT</button>
-        <button  @click="scrollToTop">TOP</button>
+        <div class="info-sidenav"
+            :class="{'info-sidenav-tranfer':overlay.sidenav && !overlay.reflow}">
+            <button @click="scrollToTop">TOP</button>
+            <button @click="overlay.reflow=!overlay.reflow">MENU</button>
+            <button @click="loadViews">VIEW</button>
+            <button @click="loadNext">NEXT</button>
+        </div>
     </div>
-    </div>
-    <script>
-
-        let needReconnect = true;
-        let reconnectTimeout = 100; // 重连间隔时间，单位毫秒
-        let vm = new Vue({
-            el: '#box',
-            data: {
-                requirement: '',
-                pressTimer: null,
-                keyWord: '',
-                select: '0x01',
-                template: "关键词",
-                stars: '',
-                genre: '',
-                dynamiclist: [],
-                log: '暂无条目',
-                socket: null,
-                mode: 'censored',
-                state: '',
-                observer: null,
-                page: '',
-                sconf: null,
-                throttle: null,
-                isdone: true,
-            },
-            methods: {
-                scrach() {
-                    if (!(this.socket.readyState == this.socket.OPEN)) {
-                        this.connect()
-                    }
-                    if (this.keyWord.includes('$')) {
-                        this.socket.send(JSON.stringify({ type: 'scrach', keyWord: this.keyWord, stars: this.stars, genre: this.genre, mode: this.mode }))
-                        return null;
-                    }
-                    this.page = 1;
-                    // backUp
-                    this.sconf = { type: 'scrach', keyWord: this.keyWord, stars: this.stars, genre: this.genre, mode: this.mode };
-                    this.socket.send(JSON.stringify({ ...this.sconf, keyWord: `${this.sconf.keyWord}\$${this.page}` }))
-                },
-                stop() {
-                    this.socket.send(JSON.stringify({ type: 'abort' }))
-                },
-                clear() {
-                    this.dynamiclist = []
-                    // this.filterRule = []
-                    // this.keyWord = ''
-                    this.socket.close()
-                },
-                save() {
-                    let page = document.documentElement.outerHTML
-                    let url = URL.createObjectURL(new Blob([page], { type: 'text/html' }))
-                    let dl = document.createElement('a')
-                    dl.href = url
-                    dl.download = this.keyWord
-                    document.body.appendChild(dl)
-                    dl.click()
-                    document.removeChild(dl)
-                },
-                startTimer(evt) {
-                    this.pressTimer = setTimeout(() => {
-                        let el = evt.target.style
-                        let color = '#0bd3f1';
-                        if (el.backgroundColor == color) {
-                            console.log('has');
-                            el.backgroundColor = '#fff'
-                        } else {
-                            console.log('not');
-                            el.backgroundColor = color
-                        }
-                        // el.backgroundColor =''
-                    }, 500);
-                },
-                cancelTimer() {
-                    clearTimeout(this.pressTimer);
-                },
-                loadMorePage(event) {
-                    let scrollContainer = event.target
-                    let c_height = scrollContainer.clientHeight
-                    let diif = scrollContainer.scrollHeight - Math.ceil(scrollContainer.scrollTop)
-                    if (diif == c_height && !this.throttle && this.isdone) {
-                        this.page++
-                        this.socket.send(JSON.stringify({ ...this.sconf, keyWord: `${this.sconf.keyWord}\$${this.page}` }))
-                        this.isdone = false
-                        this.throttle = setTimeout(() => {
-                            this.throttle = null
-                        }, 1000)
-                    }
-                },
-                connect() {
-                    this.socket = new WebSocket('ws://101.132.236.100:80')
-                    this.socket.onopen = () => {
-                        console.log('WebSocket OPEN');
-                        this.socket.addEventListener('message', ({ data }) => {
-                            message = JSON.parse(data)
-                            switch (message.type) {
-                                case 'log':
-                                    this.log = `${message.data.n}<==>${message.data.c}`
-                                    break;
-                                case 'done':
-                                    this.log = message.data.m
-                                    this.isdone = true
-                                    break;
-                                case 'err':
-                                    this.log = message.data.err
-                                    break;
-                                case 'start':
-                                    this.log = message.data.m
-                                    break;
-                                case 'censored':
-                                    this.dynamiclist.push(message.data)
-                                    break;
-                                case 'uncensored':
-                                    this.dynamiclist.push(message.data)
-                                    break;
-                            }
-                        })
-                    };
-                    this.socket.onclose = () => {
-                        console.log('WebSocket CLOSE');
-                        if (needReconnect) {
-                            setTimeout(this.connect, reconnectTimeout);
-                        }
-                    };
-                    this.socket.onerror = (evt) => {
-                        console.log('WebSocket ERROR');
-                        //   needReconnect = false;
-                        this.socket.close();
-                    };
-                },
-                scrollToTop() {
-                    this.$refs.box.scrollTo({
-                        top: 0,
-                        behavior: 'smooth'
-                    });
-                },
-                loadNext(){
-                    if(this.isdone){
-                        this.page++
-                        this.socket.send(JSON.stringify({ ...this.sconf, keyWord: `${this.sconf.keyWord}\$${this.page}` }))
-                        this.isdone = false;
-                    }else{
-                        alert('点你妈逼！')
-                    }
-                }
-            },
-
-            watch: {
-                dynamiclist: {
-                    async handler() {
-                        // return;
-                        await this.$nextTick(() => {
-                            let images = document.querySelectorAll('.item-content img[data-src]')
-                            this.observer.observe(images[images.length - 1])
-                        })
-                    },
-                    deep: false
-                },
-                filterRule: {
-                    async handler() {
-                        await this.$nextTick(() => {
-                            let images = document.querySelectorAll('.item-content img[data-src]')
-                            images.forEach(img=>this.observer.observe(img))
-                        })
-                    }
-                }
-            },
-            computed: {
-                // render list
-                filterRule() {  
-                    if (this.select == '0x01') {
-                        return this.dynamiclist
-                    }
-                    if (this.select == '0x02') {
-                        if (this.requirement.includes('-')) {
-                            let temp = this.requirement.split('-')
-                            if (temp[0] != '' && temp[1] != '') {
-                                return this.dynamiclist.filter(i => (temp[0] <= i.d.slice(0, 4)) && (temp[1] >= i.d.slice(0, 4)))
-                            }
-                            if (temp[0] != '' && temp[1] == '') {
-                                return this.dynamiclist.filter(i => temp[0] <= (i.d.slice(0, 4)))
-                            }
-                            if (temp[0] == '' && temp[1] != '') {
-                                return this.dynamiclist.filter(i => temp[1] >= (i.d.slice(0, 4)))
-                            }
-                        }
-                        return this.dynamiclist
-                    }
-                    if (this.select == '0x03') {
-                        if (this.requirement.includes('-')) {
-                            let temp = this.requirement.split('-')
-                            if (temp[0] != '' && temp[1] != '') {
-                                return this.dynamiclist.filter(i => (temp[0] <= i.v) && (temp[1] >= i.v))
-                            }
-                            if (temp[0] != '' && temp[1] == '') {
-                                return this.dynamiclist.filter(i => temp[0] <= i.v)
-                            }
-                            if (temp[0] == '' && temp[1] != '') {
-                                return this.dynamiclist.filter(i => temp[1] >= i.v)
-                            }
-                        }
-                        return this.dynamiclist
-                    }
-                },
-
-            },
-            created() {
-                this.observer = new IntersectionObserver((entries, observer) => {
-                    entries.forEach(async entry => {
-                        let img = entry.target
-                        if (entry.isIntersecting) {
-                            img.setAttribute('src', img.dataset.src);
-                            img.classList.add('loaded');
-                            await new Promise(r => {
-                                setTimeout(() => {
-                                    r(null)
-                                }, 1000);
-                            })
-                            let view = await fetch(`/views/${img.dataset.n}`).then(resp => resp.text());
-                            document.querySelector(`.${img.dataset.n}`).innerText = view
-                            observer.unobserve(img);
-                        }
-                    });
-                }, {
-                    rootMargin: '0px 0px 0px 0px',
-                    threshold: 0.5
-                })
-                this.connect();
-                setInterval(() => {
-                    switch (this.socket.readyState) {
-                        case this.socket.CONNECTING:
-                            this.state = "CONNECTING"
-                            break;
-                        case this.socket.OPEN:
-                            this.state = "OPEN"
-                            break;
-                        case this.socket.CLOSING:
-                            this.state = "CLOSING"
-                            break;
-                        case this.socket.CLOSED:
-                            this.state = "CLOSED"
-                            break;
-                    }
-                }, 100);
-            }
-        })
-        window.addEventListener('error', err => {
-            if (err) console.log(err);
-        })
-    </script>
+    <script  src="/index.min.js" type="module"></script>
+    <!-- <script  src="/index.js" type="module"></script> -->
 </body>
 
 </html>

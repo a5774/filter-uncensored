@@ -1,0 +1,152 @@
+{
+    "bookmark": {
+        "insert": {
+            "color": "yellow",
+            "delay": 1500
+        },
+        "remove": {
+            "color": "red",
+            "delay": 1500
+        }
+    },
+    "domain": {
+        "originDomain": "https://www.javbus.com",
+        "thirdDomain": "https://www4.javhdporn.net/video"
+    },
+    "dataOptionsNomarl": {
+        "fragment": {
+            "size": 5,
+            "idx": 1
+        },
+        "main": {
+            "log": "null",
+            "select": "NONE",
+            "mode": "censored",
+            "state": "CLOSE",
+            "slideSpeed":3,
+            "reconnectTimeout": 100
+        },
+        "chat": {
+            "state": "CLOSE"
+        }
+    },
+    "websocket": {
+        "main": "/main",
+        "chat": "/chat",
+        "connectState": {
+            "connecting": "CONNECTING",
+            "open": "OPEN",
+            "closing": "CLOSING",
+            "closed": "CLOSED"
+        }
+    },
+    "resourceRouter": {
+        "instruction": "/instruction",
+        "toggleProxy": "/toggleProxy/",
+        "proxies": "/proxies",
+        "updateProxy": "/updateProxy",
+        "views": "/views/",
+        "bookmark": "/bookmark",
+        "tag": "/tagTable"
+    },
+    "digital": {},
+    "flexibleSize": {
+        "small": "14px",
+        "big": "16px"
+    },
+    "constantString": {
+        "classString": {
+            "swipe": "swipe-zoomed-enter",
+            "observer": "loaded"
+        },
+        "flagString": {
+            "done": "done!",
+            "_data": "_data",
+            "import": "import",
+            "searchSplit": "$",
+            "searchPageSplit": "-",
+            "logFormat": "<==>",
+            "atniSortFlag": "@",
+            "socketDisconnect":"disconnected",
+            "scrollBehavior":"smooth",
+            "autoScrollBehavior":"auto"
+        },
+        "alertString": {
+            "selectProxy": "更新订阅中你点你妈呢！",
+            "import_": "请输入合法番号序列!",
+            "export_": "已复制至剪贴板!",
+            "search": "还tm没搜索完成，点你妈呢，傻狗!",
+            "loadNext": "点你妈逼!"
+        }
+    },
+    "themes": {
+        "strokeWidth": "2",
+        "day": {
+            "range":[8,17],
+            "name": "day",
+            "color": "#000",
+            "backgroundColor": "#fff"
+        },
+        "night": {
+            "range":[18,24],
+            "name": "night",
+            "color": "#fff",
+            "backgroundColor": "#000"
+        },
+        "normal": {
+            "name": "normal",
+            "color": "#3592D7",
+            "backgroundColor": "#2FD4BD"
+        }
+    },
+    "snippet": {
+        "views": 2,
+        "proxy": 4
+    },
+    "timer": {
+        "viewsLoadDealy":3000,
+        "scrollThrottled":100,
+        "morePageInterval":1000,
+        "connectDetect":300,
+        "visibilityNavBar":3000,
+        "updateHookThrottled":1000,
+        "heartbeatThrottled":20000,
+        "jumpTagTimeout":400,
+        "errorMessageTimeout":5000,
+        "invokeSlideTimeout":300
+    },
+    "constantNumber": {
+        "passProxy": 3
+    },
+    "defaultStroageMeger": {
+        "overlay": {
+            "pics": false,
+            "error": false,
+            "serial": false,
+            "magnet": false,
+            "reflow": false,
+            "sidenav": false,
+            "proxies": false,
+            "isfloat": false,
+            "history": false,
+            "dashboard": true
+        },
+        "status": {
+            "isdone": true,
+            "vthumb": true,
+            "autoview": false,
+            "single": false,
+            "stars": false,
+            "genre": false,
+            "studio": false,
+            "label": false,
+            "director": false
+        },
+        "preview": {
+            "pics": [],
+            "picsEl": null,
+            "picsIndex": -1,
+            "picsSwipe": false
+        }
+    }
+}

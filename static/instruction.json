@@ -1,0 +1,94 @@
+[
+    {
+        "title": "筛选",
+        "expand": false,
+        "details": [
+            "勾选'uncensored'筛选步兵",
+            "仪表盘'single'筛选单体作品",
+            "次级输入框进行'模糊筛选'和'时间筛选'和'热度排序'",
+            "'NONE'为模糊匹配",
+            "'TIME'为时间筛选",
+            "'VIEW'为热度排序",
+            "'@'标识进行降序排序"
+
+        ]
+    },
+    {
+        "title": "功能",
+        "expand": false,
+        "details": [
+            "keyWord填写番号(mifd)使用'search'检索",
+            "使用'$'进行区间检索",
+            "'mifd$1'表示第一页 $1-n表示[n,1]数据总和",
+            "reset清除缓存和重置参数",
+            "勾选'star' 以演员标签检索",
+            "勾选'genre' 以类别标签检索",
+            "点击'loading'获取单个作品view",
+            "点击番号(MIFD-xx1)查看查看类别标签",
+            "长按类别标签可跳转检索",
+            "长按演员标签可跳转检索(演员不存在为'null')",
+            "点击'TOP 返回顶部'",
+            "点击'VIEW'加载列表内所有view(不建议)",
+            "点击'NEXT'将加载当前番号下一页",
+            "滚动至底部将加载当前番号下一页",
+            "点击'MENU'打开仪表盘",
+            "点击略缩图可查看完整图集预览",
+             "双击任意位置打开'bookmark'"
+
+        ]
+    },
+    {
+        "title": "说明",
+        "expand": false,
+        "details": [
+            "'total'结果总数",
+            "默认保存搜索记录",
+            "'PREVIEW'访问原始页需要梯子",
+            "检索结果和参数将被缓存(页面刷新数据保留)",
+            "默认使用websocket建立连接",
+            "略缩图采用异步加载",
+            "任意触摸将唤起'导航'",
+            "默认储存所有参数和数据",
+            "'reflow'检索出现的回流项(可在'MENU'查看)",
+            "'deny'|'empty'|'expire'|'error'",
+            "'current'错误和检索日志输出",
+            "'autoView'自动加载view",
+            "点击番号名(xxxx-xx)可查看类别(长按可跳转)",
+            "'MAGNET'查看磁力",
+            "'VENDOR'查看厂商信息(长按可跳转)",
+            "'REMOVE|COLLET'添加|移除'bookmark'"
+        ]
+    },
+    {
+        "title": "仪表盘",
+        "expand": false,
+        "details": [
+            "'THEME'切换主题(默认随时间自动切换)",
+            "'isDone'表示是否检索完成",
+            "'vthumb'表示是否加载图片(防社死)",
+            "'page'表示当前番号检索页面值",
+            "'reconnectTime'重连时间间隔",
+            "'needReconnect'表示是否自动重连",
+            "'connect'表示建立连接",
+            "'disconnect'表示断开连接",
+            "'readyState'表示连接状态",
+            "'OPEN'|'CLOSE'|'CONNECTING'|'CLOSING'",
+            "'import'批量导入搜索",
+            "'export'批量导出磁力(以列表过滤结果为标准)",
+            "'heartbeat'心跳检测",
+            "'slideSpeed'滑动速度",
+            "'toggleProxy'切换节点",
+            "'updateProxy'更新订阅",
+            "'origin'为'preview'预览地址默认为'源'",
+            "'onsunc'切换为步兵搜索"
+        ]
+    },
+    {
+        "title": "使用须知",
+        "expand": true,
+        "details": [
+            "无法在非移动设备使用",
+            "好小子，还真用上了"
+        ]
+    }
+]
