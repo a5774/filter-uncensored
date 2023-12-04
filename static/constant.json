@@ -23,8 +23,9 @@
             "select": "NONE",
             "mode": "censored",
             "state": "CLOSE",
-            "slideSpeed":3,
-            "reconnectTimeout": 100
+            "slideRate": 3,
+            "reconnectTimeout": 100,
+            "actors": 1
         },
         "chat": {
             "state": "CLOSE"
@@ -49,7 +50,17 @@
         "bookmark": "/bookmark",
         "tag": "/tagTable"
     },
-    "digital": {},
+    "demoDebug": {
+        "enable": false,
+        "magnet": "demo",
+        "genre": "demo",
+        "vendor": "demo",
+        "actor": "demo",
+        "single": "null",
+        "name": "xxxx-xxxx",
+        "actorOrigin": "https://www.bilibili.com/video/BV1GJ411x7h7/",
+        "previewOrigin": "https://www.bilibili.com/video/BV1GJ411x7h7/"
+    },
     "flexibleSize": {
         "small": "14px",
         "big": "16px"
@@ -57,9 +68,11 @@
     "constantString": {
         "classString": {
             "swipe": "swipe-zoomed-enter",
-            "observer": "loaded"
+            "observer": "loaded",
+            "loaded": "loaded"
         },
         "flagString": {
+            "endFlag": "-end",
             "done": "done!",
             "_data": "_data",
             "import": "import",
@@ -67,9 +80,9 @@
             "searchPageSplit": "-",
             "logFormat": "<==>",
             "atniSortFlag": "@",
-            "socketDisconnect":"disconnected",
-            "scrollBehavior":"smooth",
-            "autoScrollBehavior":"auto"
+            "socketDisconnect": "disconnected",
+            "scrollBehavior": "smooth",
+            "autoScrollBehavior": "auto"
         },
         "alertString": {
             "selectProxy": "更新订阅中你点你妈呢！",
@@ -80,15 +93,20 @@
         }
     },
     "themes": {
-        "strokeWidth": "2",
         "day": {
-            "range":[8,17],
+            "range": [
+                8,
+                17
+            ],
             "name": "day",
             "color": "#000",
             "backgroundColor": "#fff"
         },
         "night": {
-            "range":[18,24],
+            "range": [
+                18,
+                24
+            ],
             "name": "night",
             "color": "#fff",
             "backgroundColor": "#000"
@@ -101,19 +119,27 @@
     },
     "snippet": {
         "views": 2,
-        "proxy": 4
+        "proxy": 4,
+        "endFlag": 5
     },
     "timer": {
-        "viewsLoadDealy":3000,
-        "scrollThrottled":100,
-        "morePageInterval":1000,
-        "connectDetect":300,
-        "visibilityNavBar":3000,
-        "updateHookThrottled":1000,
-        "heartbeatThrottled":20000,
-        "jumpTagTimeout":400,
-        "errorMessageTimeout":5000,
-        "invokeSlideTimeout":300
+        "viewsLoadDealy": 3000,
+        "scrollDebounce": 100,
+        "morePageInterval": 2000,
+        "connectDetect": 300,
+        "visibilityNavBar": 3000,
+        "updateHookDebounce": 500,
+        "observerDebounce": 200,
+        "heartbeatDetectCycle": 20000,
+        "errorMessageTimeout": 5000,
+        "jumpTagTimeout": 300,
+        "invokeAutoScroll": 400,
+        "swipeSlowTimeout": 500,
+        "swipeTransitionTimeout":300,
+        "openSwipeTimeout":300,
+        "closeSwipeTimeout":100,
+        "initSwipeDebounce":100
+
     },
     "constantNumber": {
         "passProxy": 3
@@ -140,13 +166,27 @@
             "genre": false,
             "studio": false,
             "label": false,
+            "deny":false,
             "director": false
         },
         "preview": {
             "pics": [],
             "picsEl": null,
             "picsIndex": -1,
-            "picsSwipe": false
+            "picsSwipe": false,
+            "picsSwipeSize": 0,
+            "desktopSwipeScale": 2,
+            "failed": "/failed.jpg"
+        },
+        "deviceMeta": {
+            "viewWidth": 0,
+            "viewHeight": 0,
+            "isMobile": false,
+            "isTablet": false,
+            "isDesktop": false,
+            "destopExpandWScale": 2,
+            "destopExpandHScale": 1.2,
+            "os": null
         }
     }
 }

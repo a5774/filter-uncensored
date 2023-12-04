@@ -1,7 +1,7 @@
 // import constant from '/constant.json' assert { type: 'json' };
 (async () => {
-    let { protocol, port, host, search } = location
-    let { v, f } = Object.fromEntries(new URLSearchParams(location.search))
+    let { protocol, host, search, origin } = location
+    let { v, f } = Object.fromEntries(new URLSearchParams(search))
     function sorted(attr, convert, flip = false) {
         let callback = (x, y) => flip ? convert(x[attr]) - convert(y[attr]) : convert(y[attr]) - convert(x[attr])
         let { sort, slice, toSorted } = Array.prototype
@@ -24,7 +24,7 @@
             overlay: {
                 pics: false,
                 error: false,
-                serial: true,
+                serial: false,
                 history: false,
                 magnet: false,
                 reflow: false,
@@ -52,18 +52,21 @@
             },
             main: {
                 page: 0,
+                actors: constant.dataOptionsNomarl.main.actors,
                 log: constant.dataOptionsNomarl.main.log,
-                error: '',
                 select: constant.dataOptionsNomarl.main.select,
                 mode: constant.dataOptionsNomarl.main.mode,
                 state: constant.dataOptionsNomarl.main.state,
+                error: '',
+                factor: '',
                 serial: '',
                 keyWord: '',
+                heartbeat: null,
+                slideRate: constant.dataOptionsNomarl.main.slideRate,
                 socket: null,
-                heartbeat: 0,
-                slideSpeed: constant.dataOptionsNomarl.main.slideSpeed,
                 needReconnect: true,
                 reconnectTimeout: constant.dataOptionsNomarl.main.reconnectTimeout
+
             },
             manual: {
                 bookmark: false,
@@ -79,13 +82,18 @@
                 studio: false,
                 label: false,
                 director: false,
-                onsunc: false
+                deny: false,
+                onunc: false,
             },
             preview: {
                 pics: [],
                 picsIndex: -1,
                 picsEl: null,
-                picsSwipe: false
+                carouselEl: null,
+                picsSwipe: false,
+                picsSwipeSize: 0,
+                desktopSwipeScale: 2,
+                failed: constant.domain.failedPics
             },
             magnet: [],
             reflow: [],
@@ -96,16 +104,42 @@
             sconf: null,
             observer: null,
             offset: null,
-            throttled: {
+            debounce: {
                 nav: null,
-                load: null,
                 slide: null,
                 scroll: null,
                 update: null,
+                observer: null,
                 heartbeat: null,
-                prefixscroll: null
+                swipeInterval: null,
+                prefixScroll: null,
             },
-            pressTimer: null,
+            throttled: {
+                load: null,
+                press: null,
+                slowSwipe: null,
+            },
+            demoDebug: {
+                name: constant.demoDebug.name,
+                enable: constant.demoDebug.enable,
+                magnet: constant.demoDebug.magnet,
+                genre: constant.demoDebug.genre,
+                single: constant.demoDebug.single,
+                vendor: constant.demoDebug.vendor,
+                actor: constant.demoDebug.actor,
+                actorOrigin: constant.demoDebug.actorOrigin,
+                previewOrigin: constant.demoDebug.previewOrigin
+            },
+            deviceMeta: {
+                viewWidth: 0,
+                viewHeight: 0,
+                isMobile: false,
+                isTablet: false,
+                isDesktop: false,
+                destopExpandWScale: 2,
+                destopExpandHScale: 1.5,
+                os: null
+            },
             proxies: [],
             theme: 'normal',
             description: 'standard'
@@ -119,7 +153,7 @@
                     this.overlay.proxies = false;
                     this.main.log = await fetch(`${constant.resourceRouter.toggleProxy}${idx + constant.constantNumber.passProxy}`).then(r => r.text())
                     this.proxies = this.snippetArray((await fetch(constant.resourceRouter.proxies).then(resp => resp.json())).slice(constant.constantNumber.passProxy), constant.snippet.proxy)
-                    this.status.isdone = !this.status.isdone
+                    this.status.isdone = true
                     return null
                 }
                 alert(constant.constantString.alertString.selectProxy)
@@ -129,7 +163,11 @@
                 this.main.log = await fetch(constant.resourceRouter.updateProxy).then(r => r.text());
             },
             flushHistory() {
-                this.overlay.history = true && this.history.length
+                this.overlay.history = this.history.length
+                /*  this.$nextTick(() => {
+                     let { main, history, } = this.$refs
+                     history.style.height = `${main.getBoundingClientRect().height}px`
+                 }) */
                 this.history = Object.keys(localStorage).filter(h => h != constant.constantString.flagString._data);
                 return null
             },
@@ -139,21 +177,21 @@
                 return null
             },
             autoScroll({ touches: [point] }) {
-                this.throttled.prefix = setTimeout(() => {
+                this.debounce.prefix = setTimeout(() => {
                     this.offset = Math.floor(this.$refs.box.scrollTop)
                     let up = point['clientX'] >= window.innerHeight >> 2
-                    cancelAnimationFrame(this.throttled.slide)
+                    cancelAnimationFrame(this.debounce.slide)
                     let animateScroll = () => {
-                        let offset = this.offset += (up ? this.main.slideSpeed : -this.main.slideSpeed)
-                        this.scrollToTop(offset, constant.constantString.flagString.autoScrollBehavior)
-                        this.throttled.slide = requestAnimationFrame(animateScroll)
+                        this.offset += (up ? this.main.slideRate : -this.main.slideRate)
+                        this.scrollToTop(null, constant.constantString.flagString.autoScrollBehavior)
+                        this.debounce.slide = requestAnimationFrame(animateScroll)
                     }
                     animateScroll()
-                }, constant.timer.invokeSlideTimeout)
+                }, constant.timer.invokeAutoScroll)
             },
             stopScroll() {
-                clearTimeout(this.throttled.prefix)
-                cancelAnimationFrame(this.throttled.slide)
+                clearTimeout(this.debounce.prefix)
+                cancelAnimationFrame(this.debounce.slide)
             },
             import_() {
                 console.log(this.main.serial);
@@ -188,17 +226,19 @@
             },
             recordStart(evt) {
                 this.chat.voiceChunks = []
+                console.log(evt);
                 evt.target.classList.toggle('bgc')
                 this.chat.mediaRecorder.start()
-                this.pressTimer = setTimeout(() => {
+                this.throttled.press = setTimeout(() => {
                     this.chat.mediaRecorder.stop()
                 }, 1000 * 60);
                 return null
             },
             recordStop(evt) {
+                console.log('sss');
                 this.chat.mediaRecorder.stop()
                 evt.target.classList.toggle('bgc')
-                return clearTimeout(this.pressTimer);
+                return clearTimeout(this.throttled.press);
             },
             // can be optimized
             search() {
@@ -208,9 +248,9 @@
                 this.reflow = [];
                 this.dynamiclist = [];
                 this.status.isdone = false;
-                this.overlay.proxies = false;
+                this.overlay.history = false;
                 this.description = (this.status.stars && 'star') || (this.status.genre && 'genre') || (this.status.studio && 'studio') || (this.status.label && 'label') || (this.status.director && 'director') || 'standard'
-                let template = { type: 'search', stars: this.status.stars, genre: this.status.genre, onsunc: this.status.onsunc, director: this.status.director, studio: this.status.studio, label: this.status.label };
+                let template = { type: 'search', stars: this.status.stars, genre: this.status.genre, onsunc: this.status.onsunc, director: this.status.director, studio: this.status.studio, label: this.status.label, deny: this.status.deny };
                 if (this.main.keyWord.includes(constant.constantString.flagString.searchSplit)) {
                     let [keyWord, range] = this.main.keyWord.split(constant.constantString.flagString.searchSplit);
                     range = range.split(constant.constantString.flagString.searchPageSplit);
@@ -223,6 +263,11 @@
                 this.main.page = 1;
                 this.sconf = { ...template, keyWord: this.main.keyWord, range: [this.main.page] };
                 this.main.socket.send(JSON.stringify(this.sconf))
+                return null
+            },
+            searchGenre(k) {
+                this.main.keyWord = k
+                this.search()
                 return null
             },
             async sleep(time) {
@@ -244,10 +289,11 @@
             },
             async loadViews() {
                 if (!this.dynamiclist.length) return null;
-                let queueView = []
-                this.main.log = this.filterRule.length
                 this.status.isdone = false;
-                let fragment = this.snippetArray(this.filterRule, constant.snippet.views)
+                let queueView = []
+                let pending = this.filterRule.filter(({ v }) => !v)
+                this.main.log = pending.length
+                let fragment = this.snippetArray(pending, constant.snippet.views)
                 for (let i = 0; i <= fragment.length - 1; i++) {
                     await this.sleep(constant.timer.viewsLoadDealy);
                     fragment[i].forEach(async (it, ix) => {
@@ -264,7 +310,7 @@
                     })
                 }
                 Promise.allSettled(queueView).then((ps) => {
-                    console.log(ps);
+                    // console.log(ps);
                     this.main.log = constant.constantString.flagString.done
                     this.status.isdone = true
                 })
@@ -294,13 +340,13 @@
                 return null
             },
             reset() {
-                this.main.socket.close()
-                location.href = location.origin
                 localStorage.clear()
+                this.main.socket.close()
+                location.href = origin
                 return null
             },
-            home(){
-                location.href = location.origin
+            home() {
+                location.href = origin
                 return null
             },
             save() {
@@ -315,32 +361,54 @@
                 return null
             },
             jumpLocation(v, f) {
-                return location.href = `${location.origin}?v=${v}&f=${f.includes('star') ? `${f}s` : f}`
+                return location.href = `${origin}?v=${v}&f=${f.includes('star') ? `${f}s` : f}`
             },
             jumpTag(v) {
-                this.pressTimer = setTimeout(() => {
+                this.throttled.press = setTimeout(() => {
                     let paths = new URL(v).pathname.split('/');
                     this.jumpLocation(paths[2], paths[1])
                 }, constant.timer.jumpTagTimeout)
             },
             cancelJump() {
-                return clearTimeout(this.pressTimer)
+                return clearTimeout(this.throttled.press)
+            },
+            // closure
+            debouncefn(fu, delay) {
+                let timerID;
+                return function (...args) {
+                    clearTimeout(timerID);
+                    timerID = setTimeout(() => {
+                        fu(...args);
+                    }, delay);
+                };
+            },
+            throttledfn(fn, delay) {
+                let timerID = null;
+                return function (...args) {
+                    if (!timerID) {
+                        fn(...args);
+                        timerID = setTimeout(() => {
+                            timerID = null;
+                        }, delay);
+                    }
+                };
             },
             loadMorePage({ target }) {
-                clearTimeout(this.throttled.scroll)
-                this.throttled.scroll = setTimeout(() => {
+                clearTimeout(this.debounce.scroll)
+                this.debounce.scroll = setTimeout(() => {
                     let { clientHeight, scrollHeight, scrollTop } = target
                     let diff = scrollHeight - Math.ceil(scrollTop)
                     this.offset = Math.floor(scrollTop)
-                    if (clientHeight - 2 <= diff && diff <= clientHeight + 2 && !this.throttled.load && this.status.isdone && this.dynamiclist.length) {
+                    if (Math.abs(diff - clientHeight) <= 2 && !this.throttled.load && this.status.isdone && this.dynamiclist.length && !this.manual.bookmark) {
                         this.main.page++
-                        this.main.socket.send(JSON.stringify({ ...this.sconf, range: [this.main.page] }))
                         this.status.isdone = false
+                        this.main.socket.send(JSON.stringify({ ...this.sconf, range: [this.main.page] }))
+                        // 防止在加载开始之前再次触发
                         this.throttled.load = setTimeout(() => {
                             this.throttled.load = null
                         }, constant.timer.morePageInterval)
                     }
-                }, constant.timer.scrollThrottled);
+                }, constant.timer.scrollDebounce);
                 return null
             },
             snippetArray(arr, size) {
@@ -350,67 +418,93 @@
                     [j, i] = [i + size, j]
                     if (!(i == j)) {
                         sliced.push(arr.slice(i, j))
-
                     }
                 }
                 return sliced;
             },
             zoomPics({ i }) {
                 this.preview.pics = i || []
-                this.overlay.pics = i?.length && true
+                this.overlay.pics = i.length
                 return null
             },
-            openSwipe(idx, { target }) {
+            async openSwipe(idx, { target }) {
                 this.preview.picsIndex = idx
                 this.preview.picsEl = target
                 this.preview.picsEl.classList.add(constant.constantString.classString.swipe)
-                setTimeout(() => {
-                    this.preview.picsSwipe = !this.preview.picsSwipe
-                }, 300);
+                await this.sleep(constant.timer.openSwipeTimeout)
+                this.preview.picsSwipe = !this.preview.picsSwipe
 
             },
-            closeSwipe() {
+            async closeSwipe() {
                 this.preview.picsIndex = -1
                 this.preview.picsSwipe = !this.preview.picsSwipe
-                setTimeout(() => {
-                    this.preview.picsEl.classList.remove(constant.constantString.classString.swipe)
-                }, 100);
+                await this.sleep(constant.timer.closeSwipeTimeout)
+                this.preview.picsEl.classList.remove(constant.constantString.classString.swipe)
                 return null
+            },
+            nextSwipePics() {
+                let el = this.preview.carouselEl
+                el.style.transitionDuration = '0.3s'
+                this.preview.picsIndex++
+                if (!el.lock) {
+                    this.$nextTick(() => {
+                        this.debounce.swipeInterval = setTimeout(() => {
+                            if (this.preview.picsIndex == (vm.preview.pics.length + 1)) {
+                                el.style.transitionDuration = '0s'
+                                this.preview.picsIndex = 1
+                            }
+                            el.lock = false
+                        }, constant.timer.swipeTransitionTimeout);
+                    })
+                }
+            },
+            prevSwipePics() {
+                let el = this.preview.carouselEl
+                el.style.transitionDuration = '0.3s'
+                this.preview.picsIndex--
+                if (!el.lock) {
+                    this.$nextTick(() => {
+                        this.debounce.swipeInterval = setTimeout(() => {
+                            if (this.preview.picsIndex == 0) {
+                                el.style.transitionDuration = '0s'
+                                this.preview.picsIndex = this.preview.pics.length 
+                            }
+                            el.lock = false
+                        }, constant.timer.swipeTransitionTimeout);
+                    })
+                }
             },
             expandMagnet(m) {
                 this.magnet = m
-                this.overlay.magnet = m?.length && true
+                this.overlay.magnet = m?.length
                 return null
             },
-            async updateBookmark(e, _data, action) {
-                let { target: { children: [{ children: [polygon] }] } } = e
+            async updateBookmark(_data, action) {
+                this.main.log = action
                 let config = constant.bookmark[action]
                 switch (action) {
                     case 'insert':
-                        polygon.style.fill = config.color
                         this.main.socket.send(JSON.stringify({ type: 'INSERT', data: _data }))
-                        _data.inserted = true
                         break;
                     case 'remove':
-                        polygon.style.fill = config.color
                         this.main.socket.send(JSON.stringify({ type: 'REMOVE', data: _data.n }))
                         break;
                 }
+                _data.active = false
                 await this.sleep(config.delay)
-                polygon.style.display = 'none'
                 this.flushBookMark()
                 return null
             },
 
-            async flushBookMark() {
-                this.status.isdone = false;
+            async flushBookMark(lock) {
+                lock && (this.status.isdone = !lock)
                 this.bookmark = await fetch(constant.resourceRouter.bookmark).then(resp => resp.json())
                 return null
             },
             visibNav() {
                 this.overlay.sidenav = true
-                clearTimeout(this.throttled.nav)
-                this.throttled.nav = setTimeout(() => {
+                clearTimeout(this.debounce.nav)
+                this.debounce.nav = setTimeout(() => {
                     this.overlay.sidenav = false
                 }, constant.timer.visibilityNavBar);
                 return null
@@ -429,22 +523,21 @@
                                     let data = Date.now() - parseInt(message.data)
                                     this.main.socket.send(JSON.stringify({ type: 'pong', data }))
                                     this.main.heartbeat = data
-                                    clearInterval(this.throttled.heartbeat)
-                                    this.throttled.heartbeat = setInterval(() => {
+                                    clearInterval(this.debounce.heartbeat)
+                                    this.debounce.heartbeat = setInterval(() => {
                                         this.main.socket.close();
-                                    }, constant.timer.heartbeatThrottled)
+                                    }, constant.timer.heartbeatDetectCycle)
                                     break;
                                 case 'LOG':
                                     this.main.log = `${message.data.n}<==>${message.data.c}`
                                     break;
                                 case 'DONE':
                                     this.main.log = message.data.m;
-                                    this.reflow = uniqueObjectsByKey([...this.reflow, ...message.data.reflow], 'n')
+                                    message.data.reflow.length ? this.reflow = uniqueObjectsByKey([...this.reflow, ...message.data.reflow], 'n') : null
                                     this.status.isdone = true
                                     if (this.sconf?.keyWord) {
                                         // save history 
-                                        localStorage.setItem(`${this.sconf?.keyWord}${constant.constantString.flagString._data}`, JSON.stringify({ ...vm._data, taglist: null, instruction: null, constant: null }))
-                                        this.flushHistory()
+                                        localStorage.setItem(`${this.sconf?.keyWord}${constant.constantString.flagString._data}`, JSON.stringify({ ...vm._data, taglist: null, instruction: null, constant: null, bookmark: null }))
                                     }
                                     break;
                                 case 'ERROR':
@@ -454,8 +547,9 @@
                                     this.main.log = message.data.m
                                     break;
                                 case 'CENSORED':
-                                    this.dynamiclist.push({ ...message.data, i: message.data.i.map(pi => ({ pt: pi, loaded: false })), gs: false, vs: false, inserted: false, })
-                                    this.reflow.find(({ value: { n } }, idx) => (message.data.n == n) ? this.reflow.splice(idx, 1) : null)
+                                    let inject = { ...message.data, i: message.data.i.map(pi => ({ pt: pi, loaded: false })), gs: false, vs: false, as: false, active: false }
+                                    this.dynamiclist.push(inject)
+                                    this.reflow.length && this.reflow.find(({ value: { n } }, idx) => (message.data.n == n) ? this.reflow.splice(idx, 1) : null)
                                     break;
                             }
                         })
@@ -476,11 +570,10 @@
 
                 })
             },
-
             scrollToTop(offset, behavior) {
                 this.$refs.box.scrollTo({
-                    top: offset || 0,
-                    behavior
+                    top: offset || this.offset || 0,
+                    behavior: behavior || constant.constantString.flagString.scrollBehavior
                 });
                 return null
             },
@@ -498,7 +591,7 @@
                 let conditions = [];
                 !(this.main.select == 'NONE' && this.main.factor) || (conditions.push('(i.n?.toLocaleLowerCase()?.includes(this.main.factor))'));
                 !(this.main.select == 'TIME' && (this.main.factor?.length == 4)) || (conditions.push('(i.d?.slice(0, 4) <= this.main.factor)'));
-                !this.status.single || conditions.push('(i.s?.length || -1) <= 1');
+                !this.status.single || conditions.push('(i.s?.length || -1) <= this.main.actors');
                 !(this.main.mode == 'censored') || conditions.push('i');
                 !(this.main.mode == 'uncensored') || conditions.push('i.r');
                 return conditions.join(` && `)
@@ -522,16 +615,10 @@
                 }, constant.timer.connectDetect);
                 return null
             },
-            getTimeRange() {
+            initTheme() {
                 let hours = new Date().getHours()
                 // return (8 <= hours && hours <= 17) ? 'day' : (18 <= hours && hours <= 24) ? 'night' : 'night'
-                return (constant.themes.day.range[0] <= hours && hours <= constant.themes.day.range[1]) ? constant.themes.day.name : (constant.themes.night.range[0] <= hours && hours <= constant.themes.night.range[1]) ? constant.themes.night.name : constant.themes.normal.name
-            },
-            flexible() {
-                let { height, width } = document.documentElement.getBoundingClientRect()
-                // document.documentElement.style.fontSize = (360 <= width && height <= 740) ? '14px' : '16px'
-                document.documentElement.style.fontSize = (360 >= width) ? constant.flexibleSize.small : constant.flexibleSize.big
-                return null
+                this.theme = (constant.themes.day.range[0] <= hours && hours <= constant.themes.day.range[1]) ? constant.themes.day.name : (constant.themes.night.range[0] <= hours && hours <= constant.themes.night.range[1]) ? constant.themes.night.name : constant.themes.normal.name
             },
             cssTemplate(cssObject) {
                 return Object.keys(cssObject).map(key => {
@@ -542,10 +629,31 @@
                     return `${key}{${cssStatements.join('')}}`
                 }).join('')
             },
-            thumbSucess({target}){
-                this.$nextTick(()=>{
-                    target.classList.add('class','loaded')
-                })
+            thumbSucess({ target }) {
+                target.classList.add(constant.constantString.classString.loaded)
+
+                return null
+            },
+            //onloadstart 
+            thumbFailed() {
+
+            },
+            initDeviceMeta() {
+                // offsetH/W w+p+b+s ,clientH/W, w+p  windowH/W w+p+b+s  rectH/W w+p+b
+                const platform = navigator.platform.toLowerCase();
+                const userAgent = navigator.userAgent.toLowerCase();
+                //  const { width } = document.documentElement.getBoundingClientRect()
+                this.deviceMeta.os = platform.includes('win') && 'Windows' || platform.includes('mac') && 'MacOS' || platform.includes('linux') && 'Linux' || 'Unknown'
+                this.deviceMeta.isMobile = /mobile|android|iphone|ipad|ipod|blackberry|windows phone/i.test(userAgent) || ('ontouchstart' in window || navigator.maxTouchPoints || false);
+                this.deviceMeta.isTablet = /ipad|android/i.test(userAgent) && !this.deviceMeta.isMobile;
+                this.deviceMeta.isDesktop = !this.deviceMeta.isMobile && !this.deviceMeta.isTablet;
+                // this.$refs.box.style.height = `${visualViewport.height}px`
+                this.deviceMeta.viewWidth = window.innerWidth
+                this.deviceMeta.viewHeight = window.innerHeight;
+                this.$refs.box.style.height = `${this.deviceMeta.viewHeight}px`;
+                document.documentElement.style.fontSize = (360 >= this.deviceMeta.viewWidth) ? constant.flexibleSize.small : constant.flexibleSize.big;
+                // this.main.error = this.deviceMeta
+                // console.log( this.deviceMeta);
                 return null
             },
             initVueOption($data, data, overWrite = {}) {
@@ -573,15 +681,44 @@
                                 vm.$set(this.filterRule[target.dataset.i], 'v', parseInt(view))
                             }
                             observer.unobserve(target)
-                        }
+                        } else target.classList.contains(constant.constantString.classString.loaded) && target.classList.remove(constant.constantString.classString.loaded)
+
                     });
                 }, {
                     rootMargin: '0px 0px 0px 0px',
-                    threshold: 0.5
+                    threshold: 0
                 })
+            },
+            async chatDeviceRequest() {
+                console.log('init');
+                // await this.chatConnect()
+                let stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+                let devices = await navigator.mediaDevices.enumerateDevices()
+                let constraints = await navigator.mediaDevices.getSupportedConstraints();
+                let deviceName = navigator.userAgent;
+                let tracks = stream.getAudioTracks()
+                tracks.forEach(track => {
+                    console.log(track);
+                    let trackInfo = { id: track.id, kind: track.kind, label: track.label, muted: track.muted, enabled: track.enabled, readyState: track.readyState }
+                    // console.log(track.getCapabilities());
+                    // console.log(track.getSettings());
+                    // console.log(track.getConstraints());
+                })
+                this.chat.mediaRecorder = new MediaRecorder(stream);
+                this.chat.mediaRecorder.ondataavailable = (e) => {
+                    (e.data.size > 0) ? this.chat.voiceChunks.push(e.data) : null
+                }
+                this.chat.mediaRecorder.onstop = async () => {
+                    console.log(this.chat.voiceChunks);
+                    const audioBlob = new Blob(this.chat.voiceChunks, { type: 'audio/wav' });
+                    this.chat.socket.send(await audioBlob.arrayBuffer())
+                };
+                return null
+                // this.chat.socket.send(JSON.stringify({ type: 'CODES', deviceName, constraints, devices, tracks, ratio: this.chat.mediaRecorder.audioBitsPerSecond }))
             },
             chatConnect() {
                 return new Promise(r => {
+                    // this.chatDeviceRequest()
                     this.chat.socket = new WebSocket(`${protocol.includes('https:') ? 'wss' : 'ws'}://${host}${constant.websocket.chat}`)
                     this.chat.socket.onopen = () => {
                         r(null)
@@ -626,42 +763,242 @@
         },
         filters: {
             actorTotal(v) {
-                return (!(v = v?.length)) ? -1 : v
+                return v?.length || -1
             },
             extract(v, o) {
-                v = (v && v.match(/\/(\w+)$/)[1]) ?? v
-                return o ? o[v] : v
+                v = (v.match(/\/(\w+)$/)?.[1]) ?? v
+                return o ? o?.[v] ?? v : v
             },
             getProgress(v) {
-                return v?.filter(({ loaded }) => (loaded == true))?.length || 0
+                return v?.filter(({ loaded }) => (loaded == true))?.length ?? 0
             },
             purgeSuffix(v) {
                 return v?.replace(constant.constantString.flagString._data, '')
+            },
+            uniqueKey(v) {
+                return `${Date.now()}`
+            },
+            lastSuffix(v, len) {
+                return (v >= len - constant.snippet.endFlag) && `${v}${constant.constantString.flagString.endFlag}` || v
+
             }
         },
         directives: {
             // v-for > v-bind 
             lazyLoadOberver: {
-                bind: (el, binding, vnode) => {
+                bind(el, binding, vnode) {
                     // vnode.context.observer.observe(el)
                 },
-                inserted: (el, binding, vnode) => {
+                inserted(el, binding, vnode) {
                     console.log(el.dataset.i);
                     console.log(t++);
                     // vnode.context.observer.observe(el)
                 }
+            },
+            pressAutoScroll: {
+                bind(el, binding) {
+                    let vm = binding.value
+                    el.__stopScroll = () => {
+                        clearTimeout(vm.debounce.prefix)
+                        cancelAnimationFrame(vm.debounce.slide)
+                    }
+                    // el.__autoScroll = ({ touches}) => {
+                    //    vm.main.error = `${touches[1]['clientX']}${ touches[0]['clientX']}`
+                    el.__autoScroll = ({ touches: [point] }) => {
+                        vm.debounce.prefix = setTimeout(() => {
+                            vm.offset = Math.floor(vm.$refs.box.scrollTop)
+                            let up = point['clientX'] >= window.innerHeight >> 2
+                            cancelAnimationFrame(vm.debounce.slide)
+                            let animateScroll = () => {
+                                vm.offset += (up ? vm.main.slideRate : -vm.main.slideRate)
+                                vm.scrollToTop(null, constant.constantString.flagString.autoScrollBehavior)
+                                vm.debounce.slide = requestAnimationFrame(animateScroll)
+                            }
+                            animateScroll()
+                        }, constant.timer.invokeAutoScroll)
+                    }
+                    el.addEventListener("touchstart", el.__autoScroll, { passive: true })
+                    el.addEventListener("touchmove", el.__stopScroll, { passive: true })
+                    el.addEventListener("touchend", el.__stopScroll)
+                    el.addEventListener("touchcancel", el.__stopScroll)
+                },
+                unbind(el) {
+                    el.removeEventListener("touchstart", el.__autoScroll)
+                    el.removeEventListener("touchmove", el.__stopScroll)
+                    el.removeEventListener("touchend", el.__stopScroll)
+                    el.removeEventListener("touchcancel", el.__stopScroll)
+                }
+            },
+            swipeCarouselPics: {
+                bind(el, binding) {
+                    let vm = binding.value
+                    el.lock = false;
+                    vm.preview.carouselEl = el
+                    el.enterSwipe = (deltaX, currentX) => {
+                        clearTimeout(vm.throttled.slowSwipe)
+                        // clearTimeout(vm.debounce.swipeInterval)
+                        el.style.transitionDuration = '.3s'
+                        if (Math.abs(deltaX) >= (((el.swipeMode == 'fast') && el.threshold) || ((el.swipeMode == 'slow') && el.slowSwipe))) {
+                            if (!((vm.preview.picsIndex == (vm.preview.pics.length + 1)) && (vm.preview.picsIndex == 0))) {
+                                deltaX > 0 ? vm.preview.picsIndex++ : vm.preview.picsIndex--
+                            }
+                        }
+                        vm.$nextTick(() => {
+                            vm.debounce.swipeInterval = setTimeout(() => {
+                                if (el.picsChangeIndex = (((vm.preview.picsIndex == vm.preview.pics.length + 1) && (deltaX >= 0)) && 1) || (((vm.preview.picsIndex == 0) && (deltaX <= 0)) && vm.preview.pics.length)) {
+                                    el.style.transitionDuration = '0s'
+                                    vm.preview.picsIndex = el.picsChangeIndex
+                                }
+                                el.lock = false
+                            }, constant.timer.swipeTransitionTimeout);
+                        })
+                        el.style.transform = `translateX(${currentX}px)`
+                    }
+                    el.initPicsSwipeSize = () => {
+                        vm.preview.picsSwipeSize = -el.getBoundingClientRect().width
+                        el.slowSwipe = Math.abs(vm.preview.picsSwipeSize / 2)
+                    }
+                    // moblie
+                    vm.$nextTick(el.initPicsSwipeSize)
+                    window.addEventListener('resize', vm.debouncefn(el.initPicsSwipeSize, constant.timer.initSwipeDebounce))
+                    el.threshold = 25
+                    el.swipeMode = 'fast'
+                    el.__handleTouchStart = ({ touches: [point] }) => {
+                        el.touchDeltaX = 0
+                        el.touchStartX = 0
+                        el.style.transitionDuration = '0s'
+                        el.touchCurrentX = vm.preview.picsSwipeSize * vm.preview.picsIndex;
+                        el.touchStartX = point['clientX']
+                        el.swipeMode = 'fast'
+                        clearTimeout(vm.throttled.slowSwipe)
+                        vm.throttled.slowSwipe = setTimeout(() => {
+                            el.swipeMode = 'slow'
+                        }, constant.timer.swipeSlowTimeout);
+
+                    }
+                    el.__handleTouchMove = ({ touches: [point] }) => {
+                        if (!el.lock) {
+                            el.touchDeltaX = el.touchStartX - point['clientX'];
+                            el.style.transform = `translateX(${el.touchCurrentX - el.touchDeltaX}px)`
+                        }
+                    }
+                    el.__handleTouchEnd = () => {
+                        if (!el.lock) {
+                            el.lock = true
+                            el.enterSwipe(el.touchDeltaX, el.touchCurrentX)
+                        }
+                    }
+                    el.addEventListener('touchstart', el.__handleTouchStart, { passive: true });
+                    el.addEventListener('touchmove', el.__handleTouchMove, { passive: true });
+                    el.addEventListener('touchend', el.__handleTouchEnd);
+                    // desktop
+                    el.__handleMouseDown = (e) => {
+                        el.MouseDeltaX = 0
+                        el.MouseStartX = 0
+                        el.style.transitionDuration = '0s'
+                        el.MouseCurrentX = vm.preview.picsSwipeSize * vm.preview.picsIndex;
+                        el.MouseStartX = e['clientX']
+                        el.addEventListener('mousemove', el.__handleMouseMove);
+                        el.addEventListener('mouseleave', el.__handleMouseUpAndLeave);
+                        el.swipeMode = 'fast'
+                        vm.throttled.slowSwipe = setTimeout(() => {
+                            el.swipeMode = 'slow'
+                        }, constant.timer.swipeSlowTimeout);
+                    }
+                    el.__handleMouseMove = (e) => {
+                        if (!el.lock) {
+                            el.MouseDeltaX = el.MouseStartX - e['clientX'];
+                            el.style.transform = `translateX(${el.MouseCurrentX - el.MouseDeltaX}px)`
+                        }
+                    }
+                    el.__handleMouseUpAndLeave = () => {
+                        el.removeEventListener('mousemove', el.__handleMouseMove)
+                        el.removeEventListener('mouseleave', el.__handleMouseUpAndLeave)
+                        if (!el.lock) {
+                            el.lock = true
+                            el.enterSwipe(el.MouseDeltaX, el.MouseCurrentX)
+                        }
+                    }
+                    el.addEventListener('mousedown', el.__handleMouseDown);
+                    el.addEventListener('mouseup', el.__handleMouseUpAndLeave);
+                },
+                unbind(el) {
+                    window.removeEventListener('resize', el.initPicsSwipeSize)
+                    el.removeEventListener('mousedown', el.__handleMouseDown);
+                    el.removeEventListener('mouseup', el.__handleMouseUpAndLeave);
+                    el.removeEventListener('touchstart', el.__handleTouchStart);
+                    el.removeEventListener('touchmove', el.__handleTouchMove);
+                    el.removeEventListener('touchend', el.__handleTouchEnd);
+                },
+            },
+            swipeToReveal: {
+                bind(el, binding) {
+                    let vm = binding.value;
+                    let data_ = binding.arg
+                    vm.$nextTick(() => {
+                        let { width, height } = el.getBoundingClientRect()
+                        el.__halfX = width / 2
+                        el.__revealY = height
+                        el.__HalfY = el.__revealY / 2
+                    })
+                    el.__handleTouchStart = ({ touches: [point] }) => {
+                        // Not updated due to changes
+                        vm.filterRule.forEach(i => i.active = false)
+                        // keep updateBookmark available
+                        data_.active = true
+                        el.touchDeltaX = 0
+                        el.touchStartX = 0
+                        el.touchCurrentX = 0
+                        el.style.transitionDuration = '0s'
+                        el.touchStartX = point['clientX'];
+                        el.openOffset = Number.parseInt(el.style.transform.match(/(\d+\.*\d*)/g)?.[0])
+                        el.isOpen = el.openOffset >= el.__HalfY
+                    }
+                    el.__handleTouchMove = (e) => {
+                        el.touchDeltaX = el.touchStartX - e.touches[0]['clientX'];
+                        if (el.isOpen && el.openOffset >= Math.abs(el.touchDeltaX)) {
+                            (el.touchDeltaX < 0) && (el.style.transform = `translateX(${-el.openOffset - el.touchDeltaX}px)`)
+                        }
+                        // limit offset distance 
+                        if ((Math.abs(el.touchDeltaX) <= el.__revealY) && (Math.abs(el.touchDeltaX) >= el.__HalfY / 2) && !el.isOpen) {
+                            (el.touchDeltaX > 0) && (el.style.transform = `translateX(${-el.touchDeltaX}px)`)
+                        }
+                    }
+                    el.__handleTouchEnd = () => {
+                        el.style.transitionDuration = '.3s';
+                        if ((Math.abs(el.touchDeltaX) >= el.__HalfY) && !el.isOpen) {
+                            el.style.transform = `translateX(${-el.__revealY}px)`
+                        } else {
+                            // roll back
+                            el.style.transform = `translateX(${el.touchCurrentX}px)`
+                        }
+                    }
+                    el.addEventListener('touchstart', el.__handleTouchStart, { passive: true });
+                    el.addEventListener('touchmove', el.__handleTouchMove, { passive: true });
+                    el.addEventListener('touchend', el.__handleTouchEnd);
+                },
+                unbind(el) {
+                    el.removeEventListener('touchstart', el.__handleTouchStart);
+                    el.removeEventListener('touchmove', el.__handleTouchMove);
+                    el.removeEventListener('touchend', el.__handleTouchEnd);
+                }
             }
         },
         watch: {
-            //push > computed > watch > list render(dom)
+            //push > computed > watch（可阻塞模板渲染）> list render(dom)
             filterRule: {
-                async handler() {
+                async handler(v) {
+                    console.log('watch');
                     // console.log(this.$refs.monitor.length);//n
                     // dom渲染完成之后，新的事件循环之前(因涉及到dom操作，在list render之前无法获取dom，所以在nextTick中执行上一次watch的回调时的数据(此时dom已经渲染完成可被获取)
-                    await this.$nextTick(() => {
-                        // console.log(this.$refs.monitor.length);//n+1
-                        this.$refs.monitor?.forEach(this.observer.observe.bind(this.observer))
-                    })
+                    // v?.forEach(s => s.tl && (s.tl=!s.tl))
+                    clearTimeout(this.debounce.observer)
+                    this.debounce.observer = setTimeout(async () => {
+                        await this.$nextTick(() => {
+                            // console.log(this.$refs.monitor?.length);//n+1
+                            this.$refs.monitor?.forEach(this.observer.observe.bind(this.observer))
+                        })
+                    }, constant.timer.observerDebounce);
                 },
                 deep: false
             },
@@ -671,11 +1008,11 @@
                 },
                 deep: false
             },
-            "main.select": {
-                handler(v) {
-                    this.main.factor = ''
-                }
-            },
+            /*   "main.select": {
+                  handler(v) {
+                      this.main.factor = ''
+                  }
+              }, */
             "status.stars": {
                 handler(ic) {
                     ic ? this.status.genre = !ic : null
@@ -688,7 +1025,7 @@
             },
             "preview.picsIndex": {
                 handler(idx) {
-                    this.preview.picsIndex = idx >= this.preview.pics?.length ? 0 : (idx < 0 ? this.preview.pics?.length - 1 : idx);
+                    // this.preview.picsIndex = idx >= this.preview.pics?.length ? 0 : (idx < 0 ? this.preview.pics?.length - 1 : idx);
                 },
                 deep: false
             },
@@ -705,30 +1042,33 @@
                 deep: false
             },
             "manual.bookmark": {
+                // first init dont emit watch ,sequence:computed > watch 
                 async handler(v) {
-                    v ? this.flushBookMark() : this.status.isdone = true
+                    v ? this.flushBookMark(true) : this.status.isdone = true
                 }
             },
             "main.error": {
                 handler(v) {
-                    this.overlay.error = true
-                    setTimeout(() => {
-                        this.main.error = ''
-                    }, constant.timer.errorMessageTimeout);
+                    if (v) {
+                        this.overlay.error = true
+                        setTimeout(() => {
+                            this.main.error = ''
+                        }, constant.timer.errorMessageTimeout);
+                    }
                 }
             }
-
-
         },
         computed: {
             // render list
             filterRule() {
+                console.log('computed');
                 // Function socpe window
                 // let cb = Function(`return function(i){ console.log(this); return ${this.filterCallback()}}`)().bind(this)
                 // generator funcation template
                 let cb = Function(`return i=>${this.filterCallback()}`).call(this)
                 if (this.manual.bookmark) {
-                    return this.bookmark.filter(cb)
+                    this.$nextTick(this.scrollToTop)
+                    return this.bookmark?.filter(cb) ?? []
                 }
                 let reverse = this.main.factor?.includes(constant.constantString.flagString.atniSortFlag) ?? false
                 switch (this.main.select) {
@@ -751,7 +1091,6 @@
             switchTheme() {
                 let style = document.createElement('style')
                 let color = constant.themes[this.theme]['color'];
-                let strokeWidth = constant.themes[this.theme]['strokeWidth'];
                 let bgcColor = constant.themes[this.theme]['backgroundColor'];
                 style.textContent = this.cssTemplate({
                     "*": {
@@ -761,48 +1100,22 @@
                         "background-color": bgcColor,
                         "visibility": "visible"
                     },
-                    ".info-product polygon": {
-                        "stroke": color,
-                        "stroke-width": strokeWidth
+                    ".bookmark-action-svg path": {
+                        "fill": color,
                     },
                 })
                 document.body.append(style)
-            },
-            async chatDeviceRequest() {
-                console.log('init');
-                // await this.chatConnect()
-                let stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-                let devices = await navigator.mediaDevices.enumerateDevices()
-                let constraints = await navigator.mediaDevices.getSupportedConstraints();
-                let deviceName = navigator.userAgent;
-                let tracks = stream.getAudioTracks()
-                tracks.forEach(track => {
-                    console.log(track);
-                    let trackInfo = { id: track.id, kind: track.kind, label: track.label, muted: track.muted, enabled: track.enabled, readyState: track.readyState }
-                    // console.log(track.getCapabilities());
-                    // console.log(track.getSettings());
-                    // console.log(track.getConstraints());
-                })
-                this.chat.mediaRecorder = new MediaRecorder(stream);
-                this.chat.mediaRecorder.ondataavailable = (e) => {
-                    (e.data.size > 0) ? this.chat.voiceChunks.push(e.data) : null
-                }
-                this.chat.mediaRecorder.onstop = async () => {
-                    console.log(this.chat.voiceChunks);
-                    const audioBlob = new Blob(this.chat.voiceChunks, { type: 'audio/wav' });
-                    this.chat.socket.send(await audioBlob.arrayBuffer())
-                };
-                return null
-                // this.chat.socket.send(JSON.stringify({ type: 'CODES', deviceName, constraints, devices, tracks, ratio: this.chat.mediaRecorder.audioBitsPerSecond }))
             }
-
         },
+        // hook fn dont block init 阻塞钩子函数执行，并不会阻塞vue 实例渲染
         async created() {
+            console.log('created');
             // init errorHandler
-            Vue.config.errorHandler = (err, vm, info) => {
+            Vue.config.errorHandler = async (err, vm, info) => {
                 console.log('Vue Error:', err);
                 console.log('Vue Error Info:', info);
-                this.main.error = err
+                // filters 处于渲染阶段，修改实例属性将会触发新的渲染导致循环触发errorHandler
+                vm.main.error = err
             };
             // init Vue Option
             let data = JSON.parse(localStorage.getItem(`${v || ''}${constant.constantString.flagString._data}`) ?? '{}')
@@ -811,6 +1124,7 @@
             this.inintObserver()
             // init websocket
             await this.connect();
+            // await this.chatConnect();
             this.connectDetect()
             // init query data
             if (v) {
@@ -821,17 +1135,18 @@
             }
         },
         async mounted() {
+            console.log('mounted');
             // init rem
-            this.flexible()
-            window.addEventListener('resize', this.flexible)
+            this.initDeviceMeta()
+            window.addEventListener('resize', this.debouncefn(this.initDeviceMeta, 100))
             // init theme
-            this.theme = this.getTimeRange()
-            this.scrollToTop(this.offset, constant.constantString.flagString.scrollBehavior)
+            this.initTheme()
+            // load scroll position
+            this.scrollToTop()
             // init resource
             this.proxies = this.snippetArray((await fetch(constant.resourceRouter.proxies).then(resp => resp.json())).slice(constant.constantNumber.passProxy), constant.snippet.proxy)
             this.taglist = await fetch(constant.resourceRouter.tag).then(resp => resp.json())
             this.instruction = await fetch(constant.resourceRouter.instruction).then(resp => resp.json())
-            // this.constant = await fetch('/constant').then(resp => resp.json())
             this.history = Object.keys(localStorage).filter(h => h != constant.constantString.flagString._data);
             new IntersectionObserver((entries, observer) => {
                 entries.forEach(async entry => {
@@ -845,13 +1160,14 @@
             }).observe(this.$refs.log)
         },
         updated() {
-            clearTimeout(this.throttled.update)
-            this.throttled.update = setTimeout(() => {
+            clearTimeout(this.debounce.update)
+            this.debounce.update = setTimeout(() => {
                 if (this.main.socket) {
+                    console.log('updated');
                     // save current 解决 v 存档被覆盖
-                    localStorage.setItem(`${(v && (v == this.sconf.keyWord) && v) || ''}${constant.constantString.flagString._data}`, JSON.stringify({ ...vm._data, taglist: null, instruction: null }))
+                    localStorage.setItem(`${(v && (v == this.sconf.keyWord) && v) || ''}${constant.constantString.flagString._data}`, JSON.stringify({ ...vm._data, taglist: null, instruction: null, bookmark: null }))
                 }
-            }, constant.timer.updateHookThrottled);
+            }, constant.timer.updateHookDebounce);
         },
     })
 })()

@@ -14,8 +14,7 @@ const serializeYML = require('js-yaml');
 const cheerio = require('cheerio')
 const { Axios, default: axios } = require('axios')
 const { v4 } = require('uuid')
-const BOOKMARKPATH = path.resolve(__dirname, './static/bookmark.json')
-const RECYLE = path.resolve(__dirname, './.recyle')
+const bookMark = path.resolve(__dirname, './static/bookmark.json')
 const Domain = 'https://www.javbus.com'
 const viewDomain = 'https://www4.javhdporn.net'
 const CLASHYAMLPATH = '/etc/clash/config.yaml'
@@ -80,38 +79,30 @@ let ax = new Axios({
     // cancelToken:axios.CancelToken.source().token
 });
 
+function r() {
+    return JSON.parse(fs.readFileSync(bookMark, { encoding: 'utf-8', flag: 'r+' }) || '[]')
+}
+function w(data) {
+    fs.writeFileSync(bookMark, JSON.stringify(data), { encoding: 'utf-8', flag: 'w+' })
+}
 
-let bookmark = {
-    timer: 0,
-    __timeout:500,
-    __bookmark: [],
-    __dump() {
-        clearTimeout(this.timer)
-        this.timer = setTimeout(() => {
-            fs.createWriteStream(BOOKMARKPATH).write(JSON.stringify(this.__bookmark))
-        }, this.__timeout);
-    },
-    insert(v) {
-        if (!this.__bookmark.some(i => i.n == v.n)) {
-            this.__bookmark.push(v)
-            this.__dump()
-        }
-    },
-    remove(v) {
-        let idx = this.__bookmark.findIndex(i => i.n == v)
-        if (idx != -1) {
-            fs.promises.writeFile(RECYLE, `${this.__bookmark[idx]['n']}\n`, { flag: 'a+' })
-            this.__bookmark.splice(idx, 1)
-            this.__dump()
-        }
-    },
-    async init() {
-        this.__bookmark = JSON.parse((await fs.promises.readFile(BOOKMARKPATH)))
+function insert(_data) {
+    let data = r();
+    if (!data.some(i => i.n == _data.n)) {
+        data.push(_data)
+        w(data)
     }
-};
-bookmark.init()
+}
 
-
+function remove(_data) {
+    let data = r();
+    let idx = data.findIndex(i => i.n == _data)
+    if (idx != -1) {
+        fs.writeFile('./static/.recyle', `${data[idx]['n']}\n`, { flag: 'a+' }, r => r)
+        data.splice(idx, 1)
+        w(data)
+    }
+}
 async function 延迟回调(t) {
     return new Promise(r => {
         setTimeout(() => {
@@ -199,7 +190,6 @@ async function sysctl(action, service) {
     await 延迟回调(1000);
     return cp.execSync(`nc -zv  ${proxy.host} ${proxy.port}`, { encoding: 'utf8', stdio: 'ignore' })
 }
-
 // yt-dlp
 router.get('/start/:likeCountLess', async (ctx, next) => {
     let like = ctx.params.likeCountLess
@@ -215,6 +205,29 @@ router.get('/start/:likeCountLess', async (ctx, next) => {
     }
     ctx.body = 'IS_NOT_NUM'
 })
+router.get('/stop', async (ctx, next) => {
+    let stdo = cp.execSync('pm2 stop yt')
+    ctx.body = stdo
+})
+router.post('/specifies', bodyparser(), async (ctx, next) => {
+    let { data } = ctx.request.body
+    if (data) {
+        try {
+            cp.execSync(`node /node/kwai_merger/Yt-dlp.js -s ${data}`, {
+                windowsHide: true,
+                stdio: 'inherit'
+            })
+            ctx.body = "STEP_IS_DONE"
+            return null
+        } catch (e) {
+            ctx.body = 'FORMAT_NOT_STAND'
+            return null
+        }
+    }
+    ctx.body = "PARAMS_IS_NULL"
+    return null
+});
+
 
 // unti 
 router.get('/:pics/:kind/:rhex', async (ctx, next) => {
@@ -282,19 +295,19 @@ router.get('/toggleProxy/:idx', async (ctx, next) => {
         ctx.body = 'rollback'
     }
 })
-async function detectFrequently(ctx, next) {
+async function detectFrequently(ctx, next){
     let t = Date.now()
     let ip = ctx.req.socket.remoteAddress
     let user = secure.tracker[ip];
     user = !user ? secure.initLock(ip, t) : user;
     let lock = (secure.isLock(user) && secure.canUnlock(user, t)) && secure.unlock(user, t) && `${STATE.UNLOCKED}`
-        || (!secure.isLock(user) && secure.isFrequently(user, t)) && secure.lock(user, t) && `${STATE.DUEBLOCK},解封时间:${secure.lockTime - (t - user['lockTimestamp'])}`
-        || secure.isLock(user) && /* secure.resetLock(user, t) && */ `${STATE.BLOCKED},解封时间:${secure.lockTime - (t - user['lockTimestamp'])}`
+    || (!secure.isLock(user) && secure.isFrequently(user, t)) && secure.lock(user, t) && `${STATE.DUEBLOCK},解封时间:${secure.lockTime - (t - user['lockTimestamp'])}`
+    || secure.isLock(user) && /* secure.resetLock(user, t) && */ `${STATE.BLOCKED},解封时间:${secure.lockTime - (t - user['lockTimestamp'])}`
+    // console.log(lock);
     console.log(secure.tracker);
     lock ? ctx.body = h5template(lock) : ++user['count'] && await next()
 }
-
-async function authVerify(ctx, next) {
+async function authVerify (ctx, next){
     let auth = ctx.request.headers.authorization?.replace('Basic ', '');
     if (auth != auth_) {
         ctx.set('WWW-Authenticate', 'Basic')
@@ -305,9 +318,8 @@ async function authVerify(ctx, next) {
     }
     await next()
 }
-
-// app.use(authVerify)
 // app.use(detectFrequently)
+app.use(authVerify)
 let nocahce = ['index', 'bookmark', 'debugger', 'constant', 'instruction']
 app.use(static(path.resolve(__dirname, './static'), { setHeaders: (res, path, stats) => !nocahce.some(n => path.includes(n)) ? res.setHeader('Cache-Control', 'max-age=2678400') : null, extensions: ['js', 'json', 'html'] }))
 // app.use(static(path.resolve(__dirname, './static'),{ extensions: ['js', 'json', 'html'] }))
@@ -321,7 +333,7 @@ app.use(async (ctx, next) => {
 })
 app.use(router.routes())
 app.use(router.allowedMethods())
-let denyGenre = ['3x', '59', 'hk', '40', '2r', '61', '4l', '2f', '55', '56', '4p', '4k', 'k', '15', '4t', '47', '1r', '36', '1a', '5z', '2c', 'es', '81', '7x']
+let deny = ['3x', '59', 'hk', '40', '2r', '61', '4l', '2f', '55', '56', '4p', '4k', 'k', '15', '4t', '47', '1r', '36', '1a', '5z', '2c', 'es', '81', '7x']
 const ssl_option = {
     key: fs.readFileSync(`./SSL/knockdoor.top.key`, { encoding: 'utf-8' }),
     cert: fs.readFileSync(`./SSL/knockdoor.top.pem`, { encoding: 'utf-8' })
@@ -356,9 +368,9 @@ ws_main.addListener('connection', (socket, req) => {
                 socket.isAlive = true
                 break;
             case 'search':
-                let { keyWord, range, stars, genre, director, studio, label, onunc, deny } = message
+                let { keyWord, range, stars, genre, director, studio, label, onsunc } = message
                 console.log(message);
-                (async function (关键词, 区间, 演员, 类别, 导演, 制作商, 发行商, onunc, deny) {
+                (async function (关键词, 区间, 演员, 类别, 导演, 制作商, 发行商, onsunc) {
                     abort = false
                     let 搜索 = '';
                     let 任务队列 = [];
@@ -393,7 +405,7 @@ ws_main.addListener('connection', (socket, req) => {
                             导演 && `${Domain}/director/${关键词}/${页面计数}` ||
                             制作商 && `${Domain}/studio/${关键词}/${页面计数}` ||
                             发行商 && `${Domain}/label/${关键词}/${页面计数}` ||
-                            关键词 && `${Domain}${onunc ? '/uncensored' : ''}/search/${关键词}/${页面计数}`;
+                            关键词 && `${Domain}${onsunc ? '/uncensored' : ''}/search/${关键词}/${页面计数}`;
                         let $ = cheerio.load((await ax.get(搜索)).data);
                         let 牛马们 = $('.photo-info span date:first-of-type').map((idx, el) => {
                             return $(el).text()
@@ -434,7 +446,7 @@ ws_main.addListener('connection', (socket, req) => {
                                         let 类别标签 = _$_('.genre label a').map((idx, el) => {
                                             return _$_(el).attr('href')
                                         }).get()
-                                        if (deny && 类别标签.find(g => denyGenre.some(d => g.includes(d)))) { return { n: 牛马, s: 0x05, t: 'deny', extra: { d: 牛马的日期, p: 牛马的略缩图, g: 类别标签 } } }
+                                        if (类别标签.find(g => deny.includes(g))) { return { n: 牛马, s: 0x05, t: 'deny', extra: { d: 牛马的日期, p: 牛马的略缩图, g: 类别标签 } } }
                                         let 磁力参数 = _$_('script:not([src]):nth-of-type(3)').text().match(/gid\s*=\s*(\d+)/)?.[1]
                                         let 预览图集 = _$_('#sample-waterfall .sample-box').map((idx, el) => {
                                             return _$_(el).attr('href')
@@ -446,7 +458,7 @@ ws_main.addListener('connection', (socket, req) => {
                                             return { text: _$_(el).text(), href: _$_(el).attr('href') }
                                         }).get()
                                         if (磁力参数 == null) return { n: 牛马, s: 0x02, t: 'empty', extra: { d: 牛马的日期, p: 牛马的略缩图, i: 预览图集, s: 演员列表, g: 类别标签 } };
-                                        let 磁力 = (await ax.get(`${Domain}/ajax/uncledatoolsbyajax.php?gid=${磁力参数}&lang=zh&uc=${onunc ? 1 : 0}`, {
+                                        let 磁力 = (await ax.get(`${Domain}/ajax/uncledatoolsbyajax.php?gid=${磁力参数}&lang=zh&uc=${onsunc ? 1 : 0}`, {
                                             headers: {
                                                 'Referer': `${Domain}/${牛马}`
                                             }
@@ -504,16 +516,16 @@ ws_main.addListener('connection', (socket, req) => {
                             }
                         ))
                     })
-                })(keyWord, range, stars, genre, director, studio, label, onunc, deny)
+                })(keyWord, range, stars, genre, director, studio, label, onsunc)
                 break;
             case 'ABORT':
                 abort = true
                 break;
             case 'INSERT':
-                bookmark.insert(message.data)
+                insert(message.data)
                 break;
             case 'REMOVE':
-                bookmark.remove(message.data)
+                remove(message.data)
                 break;
         }
 
