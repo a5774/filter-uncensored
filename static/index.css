@@ -63,7 +63,7 @@
     display: flex;
     flex-flow: row wrap;
     z-index: 2;
-    overflow:hidden;
+    overflow: hidden;
     align-content: flex-start;
 
 }
@@ -217,7 +217,7 @@
     border-bottom: 1px #a0a4a8 solid;
     text-align: left;
     transform: translateX(0);
-    transition: transform var(--timing) linear 0ms;
+    transition: transform calc(var(--timing) - 0.1s) linear 0ms;
     z-index: 2;
 }
 
@@ -267,7 +267,7 @@
     bottom: 0;
     right: 0;
     left: 0;
-    overflow: hidden    ;
+    overflow: hidden;
     /* background-color: #9c5454; */
 }
 

@@ -135,11 +135,10 @@
         "jumpTagTimeout": 300,
         "invokeAutoScroll": 400,
         "swipeSlowTimeout": 500,
-        "swipeTransitionTimeout":300,
-        "openSwipeTimeout":300,
-        "closeSwipeTimeout":100,
-        "initSwipeDebounce":100
-
+        "swipeTransitionTimeout": 500,
+        "openSwipeTimeout": 300,
+        "closeSwipeTimeout": 100,
+        "initSwipeDebounce": 100
     },
     "constantNumber": {
         "passProxy": 3
@@ -166,17 +165,19 @@
             "genre": false,
             "studio": false,
             "label": false,
-            "deny":false,
+            "deny": false,
             "director": false
         },
         "preview": {
             "pics": [],
             "picsEl": null,
-            "picsIndex": -1,
+            "carouselEl": null,
             "picsSwipe": false,
+            "picsIndex": -1,
             "picsSwipeSize": 0,
             "desktopSwipeScale": 2,
-            "failed": "/failed.jpg"
+            "picsFailed": "/failed.jpg",
+            "touches": 0
         },
         "deviceMeta": {
             "viewWidth": 0,

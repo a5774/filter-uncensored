@@ -66,7 +66,6 @@
                 socket: null,
                 needReconnect: true,
                 reconnectTimeout: constant.dataOptionsNomarl.main.reconnectTimeout
-
             },
             manual: {
                 bookmark: false,
@@ -93,7 +92,8 @@
                 picsSwipe: false,
                 picsSwipeSize: 0,
                 desktopSwipeScale: 2,
-                failed: constant.domain.failedPics
+                picsFailed: constant.domain.picsFailed,
+                touches: 0,
             },
             magnet: [],
             reflow: [],
@@ -444,9 +444,10 @@
             },
             nextSwipePics() {
                 let el = this.preview.carouselEl
-                el.style.transitionDuration = '0.3s'
-                this.preview.picsIndex++
+                el.style.transitionDuration = `${constant.timer.swipeTransitionTimeout}ms`
                 if (!el.lock) {
+                    el.lock = true
+                    this.preview.picsIndex++
                     this.$nextTick(() => {
                         this.debounce.swipeInterval = setTimeout(() => {
                             if (this.preview.picsIndex == (vm.preview.pics.length + 1)) {
@@ -457,17 +458,20 @@
                         }, constant.timer.swipeTransitionTimeout);
                     })
                 }
+                return null
+
             },
             prevSwipePics() {
                 let el = this.preview.carouselEl
-                el.style.transitionDuration = '0.3s'
-                this.preview.picsIndex--
+                el.style.transitionDuration = `${constant.timer.swipeTransitionTimeout}ms`
                 if (!el.lock) {
+                    el.lock = true
+                    this.preview.picsIndex--
                     this.$nextTick(() => {
                         this.debounce.swipeInterval = setTimeout(() => {
                             if (this.preview.picsIndex == 0) {
                                 el.style.transitionDuration = '0s'
-                                this.preview.picsIndex = this.preview.pics.length 
+                                this.preview.picsIndex = this.preview.pics.length
                             }
                             el.lock = false
                         }, constant.timer.swipeTransitionTimeout);
@@ -638,6 +642,15 @@
             thumbFailed() {
 
             },
+            listenTouches() {
+                window.addEventListener('touchstart', (e) => {
+                    this.preview.touches = e.touches.length
+                    e.touches.length >= 2 && e.preventDefault();
+                }, { passive: false });
+            },
+            listenResize() {
+                window.addEventListener('resize', this.debouncefn(this.initDeviceMeta, constant.timer.initSwipeDebounce))
+            },
             initDeviceMeta() {
                 // offsetH/W w+p+b+s ,clientH/W, w+p  windowH/W w+p+b+s  rectH/W w+p+b
                 const platform = navigator.platform.toLowerCase();
@@ -761,6 +774,13 @@
                 })
             },
         },
+
+        calculateAngle(deltaX1, deltaY1, deltaX2, deltaY2) {
+            const dotProduct = deltaX1 * deltaX2 + deltaY1 * deltaY2;
+            const magnitude1 = Math.sqrt(deltaX1 ** 2 + deltaY1 ** 2);
+            const magnitude2 = Math.sqrt(deltaX2 ** 2 + deltaY2 ** 2);
+            return Math.acos(dotProduct / (magnitude1 * magnitude2)) * (180 / Math.PI);
+        },
         filters: {
             actorTotal(v) {
                 return v?.length || -1
@@ -833,11 +853,10 @@
                 bind(el, binding) {
                     let vm = binding.value
                     el.lock = false;
-                    vm.preview.carouselEl = el
                     el.enterSwipe = (deltaX, currentX) => {
                         clearTimeout(vm.throttled.slowSwipe)
                         // clearTimeout(vm.debounce.swipeInterval)
-                        el.style.transitionDuration = '.3s'
+                        el.style.transitionDuration = `${constant.timer.swipeTransitionTimeout}ms`
                         if (Math.abs(deltaX) >= (((el.swipeMode == 'fast') && el.threshold) || ((el.swipeMode == 'slow') && el.slowSwipe))) {
                             if (!((vm.preview.picsIndex == (vm.preview.pics.length + 1)) && (vm.preview.picsIndex == 0))) {
                                 deltaX > 0 ? vm.preview.picsIndex++ : vm.preview.picsIndex--
@@ -859,6 +878,7 @@
                         el.slowSwipe = Math.abs(vm.preview.picsSwipeSize / 2)
                     }
                     // moblie
+                    vm.preview.carouselEl = el
                     vm.$nextTick(el.initPicsSwipeSize)
                     window.addEventListener('resize', vm.debouncefn(el.initPicsSwipeSize, constant.timer.initSwipeDebounce))
                     el.threshold = 25
@@ -935,12 +955,15 @@
                 bind(el, binding) {
                     let vm = binding.value;
                     let data_ = binding.arg
+                    // directive在渲染中绑定，需要等待渲染完成获取
                     vm.$nextTick(() => {
                         let { width, height } = el.getBoundingClientRect()
                         el.__halfX = width / 2
                         el.__revealY = height
-                        el.__HalfY = el.__revealY / 2
+                        el.__halfY = el.__revealY / 2
                     })
+                    el.thresholdX = 15
+                    el.thresholdY = 25
                     el.__handleTouchStart = ({ touches: [point] }) => {
                         // Not updated due to changes
                         vm.filterRule.forEach(i => i.active = false)
@@ -948,33 +971,52 @@
                         data_.active = true
                         el.touchDeltaX = 0
                         el.touchStartX = 0
+                        el.touchDeltaY = 0
+                        el.touchStartY = 0
                         el.touchCurrentX = 0
                         el.style.transitionDuration = '0s'
                         el.touchStartX = point['clientX'];
-                        el.openOffset = Number.parseInt(el.style.transform.match(/(\d+\.*\d*)/g)?.[0])
-                        el.isOpen = el.openOffset >= el.__HalfY
+                        el.touchStartY = point['clientY'];
                     }
                     el.__handleTouchMove = (e) => {
-                        el.touchDeltaX = el.touchStartX - e.touches[0]['clientX'];
-                        if (el.isOpen && el.openOffset >= Math.abs(el.touchDeltaX)) {
-                            (el.touchDeltaX < 0) && (el.style.transform = `translateX(${-el.openOffset - el.touchDeltaX}px)`)
-                        }
-                        // limit offset distance 
-                        if ((Math.abs(el.touchDeltaX) <= el.__revealY) && (Math.abs(el.touchDeltaX) >= el.__HalfY / 2) && !el.isOpen) {
-                            (el.touchDeltaX > 0) && (el.style.transform = `translateX(${-el.touchDeltaX}px)`)
+                        if (vm.preview.touches == 1) {
+                            let moveX = e.touches[0]['clientX'];
+                            let moveY = e.touches[0]['clientY'];
+                            // el.touchDeltaX = el.touchStartX - e.touches[0]['clientX'];
+                            // el.touchDeltaY = el.touchStartY - e.touches[0]['clientY'];
+                            el.touchDeltaX = el.touchStartX - moveX
+                            el.touchDeltaY = el.touchStartY - moveY
+                            // let xielv =  el.touchDeltaY  /  el.touchDeltaX
+                            // vm.calculateAngle(el,touchStartX)
+                            // console.log(xielv);
+                            if ((Math.abs(el.touchDeltaY) <= el.thresholdY) && (Math.abs(el.touchDeltaX) >= el.thresholdX)) {
+                                e.preventDefault()
+                                // limit offset direction 
+                                if (el.isOpen && (el.__revealY >= Math.abs(el.touchDeltaX)) && (el.touchDeltaX < 0)) {
+                                    // limit offset distance 
+                                    el.style.transform = `translateX(${-el.__revealY - el.touchDeltaX}px)`
+                                }
+                                if (!el.isOpen && (Math.abs(el.touchDeltaX) <= el.__revealY) && (el.touchDeltaX > 0)) {
+                                    el.style.transform = `translateX(${-el.touchDeltaX}px)`
+                                }
+                            }
                         }
                     }
                     el.__handleTouchEnd = () => {
-                        el.style.transitionDuration = '.3s';
-                        if ((Math.abs(el.touchDeltaX) >= el.__HalfY) && !el.isOpen) {
+                        el.style.transitionDuration = '.2s';
+                        if (!el.isOpen && (Math.abs(el.touchDeltaX) >= el.__halfY) && (el.touchDeltaX >= 0)) {
+                            // if (!el.isOpen && (Math.abs(el.touchDeltaX) >= el.__halfY) && (el.touchDeltaX >= 0) && (Math.abs(el.touchDeltaY) <= el.thresholdY)) {
                             el.style.transform = `translateX(${-el.__revealY}px)`
+                            el.isOpen = true
+                            // el.openOffset = Number.parseInt(el.style.transform.match(/(\d+\.*\d*)/g)?.[0])
                         } else {
                             // roll back
                             el.style.transform = `translateX(${el.touchCurrentX}px)`
+                            el.isOpen = false
                         }
                     }
                     el.addEventListener('touchstart', el.__handleTouchStart, { passive: true });
-                    el.addEventListener('touchmove', el.__handleTouchMove, { passive: true });
+                    el.addEventListener('touchmove', el.__handleTouchMove, { passive: false });
                     el.addEventListener('touchend', el.__handleTouchEnd);
                 },
                 unbind(el) {
@@ -1136,9 +1178,11 @@
         },
         async mounted() {
             console.log('mounted');
+            this.listenTouches()
             // init rem
             this.initDeviceMeta()
-            window.addEventListener('resize', this.debouncefn(this.initDeviceMeta, 100))
+            this.listenResize()
+
             // init theme
             this.initTheme()
             // load scroll position

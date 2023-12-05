@@ -287,21 +287,21 @@
                         <div class="pics-contains-swipe"
                             :style="`transform : translateX(${preview.picsIndex * preview.picsSwipeSize}px)`"
                             v-swipe-carousel-pics="this">
-                            <!-- <img class="img-preview-swipe":src="((!status.vthumb || demoDebug.enable) && preview.failed) || preview.pics[preview.picsIndex]?.['pt']" alt=""> -->
+                            <!-- <img class="img-preview-swipe":src="((!status.vthumb || demoDebug.enable) && preview.picsFailed) || preview.pics[preview.picsIndex]?.['pt']" alt=""> -->
                             <div class="pics-swipe-slide">
                                 <img class="img-preview-swipe" draggable="false" @mousedown.self="closeSwipe"
-                                    :src="((!status.vthumb || demoDebug.enable) && preview.failed) ||  preview.pics[overlay.pics -1]?.['pt']"
+                                    :src="((!status.vthumb || demoDebug.enable) && preview.picsFailed) ||  preview.pics[overlay.pics -1]?.['pt']"
                                     alt="">
                             </div>
                             <div class="pics-swipe-slide" v-for="(item,index) in preview.pics"
                                 @mousedown.self="closeSwipe">
                                 <img class="img-preview-swipe" draggable="false"
-                                    :src="((!status.vthumb || demoDebug.enable) && preview.failed) || item?.['pt']"
+                                    :src="((!status.vthumb || demoDebug.enable) && preview.picsFailed) || item?.['pt']"
                                     alt="">
                             </div>
                             <div class="pics-swipe-slide">
                                 <img class="img-preview-swipe" draggable="false" @mousedown.self="closeSwipe"
-                                    :src="((!status.vthumb || demoDebug.enable) && preview.failed) ||  preview.pics[0]?.['pt']"
+                                    :src="((!status.vthumb || demoDebug.enable) && preview.picsFailed) ||  preview.pics[0]?.['pt']"
                                     alt="">
                             </div>
                         </div>
@@ -312,7 +312,7 @@
 
                     <!--  <div class="pics-swipe-contains">
                         <img class="img-preview-swipe"
-                            :src="((!status.vthumb || demoDebug.enable) && preview.failed) || preview.pics[preview.picsIndex]?.['pt']"
+                            :src="((!status.vthumb || demoDebug.enable) && preview.picsFailed) || preview.pics[preview.picsIndex]?.['pt']"
                             alt="">
                         <span class="pics-indicator">{{preview.picsIndex +1 }}of{{preview.pics.length}}</span>
                     </div> -->
@@ -327,7 +327,7 @@
                         <img :class="index % 2 == 0 ? 'swipe-zoomed-origin-left':'swipe-zoomed-origin-right'"
                             @click="openSwipe(index + 1  ,$event)" class="img-preview-expand"
                             @load="item['loaded'] = true"
-                            :src="((!status.vthumb || demoDebug.enable) && preview.failed) || item?.['pt']" :key="index"
+                            :src="((!status.vthumb || demoDebug.enable) && preview.picsFailed) || item?.['pt']" :key="index"
                             alt="">
                     </a>
                 </div>
@@ -335,7 +335,7 @@
         </div>
         <div class="info-main"  ref="main">
             <div class="info-search">
-                <input type="text" @keydown.enter="search" @dblclick.stop="main.keyWord = ''" @focus="flushHistory"
+                <input type="text" @keydown.enter="search" @dblclick="main.keyWord = ''" @focus="flushHistory"
                     @blur="overlay.history=''" placeholder="keyWord" v-model=main.keyWord>
                 <button @click="search">search</button>
                 <label for="stars">stars</label><input id="stars" type="checkbox" v-model="status.stars">
@@ -395,7 +395,7 @@
         <ul class="info-content" v-press-auto-scroll="this">
             <li v-for="(item,index) in filterRule" class="info-contains" :key="index">
                 <div class="info-swipe-reveal" v-swipe-to-reveal:[item]="$root"
-                    :style="!item.active && 'transform : translateX(0px)'">
+                    :style="!item.active && 'transform : translateX(0)'">
                     <div class="thumb-item">
                         <!-- v-lazy-load-oberver -->
                         <!--   <img  @click="zoomPics(item)" @load="item['tl'] = true" @contextmenu.prevent
@@ -403,7 +403,7 @@
                         :data-src="!status.vthumb?'':`${item.p}`" :data-i="index" :data-n="item.n"> -->
                         <img @click="zoomPics(item)" @load="thumbSucess($event)" @contextmenu.prevent
                             class="thumb lazy-loaded" ref="monitor"
-                            :data-src="((!status.vthumb || demoDebug.enable) && preview.failed) || item.p   "
+                            :data-src="((!status.vthumb || demoDebug.enable) && preview.picsFailed) || item.p   "
                             :data-i="index" :data-n="item.n">
                     </div>
                     <div class="info-item">

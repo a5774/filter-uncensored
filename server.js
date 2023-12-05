@@ -255,7 +255,8 @@ router.get('/views/:sequence', async (ctx, next) => {
 
 router.get('/proxies', async (ctx, next) => {
     ctx.status = 200
-    ctx.body = JSON.parse(fs.readFileSync(PROXIES, { encoding: 'utf-8' }))
+    ctx.body = '00'
+    // ctx.body = JSON.parse(fs.readFileSync(PROXIES, { encoding: 'utf-8' }))
 })
 
 router.get('/updateProxy', async (ctx, next) => {
@@ -323,12 +324,13 @@ app.use(router.routes())
 app.use(router.allowedMethods())
 let denyGenre = ['3x', '59', 'hk', '40', '2r', '61', '4l', '2f', '55', '56', '4p', '4k', 'k', '15', '4t', '47', '1r', '36', '1a', '5z', '2c', 'es', '81', '7x']
 const ssl_option = {
-    key: fs.readFileSync(`./SSL/knockdoor.top.key`, { encoding: 'utf-8' }),
-    cert: fs.readFileSync(`./SSL/knockdoor.top.pem`, { encoding: 'utf-8' })
+    // key: fs.readFileSync(`./SSL/knockdoor.top.key`, { encoding: 'utf-8' }),
+    // cert: fs.readFileSync(`./SSL/knockdoor.top.pem`, { encoding: 'utf-8' })
 }
 let ws_option = { noServer: true, perMessageDeflate: true, clientTracking: true }
 // let https2Server = http2.createSecureServer(ssl_option, app.callback())
-let httpsServer = https.createServer(ssl_option, app.callback())
+// let httpsServer = https.createServer(ssl_option, app.callback())
+let httpsServer = http.createServer( app.callback())
 // let server = new ws.Server({ server: httpServer})
 let ws_main = new WebSocketServer(ws_option)
 let ws_chat = new WebSocketServer(ws_option)
@@ -621,7 +623,8 @@ https2Server.addListener('stream',(stream,headers)=>{
 */
 
 
-httpsServer.listen(443, '0.0.0.0', () => { console.log(httpsServer.address().port); })
+// httpsServer.listen(443, '0.0.0.0', () => { console.log(httpsServer.address().port); })
+httpsServer.listen(80, '0.0.0.0', () => { console.log(httpsServer.address().port); })
 
 process.addListener('uncaughtException', (err) => {
     console.log(err);
