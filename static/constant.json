@@ -120,7 +120,11 @@
     "snippet": {
         "views": 2,
         "proxy": 4,
-        "endFlag": 5
+        "endFlag": 5,
+        "tiltFactor":0.5,
+        "swipeThreshold":25,
+        "smallScreenWidth":360
+    
     },
     "timer": {
         "viewsLoadDealy": 3000,
@@ -135,7 +139,8 @@
         "jumpTagTimeout": 300,
         "invokeAutoScroll": 400,
         "swipeSlowTimeout": 500,
-        "swipeTransitionTimeout": 500,
+        "swipeTransitionTimeout": 300,
+        "revealTransitionTimeout": 200,
         "openSwipeTimeout": 300,
         "closeSwipeTimeout": 100,
         "initSwipeDebounce": 100

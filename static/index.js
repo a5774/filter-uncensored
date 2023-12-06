@@ -594,7 +594,7 @@
             filterCallback() {
                 let conditions = [];
                 !(this.main.select == 'NONE' && this.main.factor) || (conditions.push('(i.n?.toLocaleLowerCase()?.includes(this.main.factor))'));
-                !(this.main.select == 'TIME' && (this.main.factor?.length == 4)) || (conditions.push('(i.d?.slice(0, 4) <= this.main.factor)'));
+                !(this.main.select == 'TIME' && (this.main.factor?.length == 4)) || (conditions.push('(i.d?.slice(0, 4) >= this.main.factor)'));
                 !this.status.single || conditions.push('(i.s?.length || -1) <= this.main.actors');
                 !(this.main.mode == 'censored') || conditions.push('i');
                 !(this.main.mode == 'uncensored') || conditions.push('i.r');
@@ -664,7 +664,7 @@
                 this.deviceMeta.viewWidth = window.innerWidth
                 this.deviceMeta.viewHeight = window.innerHeight;
                 this.$refs.box.style.height = `${this.deviceMeta.viewHeight}px`;
-                document.documentElement.style.fontSize = (360 >= this.deviceMeta.viewWidth) ? constant.flexibleSize.small : constant.flexibleSize.big;
+                document.documentElement.style.fontSize = (constant.snippet.smallScreenWidth >= this.deviceMeta.viewWidth) ? constant.flexibleSize.small : constant.flexibleSize.big;
                 // this.main.error = this.deviceMeta
                 // console.log( this.deviceMeta);
                 return null
@@ -774,13 +774,6 @@
                 })
             },
         },
-
-        calculateAngle(deltaX1, deltaY1, deltaX2, deltaY2) {
-            const dotProduct = deltaX1 * deltaX2 + deltaY1 * deltaY2;
-            const magnitude1 = Math.sqrt(deltaX1 ** 2 + deltaY1 ** 2);
-            const magnitude2 = Math.sqrt(deltaX2 ** 2 + deltaY2 ** 2);
-            return Math.acos(dotProduct / (magnitude1 * magnitude2)) * (180 / Math.PI);
-        },
         filters: {
             actorTotal(v) {
                 return v?.length || -1
@@ -822,8 +815,6 @@
                         clearTimeout(vm.debounce.prefix)
                         cancelAnimationFrame(vm.debounce.slide)
                     }
-                    // el.__autoScroll = ({ touches}) => {
-                    //    vm.main.error = `${touches[1]['clientX']}${ touches[0]['clientX']}`
                     el.__autoScroll = ({ touches: [point] }) => {
                         vm.debounce.prefix = setTimeout(() => {
                             vm.offset = Math.floor(vm.$refs.box.scrollTop)
@@ -871,7 +862,7 @@
                                 el.lock = false
                             }, constant.timer.swipeTransitionTimeout);
                         })
-                        el.style.transform = `translateX(${currentX}px)`
+                        el.style.transform = `translate3d(${currentX}px,0,0)`
                     }
                     el.initPicsSwipeSize = () => {
                         vm.preview.picsSwipeSize = -el.getBoundingClientRect().width
@@ -881,7 +872,7 @@
                     vm.preview.carouselEl = el
                     vm.$nextTick(el.initPicsSwipeSize)
                     window.addEventListener('resize', vm.debouncefn(el.initPicsSwipeSize, constant.timer.initSwipeDebounce))
-                    el.threshold = 25
+                    el.threshold = constant.snippet.swipeThreshold
                     el.swipeMode = 'fast'
                     el.__handleTouchStart = ({ touches: [point] }) => {
                         el.touchDeltaX = 0
@@ -899,7 +890,7 @@
                     el.__handleTouchMove = ({ touches: [point] }) => {
                         if (!el.lock) {
                             el.touchDeltaX = el.touchStartX - point['clientX'];
-                            el.style.transform = `translateX(${el.touchCurrentX - el.touchDeltaX}px)`
+                            el.style.transform = `translate3d(${el.touchCurrentX - el.touchDeltaX}px,0,0)`
                         }
                     }
                     el.__handleTouchEnd = () => {
@@ -928,7 +919,7 @@
                     el.__handleMouseMove = (e) => {
                         if (!el.lock) {
                             el.MouseDeltaX = el.MouseStartX - e['clientX'];
-                            el.style.transform = `translateX(${el.MouseCurrentX - el.MouseDeltaX}px)`
+                            el.style.transform = `translate3d(${el.MouseCurrentX - el.MouseDeltaX}px,0,0)`
                         }
                     }
                     el.__handleMouseUpAndLeave = () => {
@@ -962,8 +953,6 @@
                         el.__revealY = height
                         el.__halfY = el.__revealY / 2
                     })
-                    el.thresholdX = 15
-                    el.thresholdY = 25
                     el.__handleTouchStart = ({ touches: [point] }) => {
                         // Not updated due to changes
                         vm.filterRule.forEach(i => i.active = false)
@@ -974,44 +963,47 @@
                         el.touchDeltaY = 0
                         el.touchStartY = 0
                         el.touchCurrentX = 0
+                        el.revealing = false
                         el.style.transitionDuration = '0s'
                         el.touchStartX = point['clientX'];
                         el.touchStartY = point['clientY'];
                     }
                     el.__handleTouchMove = (e) => {
+                        // e.preventDefault()
                         if (vm.preview.touches == 1) {
-                            let moveX = e.touches[0]['clientX'];
-                            let moveY = e.touches[0]['clientY'];
-                            // el.touchDeltaX = el.touchStartX - e.touches[0]['clientX'];
-                            // el.touchDeltaY = el.touchStartY - e.touches[0]['clientY'];
-                            el.touchDeltaX = el.touchStartX - moveX
-                            el.touchDeltaY = el.touchStartY - moveY
-                            // let xielv =  el.touchDeltaY  /  el.touchDeltaX
-                            // vm.calculateAngle(el,touchStartX)
-                            // console.log(xielv);
-                            if ((Math.abs(el.touchDeltaY) <= el.thresholdY) && (Math.abs(el.touchDeltaX) >= el.thresholdX)) {
+                            el.touchDeltaX = el.touchStartX - e.touches[0]['clientX'];
+                            el.touchDeltaY = el.touchStartY - e.touches[0]['clientY'];
+                            el.slope = el.touchDeltaY / el.touchDeltaX
+                            // vm.main.log = el.slope
+                            if ((Math.abs(el.slope) <= constant.snippet.tiltFactor) || el.revealing) {
                                 e.preventDefault()
+                                vm.$refs.box.style.overflowY = "hidden"
+                                if (!el.isOpen && (Math.abs(el.touchDeltaX) <= el.__revealY) && (el.touchDeltaX > 0)) {
+                                    el.style.transform = `translate3d(${-el.touchDeltaX}px,0,0)`
+                                    el.revealing = true
+                                }
                                 // limit offset direction 
                                 if (el.isOpen && (el.__revealY >= Math.abs(el.touchDeltaX)) && (el.touchDeltaX < 0)) {
                                     // limit offset distance 
-                                    el.style.transform = `translateX(${-el.__revealY - el.touchDeltaX}px)`
-                                }
-                                if (!el.isOpen && (Math.abs(el.touchDeltaX) <= el.__revealY) && (el.touchDeltaX > 0)) {
-                                    el.style.transform = `translateX(${-el.touchDeltaX}px)`
+                                    vm.main.error = 'back'
+                                    el.style.transform = `translate3d(${-el.__revealY - el.touchDeltaX}px,0,0)`
+                                    el.revealing = true
                                 }
                             }
+
                         }
                     }
                     el.__handleTouchEnd = () => {
-                        el.style.transitionDuration = '.2s';
-                        if (!el.isOpen && (Math.abs(el.touchDeltaX) >= el.__halfY) && (el.touchDeltaX >= 0)) {
+                        vm.$refs.box.style.overflowY = "scroll"
+                        el.style.transitionDuration = `${constant.timer.revealTransitionTimeout}ms`;
+                        if (!el.isOpen && (Math.abs(el.touchDeltaX) >= el.__halfY) && (el.touchDeltaX >= 0) && (Math.abs(el.slope) <= constant.snippet.tiltFactor)) {
                             // if (!el.isOpen && (Math.abs(el.touchDeltaX) >= el.__halfY) && (el.touchDeltaX >= 0) && (Math.abs(el.touchDeltaY) <= el.thresholdY)) {
-                            el.style.transform = `translateX(${-el.__revealY}px)`
+                            el.style.transform = `translate3d(${-el.__revealY}px,0,0)`
                             el.isOpen = true
                             // el.openOffset = Number.parseInt(el.style.transform.match(/(\d+\.*\d*)/g)?.[0])
                         } else {
                             // roll back
-                            el.style.transform = `translateX(${el.touchCurrentX}px)`
+                            el.style.transform = `translate3d(${el.touchCurrentX}px,0,0)`
                             el.isOpen = false
                         }
                     }
@@ -1050,11 +1042,6 @@
                 },
                 deep: false
             },
-            /*   "main.select": {
-                  handler(v) {
-                      this.main.factor = ''
-                  }
-              }, */
             "status.stars": {
                 handler(ic) {
                     ic ? this.status.genre = !ic : null

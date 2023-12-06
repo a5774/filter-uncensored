@@ -285,7 +285,7 @@
                     <div class="pics-wrapper-swipe"
                         :style="deviceMeta.isDesktop && `width:${deviceMeta.viewWidth / preview.desktopSwipeScale}px`">
                         <div class="pics-contains-swipe"
-                            :style="`transform : translateX(${preview.picsIndex * preview.picsSwipeSize}px)`"
+                            :style="`transform : translate3d(${preview.picsIndex * preview.picsSwipeSize}px,0,0)`"
                             v-swipe-carousel-pics="this">
                             <!-- <img class="img-preview-swipe":src="((!status.vthumb || demoDebug.enable) && preview.picsFailed) || preview.pics[preview.picsIndex]?.['pt']" alt=""> -->
                             <div class="pics-swipe-slide">
@@ -395,7 +395,7 @@
         <ul class="info-content" v-press-auto-scroll="this">
             <li v-for="(item,index) in filterRule" class="info-contains" :key="index">
                 <div class="info-swipe-reveal" v-swipe-to-reveal:[item]="$root"
-                    :style="!item.active && 'transform : translateX(0)'">
+                    :style="!item.active && 'transform : translate3d(0,0,0)'">
                     <div class="thumb-item">
                         <!-- v-lazy-load-oberver -->
                         <!--   <img  @click="zoomPics(item)" @load="item['tl'] = true" @contextmenu.prevent

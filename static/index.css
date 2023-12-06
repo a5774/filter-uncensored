@@ -217,7 +217,7 @@
     border-bottom: 1px #a0a4a8 solid;
     text-align: left;
     transform: translateX(0);
-    transition: transform calc(var(--timing) - 0.1s) linear 0ms;
+    transition: transform calc(var(--timing) - 0.1s) ease 0ms;
     z-index: 2;
 }
 
@@ -534,7 +534,7 @@
     width: 100%;
     display: flex;
     flex-flow: row nowrap;
-    transition: transform 0s ease-in-out 0s;
+    transition: transform 0s ease 0s, 0s;
     transform: translateX(0);
 }
 

@@ -53,10 +53,11 @@
             "'deny'|'empty'|'expire'|'error'",
             "'current'错误和检索日志输出",
             "'autoView'自动加载view",
-            "点击番号名(xxxx-xx)可查看类别(长按可跳转)",
             "'MAGNET'查看磁力",
-            "'VENDOR'查看厂商信息(长按可跳转)",
-            "'REMOVE|COLLET'添加|移除'bookmark'"
+            "点击番号名(xxxx-xx)可查看类别(长按可跳转)",
+            "'ACTORS'查看演员列表",
+            "'VENDOR'查看厂商信息",
+            "任意条目右侧滑动启动REVEAL"
         ]
     },
     {
@@ -76,11 +77,13 @@
             "'import'批量导入搜索",
             "'export'批量导出磁力(以列表过滤结果为标准)",
             "'heartbeat'心跳检测",
-            "'slideSpeed'滑动速度",
+            "'actors'调整'signle'过滤条件默认为'1'",
+            "'slideSpeed'滑动速度默认为'3'",
             "'toggleProxy'切换节点",
             "'updateProxy'更新订阅",
             "'origin'为'preview'预览地址默认为'源'",
-            "'onsunc'切换为步兵搜索"
+            "'onsunc'切换为步兵搜索",
+            "'deny'启用黑名单过滤搜索"
         ]
     },
     {
