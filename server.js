@@ -1,11 +1,10 @@
 const path = require('path')
 const fs = require('fs')
-const http2 = require('http2')
-const https = require('https')
+// const http2 = require('http2')
+const http = require((process.argv[2] && 'http') || 'https')
 const { URL } = require('url');
 const { Buffer } = require('buffer');
 const cp = require('child_process');
-const http = require('http')
 const Koa = require('koa')
 const Router = require('koa-router')
 const static = require('koa-static')
@@ -30,17 +29,7 @@ let proxy = {
     port: '7890',
     protocol: 'http'
 }
-let h5template = (alert) => `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>shabi</title>
-</head>
-<body>
-${alert}
-</body>
-</html>`
+
 let secure = {
     tracker: {},
     lockTime: 1000 * 60,
@@ -80,7 +69,7 @@ let ax = new Axios({
     // cancelToken:axios.CancelToken.source().token
 });
 
-let bookmark = {
+let bookmarker = {
     timer: 0,
     __timeout: 500,
     __bookmark: [],
@@ -97,7 +86,7 @@ let bookmark = {
         }
     },
     remove(v) {
-        let idx = this.__bookmark.findIndex(i => i.n == v)
+        let idx = this.__bookmark.findIndex(i => i.n == v.n)
         if (idx != -1) {
             fs.promises.writeFile(RECYLE, `${this.__bookmark[idx]['n']}\n`, { flag: 'a+' })
             this.__bookmark.splice(idx, 1)
@@ -197,21 +186,8 @@ async function sysctl(action, service) {
     return cp.execSync(`nc -zv  ${proxy.host} ${proxy.port}`, { encoding: 'utf8', stdio: 'ignore' })
 }
 
-// yt-dlp
-router.get('/start/:likeCountLess', async (ctx, next) => {
-    let like = ctx.params.likeCountLess
-    if (/^[0-9]*$/.test(like)) {
-        // cp.execSync(`pm2 start /node/ytdlp/Ytdlp.js --name yt -- -m ${like}`)
-        try {
-            let stdo = cp.execSync(`pm2 restart /node/kwai_merger/Yt-dlp.js --name yt -- -m ${like}`)
-            ctx.body = stdo
-        } catch (e) {
-            ctx.body = 'FORMAT_NOT_STAND'
-        }
-        return null
-    }
-    ctx.body = 'IS_NOT_NUM'
-})
+
+
 
 // unti 
 router.get('/:pics/:kind/:rhex', async (ctx, next) => {
@@ -304,11 +280,10 @@ async function authVerify(ctx, next) {
     await next()
 }
 
-app.use(authVerify)
-app.use(detectFrequently)
+// app.use(authVerify)
+// app.use(detectFrequently)
 let nocahce = ['index', 'bookmark', 'debugger', 'constant', 'instruction']
 app.use(static(path.resolve(__dirname, './static'), { setHeaders: (res, path, stats) => !nocahce.some(n => path.includes(n)) ? res.setHeader('Cache-Control', 'max-age=2678400') : null, extensions: ['js', 'json', 'html'] }))
-// app.use(static(path.resolve(__dirname, './static'),{ extensions: ['js', 'json', 'html'] }))
 app.use(async (ctx, next) => {
     ctx.set({
         "Access-Control-Allow-Origin": "*",
@@ -320,14 +295,12 @@ app.use(async (ctx, next) => {
 app.use(router.routes())
 app.use(router.allowedMethods())
 let denyGenre = ['3x', '59', 'hk', '40', '2r', '61', '4l', '2f', '55', '56', '4p', '4k', 'k', '15', '4t', '47', '1r', '36', '1a', '5z', '2c', 'es', '81', '7x']
-const ssl_option = {
-    key: fs.readFileSync(`./SSL/knockdoor.top.key`, { encoding: 'utf-8' }),
-    cert: fs.readFileSync(`./SSL/knockdoor.top.pem`, { encoding: 'utf-8' })
-}
 let ws_option = { noServer: true, perMessageDeflate: true, clientTracking: true }
 // let https2Server = http2.createSecureServer(ssl_option, app.callback())
-let httpsServer = https.createServer(ssl_option, app.callback())
-// let httpsServer = http.createServer( app.callback())
+let httpServer = http.createServer((process.argv[2] && {}) || {
+    key: fs.readFileSync(`./SSL/knockdoor.top.key`, { encoding: 'utf-8' }),
+    cert: fs.readFileSync(`./SSL/knockdoor.top.pem`, { encoding: 'utf-8' })
+}, app.callback())
 // let server = new ws.Server({ server: httpServer})
 let ws_main = new WebSocketServer(ws_option)
 let ws_chat = new WebSocketServer(ws_option)
@@ -408,6 +381,7 @@ ws_main.addListener('connection', (socket, req) => {
                         // console.log(略缩图集);
                         if (牛马们.length == 0) break;
                         for (let 计数 = 0; 计数 <= 牛马们.length - 1; 计数++) {
+                            if (abort) break;
                             // 控制push堆栈间隔
                             await 延迟回调(150)
                             任务队列.push(
@@ -458,15 +432,16 @@ ws_main.addListener('connection', (socket, req) => {
                                             {
                                                 type: 'CENSORED',
                                                 data: {
-                                                    n: 牛马,
-                                                    d: 牛马的日期,
-                                                    p: 牛马的略缩图,
-                                                    s: 演员列表,
-                                                    i: 预览图集,
-                                                    g: 类别标签,
-                                                    m: 磁力列表,
-                                                    b: 归属信息,
-                                                    r: /uncen/ig.test(磁力)
+                                                    n: 牛马,//string
+                                                    d: 牛马的日期,//string
+                                                    p: 牛马的略缩图,//string
+                                                    s: 演员列表,//array
+                                                    i: 预览图集,//array
+                                                    g: 类别标签,//array
+                                                    m: 磁力列表,//array
+                                                    b: 归属信息,//array
+                                                    r: /uncen/ig.test(磁力)//boolean
+
                                                 }
                                             }
                                         ))
@@ -509,10 +484,10 @@ ws_main.addListener('connection', (socket, req) => {
                 abort = true
                 break;
             case 'INSERT':
-                bookmark.insert(message.data)
+                bookmarker.insert(message.data)
                 break;
             case 'REMOVE':
-                bookmark.remove(message.data)
+                bookmarker.remove(message.data)
                 break;
         }
 
@@ -598,7 +573,7 @@ ws_chat.addListener('connection', (socket, req) => {
 })
 
 
-httpsServer.addListener('upgrade', (request, socket, head) => {
+httpServer.addListener('upgrade', (request, socket, head) => {
     if (request.url == '/main') {
         ws_main.handleUpgrade(request, socket, head, websocket => {
             ws_main.emit('connection', websocket, request)
@@ -619,9 +594,8 @@ https2Server.addListener('stream',(stream,headers)=>{
 })
 */
 
-bookmark.init()
-httpsServer.listen(443, '0.0.0.0', () => { console.log(httpsServer.address().port); })
-// httpsServer.listen(80, '0.0.0.0', () => { console.log(httpsServer.address().port); })
+bookmarker.init()
+httpServer.listen((process.argv[2] && 80) || 443, '0.0.0.0', () => { console.log(httpServer.address().port); })
 
 process.addListener('uncaughtException', (err) => {
     console.log(err);

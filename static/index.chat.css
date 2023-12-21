@@ -70,7 +70,7 @@
     z-index: 9;
 }
 
-.over-lay-chat-tranfer {
+.over-lay-chat-transform {
     transform: translateX(0%);
 }
 
@@ -136,7 +136,7 @@
     /* margin: 1px; */
 }
 
-.post-message-box-tranfer {
+.post-message-box-transform {
     opacity: 1;
     transform: translateX(0%);
 }

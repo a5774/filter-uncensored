@@ -16,7 +16,6 @@
     }
     let constant = await fetch("/constant").then(resp => resp.json())
     let vm = new Vue({
-        el: '#box',
         data: {
             originDomain: constant.domain.originDomain,
             thirdDomain: constant.domain.thirdDomain,
@@ -88,7 +87,8 @@
                 pics: [],
                 picsIndex: -1,
                 picsEl: null,
-                carouselEl: null,
+                viewerEl: null,
+                prevRevealEl: null,
                 picsSwipe: false,
                 picsSwipeSize: 0,
                 desktopSwipeScale: 2,
@@ -113,6 +113,7 @@
                 heartbeat: null,
                 swipeInterval: null,
                 prefixScroll: null,
+                prefixScale: null
             },
             throttled: {
                 load: null,
@@ -242,7 +243,7 @@
             },
             // can be optimized
             search() {
-                // return null
+                if (this.searchAction == 'abort') return this.main.socket.send(JSON.stringify({ type: 'abort' }))
                 if (!this.status.isdone) return alert(constant.constantString.alertString.search)
                 if (!this.main.socket.readyState == 3) return this.main.log = constant.constantString.flagString.socketDisconnect
                 this.reflow = [];
@@ -333,10 +334,6 @@
             onlyPush(n, extra, idx) {
                 this.dynamiclist.push({ n, ...extra, r: false })
                 this.reflow.splice(idx, 1)
-                return null
-            },
-            stop() {
-                this.main.socket.send(JSON.stringify({ type: 'abort' }))
                 return null
             },
             reset() {
@@ -443,7 +440,7 @@
                 return null
             },
             nextSwipePics() {
-                let el = this.preview.carouselEl
+                let el = this.preview.viewerEl
                 el.style.transitionDuration = `${constant.timer.swipeTransitionTimeout}ms`
                 if (!el.lock) {
                     el.lock = true
@@ -462,7 +459,7 @@
 
             },
             prevSwipePics() {
-                let el = this.preview.carouselEl
+                let el = this.preview.viewerEl
                 el.style.transitionDuration = `${constant.timer.swipeTransitionTimeout}ms`
                 if (!el.lock) {
                     el.lock = true
@@ -483,18 +480,19 @@
                 this.overlay.magnet = m?.length
                 return null
             },
-            async updateBookmark(_data, action) {
-                this.main.log = action
-                let config = constant.bookmark[action]
-                switch (action) {
+            async updateBookmark(_data, { target }) {
+                this.main.log = `${this.markAction}${constant.constantString.flagString.logFormat}${_data.n}`
+                let el = target.closest(constant.constantString.classString.revealBox).querySelector(constant.constantString.classString.revealEl)
+                let config = constant.bookmark[this.markAction]
+                switch (this.markAction) {
                     case 'insert':
                         this.main.socket.send(JSON.stringify({ type: 'INSERT', data: _data }))
                         break;
                     case 'remove':
-                        this.main.socket.send(JSON.stringify({ type: 'REMOVE', data: _data.n }))
+                        this.main.socket.send(JSON.stringify({ type: 'REMOVE', data: _data }))
                         break;
                 }
-                _data.active = false
+                el.__recoverReveal()
                 await this.sleep(config.delay)
                 this.flushBookMark()
                 return null
@@ -551,7 +549,7 @@
                                     this.main.log = message.data.m
                                     break;
                                 case 'CENSORED':
-                                    let inject = { ...message.data, i: message.data.i.map(pi => ({ pt: pi, loaded: false })), gs: false, vs: false, as: false, active: false }
+                                    let inject = { ...message.data, i: message.data.i.map(pi => ({ pt: pi, loaded: false })), gs: false, vs: false, as: false }
                                     this.dynamiclist.push(inject)
                                     this.reflow.length && this.reflow.find(({ value: { n } }, idx) => (message.data.n == n) ? this.reflow.splice(idx, 1) : null)
                                     break;
@@ -595,7 +593,7 @@
                 let conditions = [];
                 !(this.main.select == 'NONE' && this.main.factor) || (conditions.push('(i.n?.toLocaleLowerCase()?.includes(this.main.factor))'));
                 !(this.main.select == 'TIME' && (this.main.factor?.length == 4)) || (conditions.push('(i.d?.slice(0, 4) >= this.main.factor)'));
-                !this.status.single || conditions.push('(i.s?.length || -1) <= this.main.actors');
+                !this.status.single || conditions.push('(i.s?.length || -1) == this.main.actors');
                 !(this.main.mode == 'censored') || conditions.push('i');
                 !(this.main.mode == 'uncensored') || conditions.push('i.r');
                 return conditions.join(` && `)
@@ -635,7 +633,6 @@
             },
             thumbSucess({ target }) {
                 target.classList.add(constant.constantString.classString.loaded)
-
                 return null
             },
             //onloadstart 
@@ -644,6 +641,7 @@
             },
             listenTouches() {
                 window.addEventListener('touchstart', (e) => {
+                    //   console.log(  e.target.closest('.info-swipe-reveal'));
                     this.preview.touches = e.touches.length
                     e.touches.length >= 2 && e.preventDefault();
                 }, { passive: false });
@@ -679,7 +677,7 @@
                 }
                 return null
             },
-            inintObserver() {
+            initObserver() {
                 // 元素可视状态的变化都将执行IntersectionObserver回调
                 this.observer = new IntersectionObserver((entries, observer) => {
                     // console.log(`active:${entries.length}`);
@@ -812,11 +810,11 @@
                 bind(el, binding) {
                     let vm = binding.value
                     el.__stopScroll = () => {
-                        clearTimeout(vm.debounce.prefix)
+                        clearTimeout(vm.debounce.prefixScroll)
                         cancelAnimationFrame(vm.debounce.slide)
                     }
                     el.__autoScroll = ({ touches: [point] }) => {
-                        vm.debounce.prefix = setTimeout(() => {
+                        vm.debounce.prefixScroll = setTimeout(() => {
                             vm.offset = Math.floor(vm.$refs.box.scrollTop)
                             let up = point['clientX'] >= window.innerHeight >> 2
                             cancelAnimationFrame(vm.debounce.slide)
@@ -838,6 +836,28 @@
                     el.removeEventListener("touchmove", el.__stopScroll)
                     el.removeEventListener("touchend", el.__stopScroll)
                     el.removeEventListener("touchcancel", el.__stopScroll)
+                }
+            },
+            pressAutoScale: {
+                bind(el, binding) {
+                    let vm = binding.value
+                    el.__startScale = (e) => {
+                        e.stopPropagation();
+                        vm.debounce.prefixScale = setTimeout(() => {
+                            el.classList.add(constant.constantString.classString.thumbScale)
+                        }, constant.timer.scaleThumbTimeout);
+                    }
+                    el.__stopScale = () => {
+                        clearTimeout(vm.debounce.prefixScale)
+                        el.classList.remove(constant.constantString.classString.thumbScale)
+                    }
+                    el.addEventListener('touchstart', el.__startScale, { passive: true })
+                    el.addEventListener('touchend', el.__stopScale, { passive: true })
+                },
+                unbind(el) {
+                    el.removeEventListener("touchstart", el.__startScale)
+                    el.removeEventListener("touchend", el.__stopScale)
+                    el.removeEventListener("touchcancel", el.__stopScale)
                 }
             },
             swipeCarouselPics: {
@@ -869,11 +889,10 @@
                         el.slowSwipe = Math.abs(vm.preview.picsSwipeSize / 2)
                     }
                     // moblie
-                    vm.preview.carouselEl = el
+                    vm.preview.viewerEl = el
                     vm.$nextTick(el.initPicsSwipeSize)
                     window.addEventListener('resize', vm.debouncefn(el.initPicsSwipeSize, constant.timer.initSwipeDebounce))
                     el.threshold = constant.snippet.swipeThreshold
-                    el.swipeMode = 'fast'
                     el.__handleTouchStart = ({ touches: [point] }) => {
                         el.touchDeltaX = 0
                         el.touchStartX = 0
@@ -945,7 +964,6 @@
             swipeToReveal: {
                 bind(el, binding) {
                     let vm = binding.value;
-                    let data_ = binding.arg
                     // directive在渲染中绑定，需要等待渲染完成获取
                     vm.$nextTick(() => {
                         let { width, height } = el.getBoundingClientRect()
@@ -953,58 +971,66 @@
                         el.__revealY = height
                         el.__halfY = el.__revealY / 2
                     })
+                    el.isOpen = false
+                    el.opacityCurrent = ''
+                    el.__recoverReveal = function () {
+                        this.style.opacity = ''
+                        this.style.transform = `translate3d(0,0,0)`
+                        this.isOpen = false
+                    }
                     el.__handleTouchStart = ({ touches: [point] }) => {
-                        // Not updated due to changes
-                        vm.filterRule.forEach(i => i.active = false)
-                        // keep updateBookmark available
-                        data_.active = true
-                        el.touchDeltaX = 0
-                        el.touchStartX = 0
-                        el.touchDeltaY = 0
-                        el.touchStartY = 0
-                        el.touchCurrentX = 0
-                        el.revealing = false
-                        el.style.transitionDuration = '0s'
-                        el.touchStartX = point['clientX'];
-                        el.touchStartY = point['clientY'];
+                        if (vm.preview.touches == 1) {
+                            if (vm.preview.prevRevealEl == null) {
+                                vm.preview.prevRevealEl = el
+                            }
+                            if (vm.preview.prevRevealEl != el) {
+                                vm.preview.prevRevealEl.__recoverReveal()
+                                vm.preview.prevRevealEl = el
+                            }
+                            el.touchDeltaX = 0
+                            el.touchStartX = 0
+                            el.touchDeltaY = 0
+                            el.touchStartY = 0
+                            el.touchCurrentX = 0
+                            el.opacity = 0
+                            el.revealing = false
+                            el.style.transitionDuration = '0s'
+                            el.touchStartX = point['clientX'];
+                            el.touchStartY = point['clientY'];
+                        }
                     }
                     el.__handleTouchMove = (e) => {
-                        // e.preventDefault()
                         if (vm.preview.touches == 1) {
                             el.touchDeltaX = el.touchStartX - e.touches[0]['clientX'];
                             el.touchDeltaY = el.touchStartY - e.touches[0]['clientY'];
-                            el.slope = el.touchDeltaY / el.touchDeltaX
-                            // vm.main.log = el.slope
+                            !el.revealing && (el.slope = el.touchDeltaY / el.touchDeltaX)
                             if ((Math.abs(el.slope) <= constant.snippet.tiltFactor) || el.revealing) {
                                 e.preventDefault()
-                                vm.$refs.box.style.overflowY = "hidden"
+                                el.opacity = ((Math.abs(el.touchDeltaX) * constant.snippet.revealOpacityFactor) / el.__revealY)
                                 if (!el.isOpen && (Math.abs(el.touchDeltaX) <= el.__revealY) && (el.touchDeltaX > 0)) {
+                                    el.opacityCurrent = 1 - el.opacity
+                                    el.style.opacity = el.opacityCurrent
                                     el.style.transform = `translate3d(${-el.touchDeltaX}px,0,0)`
                                     el.revealing = true
                                 }
                                 // limit offset direction 
                                 if (el.isOpen && (el.__revealY >= Math.abs(el.touchDeltaX)) && (el.touchDeltaX < 0)) {
                                     // limit offset distance 
-                                    vm.main.error = 'back'
+                                    el.style.opacity = el.opacityCurrent + el.opacity
                                     el.style.transform = `translate3d(${-el.__revealY - el.touchDeltaX}px,0,0)`
                                     el.revealing = true
                                 }
                             }
-
                         }
                     }
                     el.__handleTouchEnd = () => {
-                        vm.$refs.box.style.overflowY = "scroll"
                         el.style.transitionDuration = `${constant.timer.revealTransitionTimeout}ms`;
                         if (!el.isOpen && (Math.abs(el.touchDeltaX) >= el.__halfY) && (el.touchDeltaX >= 0) && (Math.abs(el.slope) <= constant.snippet.tiltFactor)) {
-                            // if (!el.isOpen && (Math.abs(el.touchDeltaX) >= el.__halfY) && (el.touchDeltaX >= 0) && (Math.abs(el.touchDeltaY) <= el.thresholdY)) {
+                            el.style.opacity = constant.snippet.revealOpacityFactor
                             el.style.transform = `translate3d(${-el.__revealY}px,0,0)`
                             el.isOpen = true
-                            // el.openOffset = Number.parseInt(el.style.transform.match(/(\d+\.*\d*)/g)?.[0])
                         } else {
-                            // roll back
-                            el.style.transform = `translate3d(${el.touchCurrentX}px,0,0)`
-                            el.isOpen = false
+                            el.__recoverReveal()
                         }
                     }
                     el.addEventListener('touchstart', el.__handleTouchStart, { passive: true });
@@ -1134,6 +1160,13 @@
                     },
                 })
                 document.body.append(style)
+            },
+            markAction() {
+                return this.manual.bookmark ? 'remove' : 'insert'
+            },
+            searchAction() {
+                return this.status.isdone ? 'search' : 'abort'
+
             }
         },
         // hook fn dont block init 阻塞钩子函数执行，并不会阻塞vue 实例渲染
@@ -1150,7 +1183,7 @@
             let data = JSON.parse(localStorage.getItem(`${v || ''}${constant.constantString.flagString._data}`) ?? '{}')
             this.initVueOption(this.$data, data, constant.defaultStroageMeger)
             // init observer
-            this.inintObserver()
+            this.initObserver()
             // init websocket
             await this.connect();
             // await this.chatConnect();
@@ -1169,7 +1202,6 @@
             // init rem
             this.initDeviceMeta()
             this.listenResize()
-
             // init theme
             this.initTheme()
             // load scroll position
@@ -1201,4 +1233,5 @@
             }, constant.timer.updateHookDebounce);
         },
     })
+    vm.$mount('#box')
 })()

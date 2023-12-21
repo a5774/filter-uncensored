@@ -68,8 +68,10 @@
     "constantString": {
         "classString": {
             "swipe": "swipe-zoomed-enter",
-            "observer": "loaded",
-            "loaded": "loaded"
+            "loaded": "loaded",
+            "revealEl": ".info-swipe-reveal",
+            "revealBox": ".info-contains",
+            "thumbScale":"thumb-zoomed-transform"
         },
         "flagString": {
             "endFlag": "-end",
@@ -121,10 +123,10 @@
         "views": 2,
         "proxy": 4,
         "endFlag": 5,
-        "tiltFactor":0.5,
-        "swipeThreshold":25,
-        "smallScreenWidth":360
-    
+        "tiltFactor": 0.5,
+        "swipeThreshold": 25,
+        "smallScreenWidth": 360,
+        "revealOpacityFactor":0.5
     },
     "timer": {
         "viewsLoadDealy": 3000,
@@ -143,7 +145,8 @@
         "revealTransitionTimeout": 200,
         "openSwipeTimeout": 300,
         "closeSwipeTimeout": 100,
-        "initSwipeDebounce": 100
+        "initSwipeDebounce": 100,
+        "scaleThumbTimeout":200
     },
     "constantNumber": {
         "passProxy": 3
@@ -176,7 +179,8 @@
         "preview": {
             "pics": [],
             "picsEl": null,
-            "carouselEl": null,
+            "viewerEl": null,
+            "prevRevealEl": null,
             "picsSwipe": false,
             "picsIndex": -1,
             "picsSwipeSize": 0,
