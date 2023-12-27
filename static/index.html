@@ -177,6 +177,7 @@
                 <label for="javdb">javdb</label><input id="javdb" type="checkbox" v-model="manual.javdb">
             </span>
             <span class="status-control">
+                <label for="codes">codes</label><input id="codes" type="checkbox" v-model="status.codes">
                 <label for="page">page</label><input id="page" class="input-text-control" :disabled="!sconf"
                     style="width: 1.2rem;" type="text" v-model.number="main.page">
                 <label for="actors">actors</label><input id="actors" class="input-text-control" style="width: 1.2rem;"
@@ -423,7 +424,7 @@
                     <div class="info-item">
                         <transition name="fade" mode="out-in">
                             <p v-if="item.gs" @click.self="item.gs=!item.gs" class="info-genre">
-                                <a class="info info-gs" v-for="(g,idx) in item.g" @touchstart.slef="jumpTag(g,'genre')"
+                                <a class="info info-gs" v-for="(g,idx) in item.g" @touchstart.slef="jumpTag(g,item.df)"
                                     @touchend.self="cancelJump" :key="idx">{{((demoDebug.enable && demoDebug.genre) || g
                                     ) |
                                     extract(taglistCurrent)}}</a>
@@ -432,14 +433,14 @@
 
                         <transition name="fade" mode="out-in">
                             <p v-if="item.vs" @click.self="item.vs=!item.vs" class="info-vendor">
-                                <a class="info info-vs" v-for="(b,idx) in item.b" @touchstart.slef="jumpTag(b.href)"
+                                <a class="info info-vs" v-for="(b,idx) in item.b" @touchstart.slef="jumpTag(b.href,item.df)"
                                     @touchend.self="cancelJump" :key="idx">{{(demoDebug.enable && demoDebug.vendor) ||
                                     b.text}}</a>
                             </p>
                         </transition>
                         <transition name="fade" mode="out-in">
                             <p v-if="item.as" @click.self="item.as=!item.as" class="info-actor">
-                                <a class="info info-as" v-for="(s,idx) in item.s" @touchstart.slef="jumpTag(s.href)"
+                                <a class="info info-as" v-for="(s,idx) in item.s" @touchstart.slef="jumpTag(s.href,item.df)"
                                     @touchend.self="cancelJump" :key="idx">{{(demoDebug.enable && demoDebug.actor) ||
                                     s.text}}</a>
                             </p>    
@@ -467,7 +468,7 @@
 
                             <a class="info" v-if="item.s.length == 1"
                                 :href="(demoDebug.enable && demoDebug.previewOrigin) || item.s[0].href" target="_blank"
-                                @touchstart.self="jumpTag(item.s[0].href)"
+                                @touchstart.self="jumpTag(item.s[0].href,item.df)"
                                 @touchend.self="cancelJump">{{(demoDebug.enable &&
                                 demoDebug.single) || item.s[0].text}}</a>
                             <a v-else class="info">null</a>

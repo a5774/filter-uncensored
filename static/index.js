@@ -88,6 +88,7 @@
                 makers: false,
                 publishers: false,
                 series: false,
+                codes:false,
                 deny: false,
             },
             preview: {
@@ -258,7 +259,7 @@
                 this.status.isdone = false;
                 this.overlay.history = false;
                 this.description = (this.status.star && 'star') || (this.status.genre && 'genre') || (this.status.studio && 'studio') || (this.status.label && 'label') || (this.status.actors && 'actors') || (this.status.tags && 'tags') || (this.status.directors && 'directors') || (this.status.directors && 'directors') || (this.status.makers && 'makers') || (this.status.publishers && 'publishers') || (this.status.series && 'series') || 'standard'
-                let template = { type: 'SEARCH', star: this.status.star, genre: this.status.genre, director: this.status.director, studio: this.status.studio, label: this.status.label, actors: this.status.actors, tags: this.status.tags, directors: this.status.directors, makers: this.status.makers, publishers: this.status.publishers, series: this.status.series, deny: this.status.deny, javdb: this.manual.javdb, dbsorts: { dbsort: this.main.dbsort, dbsortsb: this.main.dbsortsb, dbsortvst: this.main.dbsortvst } };
+                let template = { type: 'SEARCH', star: this.status.star, genre: this.status.genre, director: this.status.director, studio: this.status.studio, label: this.status.label, actors: this.status.actors, tags: this.status.tags, directors: this.status.directors, makers: this.status.makers, publishers: this.status.publishers, series: this.status.series, codes:this.status.codes, deny: this.status.deny, javdb: this.manual.javdb, dbsorts: { dbsort: this.main.dbsort, dbsortsb: this.main.dbsortsb, dbsortvst: this.main.dbsortvst } };
                 if (this.main.keyWord.includes(constant.constantString.flagString.searchSplit)) {
                     let [keyWord, range] = this.main.keyWord.split(constant.constantString.flagString.searchSplit);
                     range = range.split(constant.constantString.flagString.searchPageSplit);
@@ -368,12 +369,12 @@
             jumpLocation(v, f, m) {
                 return location.href = `${origin}?v=${v}&f=${f}&m=${m}`
             },
-            jumpTag(v) {
+            jumpTag(v,m) {
                 this.throttled.press = setTimeout(() => {
                     v = new URL(v);
                     let paths = v.pathname.split('/');
                     v.search && (paths[2] = v.search.match(/([^?]+)$/)[0])
-                    this.jumpLocation(paths[2], paths[1], this.filterRule[0]['df'])
+                    this.jumpLocation(paths[2], paths[1], m)
                 }, constant.timer.jumpTagTimeout)
             },
 
@@ -1226,8 +1227,6 @@
             if (v) {
                 this.main.keyWord = v
                 this.status[f] = true;
-
-
                 this.manual[m] = true;
                 // relation websockert 
                 !(this.dynamiclist.length) ? this.search() : null

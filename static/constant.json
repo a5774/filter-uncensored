@@ -186,6 +186,7 @@
             "makers":false,
             "publishers":false,
             "series":false,
+            "codes":false, 
             "deny": false
         },
         "preview": {

@@ -5,11 +5,11 @@ const { WebSocketServer } = require('ws');
 // const server = new ws.Server({ server: httpServer})
 const ws_main = new WebSocketServer(wsOption)
 const bookmarkers = {
-    db: new BookMarker('db', DBBOOKMARKPATH),
-    bus: new BookMarker('bus', BUSBOOKMARKPATH)
+    javdb: new BookMarker('db', DBBOOKMARKPATH),
+    javbus: new BookMarker('bus', BUSBOOKMARKPATH)
 }
-bookmarkers.bus.init()
-bookmarkers.db.init()
+bookmarkers.javbus.init()
+bookmarkers.javdb.init()
 // let ws = fs.createWriteStream('./index_full.html')
 let abort = false
 // 函数作用域在定义时被确定在不改变this指向下,全局函数无法访问局部变量
@@ -166,7 +166,7 @@ async function javbus_(domain, 关键词, 区间, 演员, 类别, 导演, 制作
 
 
 
-async function javdb_(domain, 关键词, 区间, 演员, 类别, 导演, 制作商, 发行商, 系列, dbsorts, socket, df) {
+async function javdb_(domain, 关键词, 区间, 演员, 类别, 导演, 制作商, 发行商, 系列, 番号集, dbsorts, socket, df) {
     abort = false
     let 搜索 = '';
     let 任务队列 = [];
@@ -202,8 +202,8 @@ async function javdb_(domain, 关键词, 区间, 演员, 类别, 导演, 制作�
             制作商 && `${domain}/makers/${关键词}?lm=v&page=${页面计数}` ||
             发行商 && `${domain}/publishers/${关键词}?lm=v&page=${页面计数}` ||
             系列 && `${domain}/series/${关键词}?lm=v&page=${页面计数}` ||
+            番号集 && `${domain}/video_codes/${关键词}?lm=v&page=${页面计数}&sort_type=${dbsorts.dbsortsb}` ||
             关键词 && `${domain}/search?q=${关键词}&lm=v&page=${页面计数}&sb=${dbsorts.dbsortsb}`;
-        // console.log(搜索);
         let $ = cheerio.load((await ax.get(搜索)).data);
         let 牛马们 = $('.movie-list .item .video-title strong').map((idx, el) => {
             return $(el).text().trim()
@@ -345,14 +345,13 @@ ws_main.addListener('connection', (socket, req) => {
         let message = JSON.parse(data)
         switch (message.type) {
             case 'PONG':
-                // console.log(message.data)
                 socket.isAlive = true
                 break;
             case 'SEARCH':
-                let { keyWord, range, star, genre, director, studio, label, deny, javdb, actors, tags, directors, makers, publishers, series, dbsorts } = message
+                let { keyWord, range, star, genre, director, studio, label, deny, javdb, actors, tags, directors, makers, publishers, series, codes, dbsorts } = message
                 console.log(message);
                 if (javdb) {
-                    javdb_(domain_db, keyWord, range, actors, tags, directors, makers, publishers, series, dbsorts, socket, 'javdb')
+                    javdb_(domain_db, keyWord, range, actors, tags, directors, makers, publishers, series, codes, dbsorts, socket, 'javdb')
                 } else {
                     javbus_(domain_bus, keyWord, range, star, genre, director, studio, label, deny, socket, 'javbus')
                 }
