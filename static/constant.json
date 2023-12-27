@@ -10,8 +10,8 @@
         }
     },
     "domain": {
-        "originDomain": "https://www.javbus.com",
-        "thirdDomain": "https://www4.javhdporn.net/video"
+        "domain_bus": "https://www.javbus.com",
+        "domain_db": "https://www.javdb.com"
     },
     "dataOptionsNomarl": {
         "fragment": {
@@ -21,11 +21,14 @@
         "main": {
             "log": "null",
             "select": "NONE",
-            "mode": "censored",
+            "review": "censored",
             "state": "CLOSE",
             "slideRate": 3,
             "reconnectTimeout": 100,
-            "actors": 1
+            "actors": 1,
+            "dbsort": 0,
+            "dbsortsb": 0,
+            "dbsortvst": 1
         },
         "chat": {
             "state": "CLOSE"
@@ -47,8 +50,10 @@
         "proxies": "/proxies",
         "updateProxy": "/updateProxy",
         "views": "/views/",
-        "bookmark": "/bookmark",
-        "tag": "/tagTable"
+        "busBookmark": "/bus-bookmark",
+        "dbBookmark": "/db-bookmark",
+        "busTag": "/bus-tag-table",
+        "dbTag":"/db-tag-table"
     },
     "demoDebug": {
         "enable": false,
@@ -71,7 +76,7 @@
             "loaded": "loaded",
             "revealEl": ".info-swipe-reveal",
             "revealBox": ".info-contains",
-            "thumbScale":"thumb-zoomed-transform"
+            "thumbScale": "thumb-zoomed-transform"
         },
         "flagString": {
             "endFlag": "-end",
@@ -126,7 +131,8 @@
         "tiltFactor": 0.5,
         "swipeThreshold": 25,
         "smallScreenWidth": 360,
-        "revealOpacityFactor":0.5
+        "revealOpacityFactor": 0.5,
+        "emptyViews": -1
     },
     "timer": {
         "viewsLoadDealy": 3000,
@@ -135,7 +141,7 @@
         "connectDetect": 300,
         "visibilityNavBar": 3000,
         "updateHookDebounce": 500,
-        "observerDebounce": 200,
+        "observerDebounce": 500,
         "heartbeatDetectCycle": 20000,
         "errorMessageTimeout": 5000,
         "jumpTagTimeout": 300,
@@ -146,7 +152,7 @@
         "openSwipeTimeout": 300,
         "closeSwipeTimeout": 100,
         "initSwipeDebounce": 100,
-        "scaleThumbTimeout":200
+        "scaleThumbTimeout": 200
     },
     "constantNumber": {
         "passProxy": 3
@@ -169,12 +175,18 @@
             "vthumb": true,
             "autoview": false,
             "single": false,
-            "stars": false,
+            "star": false,
             "genre": false,
+            "director": false,
             "studio": false,
             "label": false,
-            "deny": false,
-            "director": false
+            "actors": false,
+            "tags":false,
+            "directors":false,
+            "makers":false,
+            "publishers":false,
+            "series":false,
+            "deny": false
         },
         "preview": {
             "pics": [],
@@ -185,7 +197,7 @@
             "picsIndex": -1,
             "picsSwipeSize": 0,
             "desktopSwipeScale": 2,
-            "picsFailed": "/failed.jpg",
+            "picsFailed": "/debug.jpg",
             "touches": 0
         },
         "deviceMeta": {

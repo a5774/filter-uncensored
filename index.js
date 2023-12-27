@@ -1,7 +1,7 @@
 const fs = require('fs')
 const path = require('path')
 const static = require('koa-static')
-const { STATE, auth_, ROUTERDIR, router, app, STATICDIR, noCahce, bookmarker, fileCacheTimeout } = require('./config')
+const { STATE, auth_, ROUTERDIR, router, app, STATICDIR, noCahce, fileCacheTimeout } = require('./config')
 const secure = {
     tracker: {},
     lockTime: 1000 * 60,
@@ -51,12 +51,11 @@ function localRouter(router_p) {
     let routers = fs.readdirSync(router_p)
     routers.forEach(r => require(path.resolve(__dirname, `${router_p}/${r}`)))
 }
-bookmarker.init()
 localRouter(ROUTERDIR)
 // app.use(detectFrequently)
 // app.use(authVerify)
 app.use(crossOrigin)
-app.use(static(STATICDIR, { setHeaders: (res, path, stats) => !noCahce.some(n => path.includes(n)) ? res.setHeader('Cache-Control', `max-age=${fileCacheTimeout}`) : null, extensions: ['js', 'json', 'html'] }))
+app.use(static(STATICDIR, { setHeaders: (res, path, stats) => !noCahce.some(n => path.includes(n)) && res.setHeader('Cache-Control', `max-age=${fileCacheTimeout}`), extensions: ['js', 'json', 'html'] }))
 app.use(router.routes())
 app.use(router.allowedMethods())
 module.exports = {

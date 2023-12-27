@@ -12,7 +12,8 @@ const CLASHYAMLPATH = '/etc/clash/config.yaml'
 const PROXIESPATH = '/etc/clash/proxies'
 const ef_sub = 'https://v1.eflink.xyz/api/v1/client/subscribe?token=df03297a313071d85bc15eda2da19af4'
 const auth_ = 'cm9vdDozMjI2MDQ0MjE3'
-const BOOKMARKPATH = path.resolve(__dirname, './static/bookmark.json')
+const BUSBOOKMARKPATH = path.resolve(__dirname, './static/bus-bookmark.json')
+const DBBOOKMARKPATH = path.resolve(__dirname, './static/db-bookmark.json')
 const RECYLEPATH = path.resolve(__dirname, './static/.recyle')
 const ROUTERDIR = path.resolve(__dirname, './router/')
 const STATICDIR = path.resolve(__dirname, './static/')
@@ -41,7 +42,7 @@ const ax = new Axios({
         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36",
         "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
         "accept-language": "zh-CN,zh;q=0.9,sq;q=0.8,zh-TW;q=0.7",
-        "Connection":"keep-alive",
+        "Connection": "keep-alive",
         "cache-control": "no-cache",
         "pragma": "no-cache",
         "sec-ch-ua": "\"Chromium\";v=\"112\", \"Google Chrome\";v=\"112\", \"Not:A-Brand\";v=\"99\"",
@@ -54,36 +55,47 @@ const ax = new Axios({
         "Referrer-Policy": "strict-origin-when-cross-origin"
     }
 });
-const bookmarker = {
-    timer: 0,
-    __timeout: 500,
-    __bookmark: [],
-    __dump() {
-        clearTimeout(this.timer)
-        this.timer = setTimeout(() => {
-            fs.createWriteStream(BOOKMARKPATH).write(JSON.stringify(this.__bookmark))
-        }, this.__timeout);
-    },
-    insert(v) {
-        if (!this.__bookmark.some(i => i.n == v.n)) {
-            this.__bookmark.push(v)
-            this.__dump()
-        }
-    },
-    remove(v) {
-        let idx = this.__bookmark.findIndex(i => i.n == v.n)
-        if (idx != -1) {
-            fs.promises.writeFile(RECYLEPATH, `${this.__bookmark[idx]['n']}\n`, { flag: 'a+' })
-            this.__bookmark.splice(idx, 1)
-            this.__dump()
-        }
-    },
-    async init() {
-        this.__bookmark = JSON.parse((await fs.promises.readFile(BOOKMARKPATH)))
-    }
-};
-const sleep = async (t) => new Promise(r => setTimeout(() => r(t), t))
 
+
+class BookMarker {
+    #path = ''
+    #timer = 0
+    #timeout = 0
+    #bookmark = []
+    constructor(name, path, timeout) {
+        this.name = name
+        this.#path = path
+        this.#timeout = timeout || 500
+    }
+    async init() {
+        this.#bookmark = JSON.parse(await fs.promises.readFile(this.#path))
+    }
+    dump() {
+        clearTimeout(this.#timer)
+        this.#timer = setTimeout(() => {
+            fs.createWriteStream(this.#path).write(JSON.stringify(this.#bookmark))
+        }, this.#timeout);
+    }
+    remove(v) {
+        let idx = this.#bookmark.findIndex(i => i.n == v.n)
+        if (idx != -1) {
+            fs.promises.writeFile(RECYLEPATH, `${this.#bookmark[idx]['n']}\n`, { flag: 'a+' })
+            this.#bookmark.splice(idx, 1)
+            this.dump()
+        }
+    }
+    insert(v) {
+        if (!this.#bookmark.some(i => i.n == v.n)) {
+            this.#bookmark.push(v)
+            this.dump()
+        }
+    }
+
+}
+function temp (){
+    console.log(aa);
+}
+const sleep = async (t) => new Promise(r => setTimeout(() => r(t), t))
 module.exports = {
     domain_bus,
     domain_db,
@@ -94,12 +106,12 @@ module.exports = {
     PROXIESPATH,
     CLASHYAMLPATH,
     ROUTERDIR,
-    BOOKMARKPATH,
+    BUSBOOKMARKPATH,
+    DBBOOKMARKPATH,
     RECYLEPATH,
     STATICDIR,
     STATE,
     ax,
-    bookmarker,
     app,
     router,
     denyGenre,
@@ -108,5 +120,6 @@ module.exports = {
     noCahce,
     proxy,
     sslOption,
-    sleep
+    sleep,
+    BookMarker
 }

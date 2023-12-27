@@ -1,7 +1,7 @@
 // import constant from '/constant.json' assert { type: 'json' };
 (async () => {
     let { protocol, host, search, origin } = location
-    let { v, f } = Object.fromEntries(new URLSearchParams(search))
+    let { v, f, m } = Object.fromEntries(new URLSearchParams(search))
     function sorted(attr, convert, flip = false) {
         let callback = (x, y) => flip ? convert(x[attr]) - convert(y[attr]) : convert(y[attr]) - convert(x[attr])
         let { sort, slice, toSorted } = Array.prototype
@@ -17,9 +17,8 @@
     let constant = await fetch("/constant").then(resp => resp.json())
     let vm = new Vue({
         data: {
-            originDomain: constant.domain.originDomain,
-            thirdDomain: constant.domain.thirdDomain,
-            instruction: null,
+            domain_bus: constant.domain.domain_bus,
+            domain_db: constant.domain.domain_db,
             overlay: {
                 pics: false,
                 error: false,
@@ -54,12 +53,15 @@
                 actors: constant.dataOptionsNomarl.main.actors,
                 log: constant.dataOptionsNomarl.main.log,
                 select: constant.dataOptionsNomarl.main.select,
-                mode: constant.dataOptionsNomarl.main.mode,
+                review: constant.dataOptionsNomarl.main.review,
                 state: constant.dataOptionsNomarl.main.state,
                 error: '',
                 factor: '',
                 serial: '',
                 keyWord: '',
+                dbsort: constant.dataOptionsNomarl.main.dbsort,
+                dbsortsb: constant.dataOptionsNomarl.main.dbsortsb,
+                dbsortvst: constant.dataOptionsNomarl.main.dbsortvst,
                 heartbeat: null,
                 slideRate: constant.dataOptionsNomarl.main.slideRate,
                 socket: null,
@@ -67,21 +69,26 @@
                 reconnectTimeout: constant.dataOptionsNomarl.main.reconnectTimeout
             },
             manual: {
-                bookmark: false,
-                origin: true
+                javdb: false,
+                bookmark: false
             },
             status: {
                 isdone: true,
                 vthumb: true,
                 autoview: false,
                 single: false,
-                stars: false,
+                star: false,
                 genre: false,
+                director: false,
                 studio: false,
                 label: false,
-                director: false,
+                actors: false,
+                tags: false,
+                directors: false,
+                makers: false,
+                publishers: false,
+                series: false,
                 deny: false,
-                onunc: false,
             },
             preview: {
                 pics: [],
@@ -92,13 +99,18 @@
                 picsSwipe: false,
                 picsSwipeSize: 0,
                 desktopSwipeScale: 2,
-                picsFailed: constant.domain.picsFailed,
+                picsFailed: '/debug.jpg',
                 touches: 0,
             },
             magnet: [],
             reflow: [],
-            bookmark: [],
-            taglist: {},
+            resource: {
+                instruction: [],
+                dbbookmark: [],
+                busbookmark: [],
+                busTaglist: {},
+                dbTaglist: {},
+            },
             dynamiclist: [],
             history: [],
             sconf: null,
@@ -144,7 +156,6 @@
             proxies: [],
             theme: 'normal',
             description: 'standard'
-
         },
         methods: {
             async selectProxy(idx) {
@@ -165,16 +176,12 @@
             },
             flushHistory() {
                 this.overlay.history = this.history.length
-                /*  this.$nextTick(() => {
-                     let { main, history, } = this.$refs
-                     history.style.height = `${main.getBoundingClientRect().height}px`
-                 }) */
                 this.history = Object.keys(localStorage).filter(h => h != constant.constantString.flagString._data);
                 return null
             },
             loadHistory(key) {
                 let data_ = JSON.parse(localStorage.getItem(key))
-                this.jumpLocation(data_['sconf']['keyWord'], data_['description'])
+                this.jumpLocation(data_['sconf']['keyWord'], data_['description'], data_["dynamiclist"]?.[0]?.['df'])
                 return null
             },
             autoScroll({ touches: [point] }) {
@@ -217,8 +224,8 @@
 
             },
             toggleItem(index) {
-                this.instruction[index].expand = !this.instruction[index].expand;
-                this.instruction.forEach((it, ix) => {
+                this.resource.instruction[index].expand = !this.resource.instruction[index].expand;
+                this.resource.instruction.forEach((it, ix) => {
                     if (!(ix == index)) {
                         it.expand = false
                     }
@@ -243,15 +250,15 @@
             },
             // can be optimized
             search() {
-                if (this.searchAction == 'abort') return this.main.socket.send(JSON.stringify({ type: 'abort' }))
+                if (this.searchAction == 'abort') return this.main.socket.send(JSON.stringify({ type: 'ABORT' }))
                 if (!this.status.isdone) return alert(constant.constantString.alertString.search)
                 if (!this.main.socket.readyState == 3) return this.main.log = constant.constantString.flagString.socketDisconnect
                 this.reflow = [];
                 this.dynamiclist = [];
                 this.status.isdone = false;
                 this.overlay.history = false;
-                this.description = (this.status.stars && 'star') || (this.status.genre && 'genre') || (this.status.studio && 'studio') || (this.status.label && 'label') || (this.status.director && 'director') || 'standard'
-                let template = { type: 'search', stars: this.status.stars, genre: this.status.genre, onsunc: this.status.onsunc, director: this.status.director, studio: this.status.studio, label: this.status.label, deny: this.status.deny };
+                this.description = (this.status.star && 'star') || (this.status.genre && 'genre') || (this.status.studio && 'studio') || (this.status.label && 'label') || (this.status.actors && 'actors') || (this.status.tags && 'tags') || (this.status.directors && 'directors') || (this.status.directors && 'directors') || (this.status.makers && 'makers') || (this.status.publishers && 'publishers') || (this.status.series && 'series') || 'standard'
+                let template = { type: 'SEARCH', star: this.status.star, genre: this.status.genre, director: this.status.director, studio: this.status.studio, label: this.status.label, actors: this.status.actors, tags: this.status.tags, directors: this.status.directors, makers: this.status.makers, publishers: this.status.publishers, series: this.status.series, deny: this.status.deny, javdb: this.manual.javdb, dbsorts: { dbsort: this.main.dbsort, dbsortsb: this.main.dbsortsb, dbsortvst: this.main.dbsortvst } };
                 if (this.main.keyWord.includes(constant.constantString.flagString.searchSplit)) {
                     let [keyWord, range] = this.main.keyWord.split(constant.constantString.flagString.searchSplit);
                     range = range.split(constant.constantString.flagString.searchPageSplit);
@@ -300,7 +307,7 @@
                     fragment[i].forEach(async (it, ix) => {
                         queueView.push(
                             (async () => {
-                                if (!it?.['v'] || it.v == -1) {
+                                if (!it['v'] || it.v == -1) {
                                     let view = (await fetch(`${constant.resourceRouter.views}${it.n}`).then(resp => resp.text()))
                                     this.main.log = `${it.n}${constant.constantString.flagString.logFormat}${view}`
                                     vm.$set(it, 'v', parseInt(view))
@@ -319,12 +326,12 @@
             },
             reflowBack(n, idx) {
                 this.status.isdone = false
-                this.main.socket.send(JSON.stringify({ type: 'search', keyWord: n, range: [1] }))
+                this.main.socket.send(JSON.stringify({ type: 'SEARCH', keyWord: n, javdb:this.manual.javdb, range: [1] }))
                 return null
             },
             reflowList() {
                 this.reflow.forEach(({ value: { n } }) => {
-                    this.main.socket.send(JSON.stringify({ type: 'search', keyWord: n, range: [1] }))
+                    this.main.socket.send(JSON.stringify({ type: 'SEARCH', keyWord:  n,  javdb:this.manual.javdb, range: [1] }))
                 })
                 return null
             },
@@ -357,15 +364,19 @@
                 document.body.removeChild(dl)
                 return null
             },
-            jumpLocation(v, f) {
-                return location.href = `${origin}?v=${v}&f=${f.includes('star') ? `${f}s` : f}`
+
+            jumpLocation(v, f, m) {
+                return location.href = `${origin}?v=${v}&f=${f}&m=${m}`
             },
             jumpTag(v) {
                 this.throttled.press = setTimeout(() => {
-                    let paths = new URL(v).pathname.split('/');
-                    this.jumpLocation(paths[2], paths[1])
+                    v = new URL(v);
+                    let paths = v.pathname.split('/');
+                    v.search && (paths[2] = v.search.match(/([^?]+)$/)[0])
+                    this.jumpLocation(paths[2], paths[1], this.filterRule[0]['df'])
                 }, constant.timer.jumpTagTimeout)
             },
+
             cancelJump() {
                 return clearTimeout(this.throttled.press)
             },
@@ -477,19 +488,20 @@
             },
             expandMagnet(m) {
                 this.magnet = m
-                this.overlay.magnet = m?.length
+                this.overlay.magnet = m.length
                 return null
             },
             async updateBookmark(_data, { target }) {
                 this.main.log = `${this.markAction}${constant.constantString.flagString.logFormat}${_data.n}`
                 let el = target.closest(constant.constantString.classString.revealBox).querySelector(constant.constantString.classString.revealEl)
                 let config = constant.bookmark[this.markAction]
+                let df = _data.df
                 switch (this.markAction) {
                     case 'insert':
-                        this.main.socket.send(JSON.stringify({ type: 'INSERT', data: _data }))
+                        this.main.socket.send(JSON.stringify({ type: 'INSERT', data: _data, df }))
                         break;
                     case 'remove':
-                        this.main.socket.send(JSON.stringify({ type: 'REMOVE', data: _data }))
+                        this.main.socket.send(JSON.stringify({ type: 'REMOVE', data: _data, df }))
                         break;
                 }
                 el.__recoverReveal()
@@ -500,7 +512,8 @@
 
             async flushBookMark(lock) {
                 lock && (this.status.isdone = !lock)
-                this.bookmark = await fetch(constant.resourceRouter.bookmark).then(resp => resp.json())
+                this.resource.dbbookmark = await fetch(constant.resourceRouter.dbBookmark).then(resp => resp.json())
+                this.resource.busbookmark = await fetch(constant.resourceRouter.busBookmark).then(resp => resp.json())
                 return null
             },
             visibNav() {
@@ -521,9 +534,9 @@
                         this.main.socket.addEventListener('message', async ({ data }) => {
                             let message = JSON.parse(data)
                             switch (message.type) {
-                                case 'ping':
+                                case 'PING':
                                     let data = Date.now() - parseInt(message.data)
-                                    this.main.socket.send(JSON.stringify({ type: 'pong', data }))
+                                    this.main.socket.send(JSON.stringify({ type: 'PONG', data }))
                                     this.main.heartbeat = data
                                     clearInterval(this.debounce.heartbeat)
                                     this.debounce.heartbeat = setInterval(() => {
@@ -539,7 +552,7 @@
                                     this.status.isdone = true
                                     if (this.sconf?.keyWord) {
                                         // save history 
-                                        localStorage.setItem(`${this.sconf?.keyWord}${constant.constantString.flagString._data}`, JSON.stringify({ ...vm._data, taglist: null, instruction: null, constant: null, bookmark: null }))
+                                        localStorage.setItem(`${this.sconf?.keyWord}${constant.constantString.flagString._data}`, JSON.stringify({ ...vm._data, resource: { busTaglist: null, dbTaglist: null, busbookmark: null, dbbookmark: null, instruction: null, bookmark: null } }))
                                     }
                                     break;
                                 case 'ERROR':
@@ -594,8 +607,8 @@
                 !(this.main.select == 'NONE' && this.main.factor) || (conditions.push('(i.n?.toLocaleLowerCase()?.includes(this.main.factor))'));
                 !(this.main.select == 'TIME' && (this.main.factor?.length == 4)) || (conditions.push('(i.d?.slice(0, 4) >= this.main.factor)'));
                 !this.status.single || conditions.push('(i.s?.length || -1) == this.main.actors');
-                !(this.main.mode == 'censored') || conditions.push('i');
-                !(this.main.mode == 'uncensored') || conditions.push('i.r');
+                !(this.main.review == 'censored') || conditions.push('i');
+                !(this.main.review == 'uncensored') || conditions.push('i?.r');
                 return conditions.join(` && `)
             },
             connectDetect() {
@@ -686,11 +699,12 @@
                         // console.log(target, isIntersecting);
                         if (isIntersecting) {
                             !(target.src == target.dataset.src) && target.setAttribute('src', target.dataset.src)
-                            if (this.status.autoview && !this.filterRule[target.dataset.i]['v']) {
+                            if (this.status.autoview && (this.filterRule[target.dataset.i]['v'] == -1)) {
                                 this.main.log = target.dataset.n
                                 const view = await fetch(`${constant.resourceRouter.views}${target.dataset.n}`).then(resp => resp.text());
                                 vm.$set(this.filterRule[target.dataset.i], 'v', parseInt(view))
                             }
+                            !target.classList.contains(constant.constantString.classString.loaded) && target.classList.add(constant.constantString.classString.loaded)
                             observer.unobserve(target)
                         } else target.classList.contains(constant.constantString.classString.loaded) && target.classList.remove(constant.constantString.classString.loaded)
 
@@ -777,8 +791,8 @@
                 return v?.length || -1
             },
             extract(v, o) {
-                v = (v.match(/\/(\w+)$/)?.[1]) ?? v
-                return o ? o?.[v] ?? v : v
+                v = (v && /\?/.test(v)) ? v.match(/([^?]+)$/)[0] : v.match(/([^/]+)$/)[0]
+                return o ? (o?.[v] ?? v) : v
             },
             getProgress(v) {
                 return v?.filter(({ loaded }) => (loaded == true))?.length ?? 0
@@ -791,8 +805,10 @@
             },
             lastSuffix(v, len) {
                 return (v >= len - constant.snippet.endFlag) && `${v}${constant.constantString.flagString.endFlag}` || v
-
-            }
+            },
+            previewAddress(v, d) {
+                return v.f || `${d}/${v.n}`
+            },
         },
         directives: {
             // v-for > v-bind 
@@ -1045,15 +1061,15 @@
             }
         },
         watch: {
-            //push > computed > watch（可阻塞模板渲染）> list render(dom)
+            //push > computed > watch> list render(dom)
             filterRule: {
-                async handler(v) {
-                    console.log('watch');
+                handler(v) {
                     // console.log(this.$refs.monitor.length);//n
                     // dom渲染完成之后，新的事件循环之前(因涉及到dom操作，在list render之前无法获取dom，所以在nextTick中执行上一次watch的回调时的数据(此时dom已经渲染完成可被获取)
-                    // v?.forEach(s => s.tl && (s.tl=!s.tl))
                     clearTimeout(this.debounce.observer)
+                    // 数据加载+异步执行回调 导致节流超时,较大延迟节流可保证push完成后observer,但会存在图片不被加载
                     this.debounce.observer = setTimeout(async () => {
+                        // console.log('watch');
                         await this.$nextTick(() => {
                             // console.log(this.$refs.monitor?.length);//n+1
                             this.$refs.monitor?.forEach(this.observer.observe.bind(this.observer))
@@ -1064,18 +1080,28 @@
             },
             "main.factor": {
                 handler(v) {
-                    return this.main.factor = v?.length >= 4 ? this.main.factor.slice(0, 4) : v
+                    return this.main.factor = v.length >= 4 ? this.main.factor.slice(0, 4) : v
                 },
                 deep: false
             },
-            "status.stars": {
-                handler(ic) {
-                    ic ? this.status.genre = !ic : null
+            "status.star": {
+                handler(v) {
+                    v && (this.status.genre = !v)
                 }
             },
             "status.genre": {
-                handler(ic) {
-                    ic ? this.status.stars = !ic : null
+                handler(v) {
+                    v && (this.status.star = !v)
+                }
+            },
+            "status.actors": {
+                handler(v) {
+                    v && (this.status.tags = !v)
+                }
+            },
+            "status.tags": {
+                handler(v) {
+                    v && (this.status.actors = !v)
                 }
             },
             "preview.picsIndex": {
@@ -1123,9 +1149,9 @@
                 let cb = Function(`return i=>${this.filterCallback()}`).call(this)
                 if (this.manual.bookmark) {
                     this.$nextTick(this.scrollToTop)
-                    return this.bookmark?.filter(cb) ?? []
+                    return this.bookmarkCurrent?.filter(cb) ?? []
                 }
-                let reverse = this.main.factor?.includes(constant.constantString.flagString.atniSortFlag) ?? false
+                let reverse = this.main.factor.includes(constant.constantString.flagString.atniSortFlag) ?? false
                 switch (this.main.select) {
                     case "NONE":
                         return this.dynamiclist.filter(cb)
@@ -1166,7 +1192,15 @@
             },
             searchAction() {
                 return this.status.isdone ? 'search' : 'abort'
-
+            },
+            taglistCurrent() {
+                return this.manual.javdb ? this.resource.dbTaglist : this.resource.busTaglist
+            },
+            bookmarkCurrent() {
+                return this.manual.javdb ? this.resource.dbbookmark : this.resource.busbookmark
+            },
+            modelAttr() {
+                return this.manual.javdb ? ['actors', 'tags'] : ['star', 'genre']
             }
         },
         // hook fn dont block init 阻塞钩子函数执行，并不会阻塞vue 实例渲染
@@ -1192,6 +1226,9 @@
             if (v) {
                 this.main.keyWord = v
                 this.status[f] = true;
+
+
+                this.manual[m] = true;
                 // relation websockert 
                 !(this.dynamiclist.length) ? this.search() : null
             }
@@ -1208,8 +1245,9 @@
             this.scrollToTop()
             // init resource
             this.proxies = this.snippetArray((await fetch(constant.resourceRouter.proxies).then(resp => resp.json())).slice(constant.constantNumber.passProxy), constant.snippet.proxy)
-            this.taglist = await fetch(constant.resourceRouter.tag).then(resp => resp.json())
-            this.instruction = await fetch(constant.resourceRouter.instruction).then(resp => resp.json())
+            this.resource.busTaglist = await fetch(constant.resourceRouter.busTag).then(resp => resp.json())
+            this.resource.dbTaglist = await fetch(constant.resourceRouter.dbTag).then(resp => resp.json())
+            this.resource.instruction = await fetch(constant.resourceRouter.instruction).then(resp => resp.json())
             this.history = Object.keys(localStorage).filter(h => h != constant.constantString.flagString._data);
             new IntersectionObserver((entries, observer) => {
                 entries.forEach(async entry => {
@@ -1228,7 +1266,7 @@
                 if (this.main.socket) {
                     console.log('updated');
                     // save current 解决 v 存档被覆盖
-                    localStorage.setItem(`${(v && (v == this.sconf.keyWord) && v) || ''}${constant.constantString.flagString._data}`, JSON.stringify({ ...vm._data, taglist: null, instruction: null, bookmark: null }))
+                    localStorage.setItem(`${(v && (v == this.sconf.keyWord) && v) || ''}${constant.constantString.flagString._data}`, JSON.stringify({ ...vm._data, resource: { busTaglist: null, dbTaglist: null, busbookmark: null, dbbookmark: null, instruction: null, bookmark: null } }))
                 }
             }, constant.timer.updateHookDebounce);
         },

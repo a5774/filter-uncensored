@@ -7,9 +7,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>scraper</title>
     <script src="/vue.js"></script>
-    <script src="/debugger.js"></script>
+    <!-- <script src="/debugger.js"></script> -->
     <link rel="stylesheet" href="/index.css">
-    <link rel="stylesheet" href="/index.chat.css">
+    <!-- <link rel="stylesheet" href="/index.chat.css"> -->
     <!-- <link rel="stylesheet" href="/photoswipe.css"> -->
     <!-- <script type="module" src="/photoswipe.esm.min.js"></script> -->
     <!-- <script type="module" src="/photoswipe-lightbox.esm.min.js"></script> -->
@@ -25,7 +25,7 @@
         @scroll.passive="loadMorePage">
         {{switchTheme}}
         <div v-if="!filterRule.length" class="instruction-box">
-            <li v-for="({title,details,expand},idx) in instruction" @click="toggleItem(idx)"
+            <li v-for="({title,details,expand},idx) in resource.instruction" @click="toggleItem(idx)"
                 class="instruction-title-box" :key="idx">
                 <span :style="expand && {'border-bottom':'1px solid #07faca'}">{{title}}</span>
                 <div class="instruction-details-box">
@@ -174,17 +174,39 @@
                 <label for="isDone">isDone</label><input id="isDone" type="checkbox" v-model="status.isdone">
                 <label for="vthumb">vthumb</label><input id="vthumb" type="checkbox" v-model="status.vthumb">
                 <label for="single">single</label><input id="single" type="checkbox" v-model="status.single">
-                <label for="origin">origin</label><input id="origin" type="checkbox" v-model="manual.origin">
+                <label for="javdb">javdb</label><input id="javdb" type="checkbox" v-model="manual.javdb">
             </span>
             <span class="status-control">
-                <label for="onunc">onunc</label><input id="onunc" type="checkbox" v-model="status.onunc">
                 <label for="page">page</label><input id="page" class="input-text-control" :disabled="!sconf"
                     style="width: 1.2rem;" type="text" v-model.number="main.page">
                 <label for="actors">actors</label><input id="actors" class="input-text-control" style="width: 1.2rem;"
                     type="text" v-model.number="main.actors">
-                <!-- <label for="bookmark">bookmark</label><input id="bookmark" type="checkbox" v-model="manual.bookmark"> -->
                 <label for="slideRate">slideRate</label><input id="slideRate" class="input-text-control"
                     style="width: 1.2rem;" type="text" v-model.number="main.slideRate">
+            </span>
+            <span v-if="manual.javdb" class="status-control caption-control">dbsort</span>
+            <span v-if="manual.javdb" class="status-control">
+                <label for="sort-date">date</label> <input type="radio" name="dbsort" id="sort-date" value="0"
+                    v-model="main.dbsort">
+                <label for="sort-score">score</label> <input type="radio" name="dbsort" id="sort-score" value="1"
+                    v-model="main.dbsort">
+                <label for="sort-heat">heat</label> <input type="radio" name="dbsort" id="sort-heat" value="2"
+                    v-model="main.dbsort">
+                <label for="sort-watch">watch</label> <input type="radio" name="dbsort" id="sort-watch" value="3"
+                    v-model="main.dbsort">
+                <label for="sort-want">want</label> <input type="radio" name="dbsort" id="sort-want" value="4"
+                    v-model="main.dbsort">
+            </span>
+            <span v-if="manual.javdb" class="status-control caption-control">sb/vst</span>
+            <span v-if="manual.javdb" class="status-control">
+                <label for="sort-related-keyword">related</label> <input type="radio" name="dbsortsb"
+                    id="sort-related-keyword" value="0" v-model="main.dbsortsb">
+                <label for="sort-release-date-sb">relsbd</label> <input type="radio" name="dbsortsb"
+                    id="sort-release-date-sb" value="1" v-model="main.dbsortsb">
+                <label for="sort-release-date-vst">relvstd</label> <input type="radio" name="dbsortvst"
+                    id="sort-release-date-vst" value="1" v-model="main.dbsortvst">
+                <label for="sort-magnet-update">magnet</label> <input type="radio" name="dbsortvst"
+                    id="sort-magnet-update" value="2" v-model="main.dbsortvst">
             </span>
             <p class="caption-control">OTHER</p>
             <span class="status-control">
@@ -209,12 +231,6 @@
                 <button @click="overlay.proxies=!overlay.proxies">toggleProxy</button>
                 <button @click="updateProxy">updateProxy</button>
             </span>
-            <!--     <div :class="(overlay.proxies && overlay.reflow && overlay.dashboard ) && 'proxies-container-transform'" class="proxies-container">
-                <li class="proxy-switch" v-if="idx >= 3" v-for="(p,idx) in proxies" :key="idx">
-                    <span v-if="p.selected" class="proxy-selected"></span>
-                    <button @click="!p.selected && selectProxy(idx)">{{p.name}}</button>
-                </li>
-            </div> -->
         </div>
 
 
@@ -269,8 +285,10 @@
             </ul>
         </transition>
 
-        <div :class="{'over-lay-genre-transform':status.genre && !main.keyWord}" class="over-lay-genre">
-            <li class="genre-key" v-for="(v,k,i) in taglist" @click="searchGenre(k)" :key="i">{{ (demoDebug.enable &&
+        <div :class="{'over-lay-genre-transform': (status.genre || status.tags) && !main.keyWord}"
+            class="over-lay-genre">
+            <li class="genre-key" v-for="(v,k,i) in taglistCurrent" @click="searchGenre(k)" :key="i">{{
+                (demoDebug.enable &&
                 demoDebug.genre) || v}}</li>
         </div>
 
@@ -338,8 +356,8 @@
                 <input type="text" @keydown.enter="search" @dblclick.stop="main.keyWord= ''" @focus="flushHistory"
                     @blur.self="overlay.history= ''" placeholder="keyWord" v-model=main.keyWord>
                 <button @click="search">{{searchAction}}</button>
-                <label for="stars">stars</label><input id="stars" type="checkbox" v-model="status.stars">
-                <label for="genre">genre</label><input id="genre" type="checkbox" v-model="status.genre">
+                <label for="star">star</label><input id="star" type="checkbox" v-model="status[modelAttr[0]]">
+                <label for="genre">genre</label><input id="genre" type="checkbox" v-model="status[modelAttr[1]]">
                 <button @click="home">home</button>
                 <transition name="fade" mode="out-in">
                     <p v-if="overlay.history" class="search-history" @mousedown.prevent>
@@ -353,9 +371,9 @@
 
             <div class="mode-switch">
                 <label for="mode-uncensored">uncensored</label> <input id="mode-uncensored" type="radio" name="mode"
-                    value="uncensored" v-model=main.mode>
+                    value="uncensored" v-model=main.review>
                 <label for="mode-censored">censored</label> <input id="mode-censored" type="radio" name="mode"
-                    value="censored" v-model=main.mode>
+                    value="censored" v-model=main.review>
             </div>
 
 
@@ -397,7 +415,7 @@
                 <div class="info-swipe-reveal" v-swipe-to-reveal:[item]="$root">
                     <div class="thumb-item">
                         <!-- v-lazy-load-oberver -->
-                        <img @click="zoomPics(item)" @load="thumbSucess($event)" @contextmenu.prevent
+                        <img @click="zoomPics(item)" @load="thumbSucess($event)" @contextmenu.prevents
                             class="thumb lazy-loaded" v-press-auto-scale="$root" ref="monitor"
                             :data-src="((!status.vthumb || demoDebug.enable) && preview.picsFailed) || item.p"
                             :data-i="index" :data-n="item.n">
@@ -405,12 +423,13 @@
                     <div class="info-item">
                         <transition name="fade" mode="out-in">
                             <p v-if="item.gs" @click.self="item.gs=!item.gs" class="info-genre">
-                                <a class="info info-gs" v-for="(g,idx) in item.g" @touchstart.slef="jumpTag(g)"
+                                <a class="info info-gs" v-for="(g,idx) in item.g" @touchstart.slef="jumpTag(g,'genre')"
                                     @touchend.self="cancelJump" :key="idx">{{((demoDebug.enable && demoDebug.genre) || g
                                     ) |
-                                    extract(taglist)}}</a>
+                                    extract(taglistCurrent)}}</a>
                             </p>
                         </transition>
+
                         <transition name="fade" mode="out-in">
                             <p v-if="item.vs" @click.self="item.vs=!item.vs" class="info-vendor">
                                 <a class="info info-vs" v-for="(b,idx) in item.b" @touchstart.slef="jumpTag(b.href)"
@@ -420,18 +439,18 @@
                         </transition>
                         <transition name="fade" mode="out-in">
                             <p v-if="item.as" @click.self="item.as=!item.as" class="info-actor">
-                                <a class="info info-as" v-for="(s,idx) in item.s" @touchstart.slef="jumpTag(s)"
+                                <a class="info info-as" v-for="(s,idx) in item.s" @touchstart.slef="jumpTag(s.href)"
                                     @touchend.self="cancelJump" :key="idx">{{(demoDebug.enable && demoDebug.actor) ||
-                                    s | extract}}</a>
-                            </p>
+                                    s.text}}</a>
+                            </p>    
                         </transition>
                         <p class="info-base">
                             <a class="info" target="_blank" @click.self="item.gs=!item.gs">{{(demoDebug.enable &&
                                 demoDebug.name)
                                 || item.n}}</a>
                             <a class="info" target="_blank">{{item.d}}</a>
-                            <button class="info load-view" @click="loadView(item)" target="_blank">{{item.v ||
-                                'LOADING'}}</button>
+                            <button class="info load-view" @click="loadView(item)" target="_blank">{{ item.v == -1 ?
+                                'LOADING' : item.v }}</button>
                         </p>
 
                         <p class="info-product">
@@ -441,16 +460,22 @@
                         </p>
                         <p class="info-detail">
                             <a class="info" @contextmenu.prevent
-                                :href="(demoDebug.enable && demoDebug.actorOrigin) || `${manual.origin?originDomain:thirdDomain}/${item.n}/`"
+                                :href="(demoDebug.enable && demoDebug.actorOrigin) || item | previewAddress(domain_bus)"
                                 target="_blank">PREVIEW</a>
                             <a class="info" target="_blank">ACTORC:{{item.s | actorTotal}}</a>
-                            <a class="info" v-if="item.s?.length == 1"
-                                :href="(demoDebug.enable && demoDebug.previewOrigin) || item.s[0]" target="_blank"
-                                @touchstart.self="jumpTag(item.s[0])" @touchend.self="cancelJump">{{(demoDebug.enable &&
-                                demoDebug.single) || item.s[0] | extract}}</a>
+
+
+                            <a class="info" v-if="item.s.length == 1"
+                                :href="(demoDebug.enable && demoDebug.previewOrigin) || item.s[0].href" target="_blank"
+                                @touchstart.self="jumpTag(item.s[0].href)"
+                                @touchend.self="cancelJump">{{(demoDebug.enable &&
+                                demoDebug.single) || item.s[0].text}}</a>
                             <a v-else class="info">null</a>
+
+
                             <a class="info info-progress" style="font-weight: bold;">{{ item.i | getProgress}}/{{
                                 item.i?.length || -1}}</a>
+
                             <a class="info info-index" style="font-weight: bold;">{{index |
                                 lastSuffix(filterRule?.length)}}</a>
                         </p>
@@ -458,8 +483,7 @@
                 </div>
                 <div class="swipe-reveal-action">
                     <div class="reveal-bookmark-action">
-                        <button class="bookmark-action-btn"
-                            @click="updateBookmark(item,$event)">
+                        <button class="bookmark-action-btn" @click="updateBookmark(item,$event)">
                             <svg v-if="manual.bookmark" class="bookmark-action-svg" viewBox="0 0 1024 1024"
                                 version="1.1" xmlns="http://www.w3.org/2000/svg">
                                 <path
