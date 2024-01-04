@@ -6,7 +6,7 @@ const { Axios } = require('axios')
 const viewCacheTimeout = 1000 * 60 * 60
 const fileCacheTimeout = 24 * 60 * 60
 const domain_bus = 'https://www.javbus.com'
-const domain_db = 'https://www.javdb.com'
+const domain_db = 'https://javdb.com'
 const viewDomain = 'https://www4.javhdporn.net'
 const CLASHYAMLPATH = '/etc/clash/config.yaml'
 const PROXIESPATH = '/etc/clash/proxies'
@@ -17,9 +17,10 @@ const DBBOOKMARKPATH = path.resolve(__dirname, './static/db-bookmark.json')
 const RECYLEPATH = path.resolve(__dirname, './static/.recyle')
 const ROUTERDIR = path.resolve(__dirname, './router/')
 const STATICDIR = path.resolve(__dirname, './static/')
+const ws = fs.createWriteStream('./index_full.html');
 const sslOption = {
-    // key: fs.readFileSync(path.resolve(__dirname,'./SSL/knockdoor.top.key'), { encoding: 'utf-8' }),
-    // cert: fs.readFileSync(path.resolve(__dirname,'./SSL/knockdoor.top.pem'), { encoding: 'utf-8' })
+    key: fs.readFileSync(path.resolve(__dirname, './SSL/knockdoor.top.key'), { encoding: 'utf-8' }),
+    cert: fs.readFileSync(path.resolve(__dirname, './SSL/knockdoor.top.pem'), { encoding: 'utf-8' })
 }
 const STATE = {
     BLOCKED: '你个傻逼被屏蔽了,重复请求将刷新屏蔽时间',
@@ -52,11 +53,9 @@ const ax = new Axios({
         "sec-fetch-mode": "navigate",
         "sec-fetch-site": "same-origin",
         "sec-fetch-user": "?1",
-        "Referrer-Policy": "strict-origin-when-cross-origin"
+        "Referrer-Policy": "strict-origin-when-cross-origin",
     }
 });
-
-
 class BookMarker {
     #path = ''
     #timer = 0
@@ -92,7 +91,7 @@ class BookMarker {
     }
 
 }
-function temp (){
+function temp() {
     console.log(aa);
 }
 const sleep = async (t) => new Promise(r => setTimeout(() => r(t), t))
@@ -121,5 +120,6 @@ module.exports = {
     proxy,
     sslOption,
     sleep,
-    BookMarker
+    BookMarker,
+    ws
 }

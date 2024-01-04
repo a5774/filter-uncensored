@@ -171,7 +171,7 @@
             </span>
             <p class="caption-control">STATUS</p>
             <span class="status-control">
-                <label for="isDone">isDone</label><input id="isDone" type="checkbox" v-model="status.isdone">
+                <label for="isdone">isdone</label><input id="isdone" type="checkbox" v-model="status.isdone">
                 <label for="vthumb">vthumb</label><input id="vthumb" type="checkbox" v-model="status.vthumb">
                 <label for="single">single</label><input id="single" type="checkbox" v-model="status.single">
                 <label for="javdb">javdb</label><input id="javdb" type="checkbox" v-model="manual.javdb">
@@ -182,8 +182,8 @@
                     style="width: 1.2rem;" type="text" v-model.number="main.page">
                 <label for="actors">actors</label><input id="actors" class="input-text-control" style="width: 1.2rem;"
                     type="text" v-model.number="main.actors">
-                <label for="slideRate">slideRate</label><input id="slideRate" class="input-text-control"
-                    style="width: 1.2rem;" type="text" v-model.number="main.slideRate">
+                <label for="sliderate">sliderate</label><input id="sliderate" class="input-text-control"
+                    style="width: 1.2rem;" type="text" v-model.number="main.sliderate">
             </span>
             <span v-if="manual.javdb" class="status-control caption-control">dbsort</span>
             <span v-if="manual.javdb" class="status-control">
@@ -211,10 +211,9 @@
             </span>
             <p class="caption-control">OTHER</p>
             <span class="status-control">
-                <label for="reconnectTime">reconnectTime</label><input id="reconnectTime" class="input-text-control"
-                    style="width: 2.5rem;" type="text" v-model="main.reconnectTimeout">
-                <label for="needReconnect">needReconnect</label><input id="needReconnect" type="checkbox"
-                    v-model="main.needReconnect">
+                <label for="reconintval">reconintval</label><input id="reconintval" class="input-text-control"
+                    style="width: 2.5rem;" type="text" v-model="main.reconintval">
+                <label for="reconn">reconn</label><input id="reconn" type="checkbox" v-model="main.reconn">
             </span>
             <span class="status-control">
                 <label for="heartbeat">heartbeat</label><span id="heartbeat">{{main.heartbeat}}</span>
@@ -225,12 +224,12 @@
                 <button @click="overlay.serial=!overlay.serial">import</button>
                 <button @click="export_">export</button>
                 <button @click="connect">connect</button>
-                <button @click="main.socket.close()">disconnect</button>
+                <button @click="main.socket.close()">disconn</button>
             </span>
             <span class="status-control">
                 <button @click="reset">reset</button>
-                <button @click="overlay.proxies=!overlay.proxies">toggleProxy</button>
-                <button @click="updateProxy">updateProxy</button>
+                <button @click="overlay.proxies=!overlay.proxies">proires</button>
+                <button @click="updateProxy">updproxy</button>
             </span>
         </div>
 
@@ -255,7 +254,7 @@
                 @click.self="overlay.reflow=!overlay.reflow">
                 <div class="reflow-action">
                     <button class="" @click="reflowList">reflow</button>
-                    <button class="" @click="clearList">remove</button>
+                    <button class="" @click="reflowClear">remove</button>
                     <label for="dashboard">dashboard</label><input id="dashboard" type="checkbox"
                         v-model="overlay.dashboard">
                     <label for="demoDebug">demoDebug</label><input id="demoDebug" type="checkbox"
@@ -355,7 +354,7 @@
             <div class="info-search">
                 <!-- mousedown 触发焦点 -->
                 <input type="text" @keydown.enter="search" @dblclick.stop="main.keyWord= ''" @focus="flushHistory"
-                    @blur.self="overlay.history= ''" placeholder="keyWord" v-model=main.keyWord>
+                    @blur.self="overlay.history=false" placeholder="keyWord" v-model=main.keyWord>
                 <button @click="search">{{searchAction}}</button>
                 <label for="star">star</label><input id="star" type="checkbox" v-model="status[modelAttr[0]]">
                 <label for="genre">genre</label><input id="genre" type="checkbox" v-model="status[modelAttr[1]]">
@@ -370,16 +369,15 @@
                 </transition>
             </div>
 
-            <div class="mode-switch">
-                <label for="mode-uncensored">uncensored</label> <input id="mode-uncensored" type="radio" name="mode"
-                    value="uncensored" v-model=main.review>
-                <label for="mode-censored">censored</label> <input id="mode-censored" type="radio" name="mode"
+            <div class="review-switch">
+                <label for="review-revelation">revelation</label> <input id="review-revelation" type="radio"
+                    name="review" value="revelation" v-model=main.review>
+                <label for="review-uncensored">uncensored</label> <input id="review-uncensored" type="radio"
+                    name="review" value="uncensored" v-model=main.review>
+                <label for="review-censored">censored</label> <input id="review-censored" type="radio" name="review"
                     value="censored" v-model=main.review>
             </div>
-
-
-
-            <h2 ref="log" class="fixed-log">
+            <h2 class="sticky-log">
                 <span> current:{{this.main.log}}</span>
                 <span v-if="status.isdone" class="reflow"> reflow:{{reflow.length}}
                 </span>
@@ -387,16 +385,6 @@
                     {{main.error}}
                 </p>
             </h2>
-
-            <h2 v-if="overlay.isfloat" class="float-log">
-                <span> current:{{this.main.log}}</span>
-                <span v-if="status.isdone" class="reflow"> reflow:{{reflow.length}}</span>
-                <p v-if="overlay.error" class="error-full-log">
-                    {{main.error}}
-                </p>
-            </h2>
-
-
             <p class="info-total">total:{{filterRule.length}}</p>
             <div class="info-filter">
                 <select class="select-filter" v-model="main.select">
@@ -409,103 +397,106 @@
                 <label for="autoView">autoView</label>
                 <input id="autoView" type="checkbox" v-model=status.autoview>
             </div>
+
+            <ul class="info-content" v-press-auto-scroll="this">
+                <li v-for="(item,index) in filterRule" class="info-contains" :key="index">
+                    <div class="info-swipe-reveal" v-swipe-to-reveal:[item]="$root">
+                        <div class="thumb-item">
+                            <!-- v-lazy-load-oberver -->
+                            <img @click="zoomPics(item)" @load="thumbSucess($event)" @contextmenu.prevent
+                                class="thumb lazy-loaded" v-press-auto-scale="$root" ref="monitor"
+                                :data-src="((!status.vthumb || demoDebug.enable) && preview.picsFailed) || item.p"
+                                :data-i="index" :data-n="item.n">
+                        </div>
+                        <div class="info-item">
+                            <transition name="fade" mode="out-in">
+                                <p v-if="item.gs" @click.self="item.gs=!item.gs" class="info-genre">
+                                    <a class="info info-gs" v-for="(g,idx) in item.g"
+                                        @touchstart.slef="jumpTag(g,item.df)" @touchend.self="cancelJump"
+                                        :key="idx">{{((demoDebug.enable && demoDebug.genre) || g
+                                        ) |
+                                        extract(taglistCurrent)}}</a>
+                                </p>
+                            </transition>
+
+                            <transition name="fade" mode="out-in">
+                                <p v-if="item.vs" @click.self="item.vs=!item.vs" class="info-vendor">
+                                    <a class="info info-vs" v-for="(b,idx) in item.b"
+                                        @touchstart.slef="jumpTag(b.href,item.df)" @touchend.self="cancelJump"
+                                        :key="idx">{{(demoDebug.enable && demoDebug.vendor) ||
+                                        b.text}}</a>
+                                </p>
+                            </transition>
+                            <transition name="fade" mode="out-in">
+                                <p v-if="item.as" @click.self="item.as=!item.as" class="info-actor">
+                                    <a class="info info-as" v-for="(s,idx) in item.s"
+                                        @touchstart.slef="jumpTag(s.href,item.df)" @touchend.self="cancelJump"
+                                        :key="idx">{{(demoDebug.enable && demoDebug.actor) ||
+                                        s.text}}</a>
+                                </p>
+                            </transition>
+                            <p class="info-base">
+                                <a class="info" target="_blank" @click.self="item.gs=!item.gs">{{(demoDebug.enable &&
+                                    demoDebug.name)
+                                    || item.n}}</a>
+                                <a class="info" target="_blank">{{item.d}}</a>
+                                <button class="info load-view" @click="loadView(item)" target="_blank">{{ item.v == -1 ?
+                                    'LOADING' : item.v }}</button>
+                            </p>
+
+                            <p class="info-product">
+                                <a class="info" target="_blank" @click.self="expandMagnet(item.m)">MAGNET</a>
+                                <a class="info" target="_blank" @click.self="item.vs=!item.vs">VENDOR</a>
+                                <a class="info" target="_blank" @click.self="item.as=!item.as">ACTORS</a>
+                            </p>
+                            <p class="info-detail">
+                                <a class="info" @contextmenu.prevent
+                                    :href="(demoDebug.enable && demoDebug.actorOrigin) || item.f"
+                                    target="_blank">PREVIEW</a>
+                                <a class="info" target="_blank">ACTORC:{{item.s | actorTotal}}</a>
+
+
+                                <a class="info actor" v-if="item.s.length == 1"
+                                    :href="(demoDebug.enable && demoDebug.previewOrigin) || item.s[0].href"
+                                    target="_blank" @touchstart.self="jumpTag(item.s[0].href,item.df)"
+                                    @touchend.self="cancelJump">{{(demoDebug.enable &&
+                                    demoDebug.single) || item.s[0].text}}</a>
+                                <a v-else class="info">null</a>
+
+
+                                <a class="info info-progress" style="font-weight: bold;">{{ item.i | getProgress}}/{{
+                                    item.i?.length || -1}}</a>
+
+                                <a class="info info-index" style="font-weight: bold;">{{index |
+                                    lastSuffix(filterRule?.length)}}</a>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="swipe-reveal-action">
+                        <div class="reveal-bookmark-action">
+                            <button class="bookmark-action-btn" @click="updateBookmark(item,$event)">
+                                <svg v-if="manual.bookmark" class="bookmark-action-svg" viewBox="0 0 1024 1024"
+                                    version="1.1" xmlns="http://www.w3.org/2000/svg">
+                                    <path
+                                        d="M840 288H688v-56c0-40-32-72-72-72h-208C368 160 336 192 336 232V288h-152c-12.8 0-24 11.2-24 24s11.2 24 24 24h656c12.8 0 24-11.2 24-24s-11.2-24-24-24zM384 288v-56c0-12.8 11.2-24 24-24h208c12.8 0 24 11.2 24 24V288H384zM758.4 384c-12.8 0-24 11.2-24 24v363.2c0 24-19.2 44.8-44.8 44.8H332.8c-24 0-44.8-19.2-44.8-44.8V408c0-12.8-11.2-24-24-24s-24 11.2-24 24v363.2c0 51.2 41.6 92.8 92.8 92.8h358.4c51.2 0 92.8-41.6 92.8-92.8V408c-1.6-12.8-12.8-24-25.6-24z"
+                                        fill="#000"></path>
+                                    <path
+                                        d="M444.8 744v-336c0-12.8-11.2-24-24-24s-24 11.2-24 24v336c0 12.8 11.2 24 24 24s24-11.2 24-24zM627.2 744v-336c0-12.8-11.2-24-24-24s-24 11.2-24 24v336c0 12.8 11.2 24 24 24s24-11.2 24-24z"
+                                        fill="#000"></path>
+                                </svg>
+                                <svg v-else class="bookmark-action-svg" viewBox="0 0 1024 1024" version="1.1"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path
+                                        d="M744.8 128H279.2c-21.3 0-38.7 17.4-38.7 38.7v690.5c0 13.7 7 26.1 18.8 33.2 11.7 7.1 26 7.5 38.1 1L512 777.7l214.6 113.7c5.7 3 11.9 4.6 18.1 4.6 6.9 0 13.8-1.9 19.9-5.6 11.7-7.1 18.7-19.5 18.7-33.2V166.7c0.2-21.3-17.2-38.7-38.5-38.7z m-12 709.5L530.1 730c-11.3-6-24.9-6-36.2 0L291.2 837.5V178.6h441.7v658.9z"
+                                        fill="#231815" p-id="3964"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <!-- <div class="reveal-remove"></div> -->
+                    </div>
+                </li>
+            </ul>
         </div>
-        <!-- <ul class="info-content" @touchstart="autoScroll($event)" @touchmove="stopScroll" @touchend="stopScroll"> -->
-        <ul class="info-content" v-press-auto-scroll="this">
-            <li v-for="(item,index) in filterRule" class="info-contains" :key="index">
-                <div class="info-swipe-reveal" v-swipe-to-reveal:[item]="$root">
-                    <div class="thumb-item">
-                        <!-- v-lazy-load-oberver -->
-                        <img @click="zoomPics(item)" @load="thumbSucess($event)" @contextmenu.prevents
-                            class="thumb lazy-loaded" v-press-auto-scale="$root" ref="monitor"
-                            :data-src="((!status.vthumb || demoDebug.enable) && preview.picsFailed) || item.p"
-                            :data-i="index" :data-n="item.n">
-                    </div>
-                    <div class="info-item">
-                        <transition name="fade" mode="out-in">
-                            <p v-if="item.gs" @click.self="item.gs=!item.gs" class="info-genre">
-                                <a class="info info-gs" v-for="(g,idx) in item.g" @touchstart.slef="jumpTag(g,item.df)"
-                                    @touchend.self="cancelJump" :key="idx">{{((demoDebug.enable && demoDebug.genre) || g
-                                    ) |
-                                    extract(taglistCurrent)}}</a>
-                            </p>
-                        </transition>
-
-                        <transition name="fade" mode="out-in">
-                            <p v-if="item.vs" @click.self="item.vs=!item.vs" class="info-vendor">
-                                <a class="info info-vs" v-for="(b,idx) in item.b" @touchstart.slef="jumpTag(b.href,item.df)"
-                                    @touchend.self="cancelJump" :key="idx">{{(demoDebug.enable && demoDebug.vendor) ||
-                                    b.text}}</a>
-                            </p>
-                        </transition>
-                        <transition name="fade" mode="out-in">
-                            <p v-if="item.as" @click.self="item.as=!item.as" class="info-actor">
-                                <a class="info info-as" v-for="(s,idx) in item.s" @touchstart.slef="jumpTag(s.href,item.df)"
-                                    @touchend.self="cancelJump" :key="idx">{{(demoDebug.enable && demoDebug.actor) ||
-                                    s.text}}</a>
-                            </p>    
-                        </transition>
-                        <p class="info-base">
-                            <a class="info" target="_blank" @click.self="item.gs=!item.gs">{{(demoDebug.enable &&
-                                demoDebug.name)
-                                || item.n}}</a>
-                            <a class="info" target="_blank">{{item.d}}</a>
-                            <button class="info load-view" @click="loadView(item)" target="_blank">{{ item.v == -1 ?
-                                'LOADING' : item.v }}</button>
-                        </p>
-
-                        <p class="info-product">
-                            <a class="info" target="_blank" @click.self="expandMagnet(item.m)">MAGNET</a>
-                            <a class="info" target="_blank" @click.self="item.vs=!item.vs">VENDOR</a>
-                            <a class="info" target="_blank" @click.self="item.as=!item.as">ACTORS</a>
-                        </p>
-                        <p class="info-detail">
-                            <a class="info" @contextmenu.prevent
-                                :href="(demoDebug.enable && demoDebug.actorOrigin) || item | previewAddress(domain_bus)"
-                                target="_blank">PREVIEW</a>
-                            <a class="info" target="_blank">ACTORC:{{item.s | actorTotal}}</a>
-
-
-                            <a class="info" v-if="item.s.length == 1"
-                                :href="(demoDebug.enable && demoDebug.previewOrigin) || item.s[0].href" target="_blank"
-                                @touchstart.self="jumpTag(item.s[0].href,item.df)"
-                                @touchend.self="cancelJump">{{(demoDebug.enable &&
-                                demoDebug.single) || item.s[0].text}}</a>
-                            <a v-else class="info">null</a>
-
-
-                            <a class="info info-progress" style="font-weight: bold;">{{ item.i | getProgress}}/{{
-                                item.i?.length || -1}}</a>
-
-                            <a class="info info-index" style="font-weight: bold;">{{index |
-                                lastSuffix(filterRule?.length)}}</a>
-                        </p>
-                    </div>
-                </div>
-                <div class="swipe-reveal-action">
-                    <div class="reveal-bookmark-action">
-                        <button class="bookmark-action-btn" @click="updateBookmark(item,$event)">
-                            <svg v-if="manual.bookmark" class="bookmark-action-svg" viewBox="0 0 1024 1024"
-                                version="1.1" xmlns="http://www.w3.org/2000/svg">
-                                <path
-                                    d="M840 288H688v-56c0-40-32-72-72-72h-208C368 160 336 192 336 232V288h-152c-12.8 0-24 11.2-24 24s11.2 24 24 24h656c12.8 0 24-11.2 24-24s-11.2-24-24-24zM384 288v-56c0-12.8 11.2-24 24-24h208c12.8 0 24 11.2 24 24V288H384zM758.4 384c-12.8 0-24 11.2-24 24v363.2c0 24-19.2 44.8-44.8 44.8H332.8c-24 0-44.8-19.2-44.8-44.8V408c0-12.8-11.2-24-24-24s-24 11.2-24 24v363.2c0 51.2 41.6 92.8 92.8 92.8h358.4c51.2 0 92.8-41.6 92.8-92.8V408c-1.6-12.8-12.8-24-25.6-24z"
-                                    fill="#000"></path>
-                                <path
-                                    d="M444.8 744v-336c0-12.8-11.2-24-24-24s-24 11.2-24 24v336c0 12.8 11.2 24 24 24s24-11.2 24-24zM627.2 744v-336c0-12.8-11.2-24-24-24s-24 11.2-24 24v336c0 12.8 11.2 24 24 24s24-11.2 24-24z"
-                                    fill="#000"></path>
-                            </svg>
-                            <svg v-else class="bookmark-action-svg" viewBox="0 0 1024 1024" version="1.1"
-                                xmlns="http://www.w3.org/2000/svg">
-                                <path
-                                    d="M744.8 128H279.2c-21.3 0-38.7 17.4-38.7 38.7v690.5c0 13.7 7 26.1 18.8 33.2 11.7 7.1 26 7.5 38.1 1L512 777.7l214.6 113.7c5.7 3 11.9 4.6 18.1 4.6 6.9 0 13.8-1.9 19.9-5.6 11.7-7.1 18.7-19.5 18.7-33.2V166.7c0.2-21.3-17.2-38.7-38.5-38.7z m-12 709.5L530.1 730c-11.3-6-24.9-6-36.2 0L291.2 837.5V178.6h441.7v658.9z"
-                                    fill="#231815" p-id="3964"></path>
-                            </svg>
-                        </button>
-                    </div>
-                    <!-- <div class="reveal-remove"></div> -->
-                </div>
-            </li>
-        </ul>
         <div class="info-sidenav" :class="{'info-sidenav-transform':overlay.sidenav && !overlay.reflow}">
             <button @click="scrollToTop">TOP</button>
             <button @click="overlay.reflow=!overlay.reflow">MENU</button>

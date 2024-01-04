@@ -3,7 +3,7 @@ const { URL } = require('url');
 const cp = require('child_process');
 const { Buffer } = require('buffer');
 const serializeYML = require('js-yaml');
-const { router, PROXIESPATH, proxy, CLASHYAMLPATH,ax ,ef_sub} = require('../config')
+const { router,sleep,  PROXIESPATH, proxy, CLASHYAMLPATH,ax ,ef_sub} = require('../config')
 async function get_trojan() {
     return new Promise((reslove, rej) => {
         let base64_str_full = ''
