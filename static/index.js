@@ -235,39 +235,39 @@
                 return clearTimeout(this.throttled.press);
             },
             // can be optimized
-                search() {
-                    if (this.searchAction == 'abort') return this.abort()
-                    if (!this.status.isdone) return alert(constant.constantString.alertString.search)
-                    if (!this.main.socket.readyState == 3) return this.main.log = constant.constantString.flagString.socketDisconnect
-                    this.reflow = [];
-                    this.dynamiclist = [];
-                    this.status.isdone = false;
-                    this.overlay.history = false;
-                    this.archive = (this.manual.javdb && 'javdb') || (this.manual.javbus && 'javbus')
-                    this.description = (this.status.star && 'star') || (this.status.genre && 'genre') || (this.status.studio && 'studio') || (this.status.label && 'label') || (this.status.actors && 'actors') || (this.status.tags && 'tags') || (this.status.directors && 'directors') || (this.status.directors && 'directors') || (this.status.makers && 'makers') || (this.status.publishers && 'publishers') || (this.status.series && 'series') || 'standard'
-                    let template = { type: 'SEARCH', star: this.status.star, genre: this.status.genre, director: this.status.director, studio: this.status.studio, label: this.status.label, actors: this.status.actors, tags: this.status.tags, directors: this.status.directors, makers: this.status.makers, publishers: this.status.publishers, series: this.status.series, codes: this.status.codes, deny: this.status.deny, javdb: this.manual.javdb, dbsorts: { dbsort: this.main.dbsort, dbsortsb: this.main.dbsortsb, dbsortvst: this.main.dbsortvst } };
-                    if (this.main.keyWord.includes(constant.constantString.flagString.searchSplit)) {
-                        let [keyWord, range] = this.main.keyWord.split(constant.constantString.flagString.searchSplit);
-                        range = range.split(constant.constantString.flagString.searchPageSplit);
-                        this.main.page = range.length > 1 ? range[1] : range[0]
-                        this.sconf = { ...template, keyWord, range }
-                        this.main.socket.send(JSON.stringify(this.sconf))
-                        return null;
-                    }
-                    if (this.main.keyWord.includes(constant.constantString.flagString.searchPageAll)) {
-                        let [keyWord] = this.main.keyWord.split(constant.constantString.flagString.searchPageAll);
-                        let range = [1, Number.MAX_SAFE_INTEGER];
-                        this.main.page = range[1];
-                        this.sconf = { ...template, keyWord, range };
-                        this.main.socket.send(JSON.stringify(this.sconf));
-                        return null
-                    }
-                    // duplicate
-                    this.main.page = 1
-                    this.sconf = { ...template, keyWord: this.main.keyWord, range: [this.main.page] };
+            search() {
+                if (this.searchAction == 'abort') return this.abort()
+                if (!this.status.isdone) return alert(constant.constantString.alertString.search)
+                if (!this.main.socket.readyState == 3) return this.main.log = constant.constantString.flagString.socketDisconnect
+                this.reflow = [];
+                this.dynamiclist = [];
+                this.status.isdone = false;
+                this.overlay.history = false;
+                this.archive = (this.manual.javdb && 'javdb') || (this.manual.javbus && 'javbus')
+                this.description = (this.status.star && 'star') || (this.status.genre && 'genre') || (this.status.studio && 'studio') || (this.status.label && 'label') || (this.status.actors && 'actors') || (this.status.tags && 'tags') || (this.status.directors && 'directors') || (this.status.directors && 'directors') || (this.status.makers && 'makers') || (this.status.publishers && 'publishers') || (this.status.series && 'series') || 'standard'
+                let template = { type: 'SEARCH', star: this.status.star, genre: this.status.genre, director: this.status.director, studio: this.status.studio, label: this.status.label, actors: this.status.actors, tags: this.status.tags, directors: this.status.directors, makers: this.status.makers, publishers: this.status.publishers, series: this.status.series, codes: this.status.codes, deny: this.status.deny, javdb: this.manual.javdb, dbsorts: { dbsort: this.main.dbsort, dbsortsb: this.main.dbsortsb, dbsortvst: this.main.dbsortvst } };
+                if (this.main.keyWord.includes(constant.constantString.flagString.searchSplit)) {
+                    let [keyWord, range] = this.main.keyWord.split(constant.constantString.flagString.searchSplit);
+                    range = range.split(constant.constantString.flagString.searchPageSplit);
+                    this.main.page = range.length > 1 ? range[1] : range[0]
+                    this.sconf = { ...template, keyWord, range }
                     this.main.socket.send(JSON.stringify(this.sconf))
+                    return null;
+                }
+                if (this.main.keyWord.includes(constant.constantString.flagString.searchPageAll)) {
+                    let [keyWord] = this.main.keyWord.split(constant.constantString.flagString.searchPageAll);
+                    let range = [1, Number.MAX_SAFE_INTEGER];
+                    this.main.page = range[1];
+                    this.sconf = { ...template, keyWord, range };
+                    this.main.socket.send(JSON.stringify(this.sconf));
                     return null
-                },
+                }
+                // duplicate
+                this.main.page = 1
+                this.sconf = { ...template, keyWord: this.main.keyWord, range: [this.main.page] };
+                this.main.socket.send(JSON.stringify(this.sconf))
+                return null
+            },
             searchGenre(k) {
                 this.main.keyWord = k
                 this.search()
@@ -675,13 +675,22 @@
                 this.deviceMeta.isTablet = /ipad|android/i.test(userAgent) && !this.deviceMeta.isMobile;
                 this.deviceMeta.isDesktop = !this.deviceMeta.isMobile && !this.deviceMeta.isTablet;
                 // this.$refs.box.style.height = `${visualViewport.height}px`
+                this.deviceMeta.rootEl = document.documentElement;
                 this.deviceMeta.viewWidth = window.innerWidth;
                 this.deviceMeta.viewHeight = window.innerHeight;
+                this.deviceMeta.fontSize = this.flexible()
                 this.$refs.box.style.height = `${this.deviceMeta.viewHeight}px`;
-                this.deviceMeta.rootEl = document.documentElement;
-                this.deviceMeta.fontSize = (constant.snippet.smallScreenWidth >= this.deviceMeta.viewWidth) ? constant.flexibleSize.small : constant.flexibleSize.big;
-                this.deviceMeta.rootEl.style.fontSize = this.deviceMeta.fontSize;
+                this.deviceMeta.rootEl.style.fontSize = `${this.deviceMeta.fontSize}px`;
                 return null
+            },
+            flexible() {
+                const { viewWidth } = this.deviceMeta;
+                const { small, big } = constant.flexibleSize;
+                const { smallScreenWidth, largeScreenWidth } = constant.snippet;
+                if (viewWidth >= smallScreenWidth && viewWidth <= largeScreenWidth) {
+                    return small + ((viewWidth - smallScreenWidth) / (largeScreenWidth - smallScreenWidth)) * (big - small);
+                }
+                return (viewWidth >= constant.largeScreenWidth) && big || (viewWidth <= smallScreenWidth) && small
             },
             initVueOption($data, data, overWrite = {}) {
                 let _data = {
@@ -842,7 +851,7 @@
                             let up = point['clientX'] >= window.innerHeight >> 2
                             cancelAnimationFrame(vm.debounce.slide)
                             let animateScroll = () => {
-                                vm.offset += (up ? vm.main.sliderate : -vm.main.slideRsliderateate)
+                                vm.offset += (up ? vm.main.sliderate : -vm.main.sliderate)
                                 vm.scrollToTop(null, constant.constantString.flagString.autoScrollBehavior)
                                 vm.debounce.slide = requestAnimationFrame(animateScroll)
                             }

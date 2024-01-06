@@ -63,8 +63,8 @@
         "previewOrigin": "https://www.bilibili.com/video/BV1GJ411x7h7/"
     },
     "flexibleSize": {
-        "small": "14px",
-        "big": "16px"
+        "small": 12,
+        "big": 16
     },
     "constantString": {
         "classString": {
@@ -128,6 +128,7 @@
         "tiltFactor": 0.5,
         "swipeThreshold": 25,
         "smallScreenWidth": 360,
+        "largeScreenWidth": 430,
         "revealOpacityFactor": 0.5
     },
     "timer": {
