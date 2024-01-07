@@ -146,6 +146,16 @@
             </div>
         </transition>
 
+        <transition name="fade" mode="out-in">
+            <div v-if="overlay.comment" @click.slef="overlay.comment=!overlay.comment" class="over-lay-comment">
+                <div class="comment-box">
+                    <p class="comment-text" v-for="(c,idx) in comment" :key="idx">
+                        {{c}}
+                    </p>
+                </div>
+            </div>
+        </transition>
+
 
         <transition name="fade" mode="out-in">
             <div v-if="overlay.serial" @click.self="overlay.serial=!overlay.serial" class="over-lay-serial">
@@ -379,7 +389,7 @@
             </div>
             <h2 class="sticky-log">
                 <span> current:{{this.main.log}}</span>
-                <span v-if="status.isdone" class="reflow"> reflow:{{reflow.length}}
+                <span v-if="status.isdone"> reflow:{{reflow.length}}
                 </span>
                 <p v-if="overlay.error" class="error-full-log">
                     {{main.error}}
@@ -403,7 +413,7 @@
                     <div class="info-swipe-reveal" v-swipe-to-reveal:[item]="$root">
                         <div class="thumb-item">
                             <!-- v-lazy-load-oberver -->
-                            <img @click="zoomPics(item)" @load="thumbSucess($event)" @contextmenu.prevent
+                            <img @click="expandPicture(item.i)" @load="thumbSucess($event)" @contextmenu.prevent
                                 class="thumb lazy-loaded" v-press-auto-scale="$root" ref="monitor"
                                 :data-src="((!status.vthumb || demoDebug.enable) && preview.picsFailed) || item.p"
                                 :data-i="index" :data-n="item.n">
@@ -439,10 +449,10 @@
                                 <a class="info" target="_blank" @click.self="item.gs=!item.gs">{{(demoDebug.enable &&
                                     demoDebug.name)
                                     || item.n}}</a>
-                                <a class="info" target="_blank">{{item.d}}</a>
+                                <a class="info" target="_blank" @click.self="expandComment(item.c)">{{item.d}}</a>
                                 <button class="info load-view" @click="loadView(item)" target="_blank">{{((item.v[0] ==
-                                -1) &&
-                                'LOADING') || item.v[0] }}</button>
+                                    -1) &&
+                                    'LOADING') || item.v[0] }}</button>
                             </p>
 
                             <p class="info-product">

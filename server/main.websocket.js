@@ -232,6 +232,7 @@ async function javdb_(domain, 关键词, 区间, 演员, 类别, 导演, 制作�
         if (牛马们.length == 0) break;
         for (let 计数 = 0; 计数 <= 牛马们.length - 1; 计数++) {
             if (abort) break;
+            if (计数 == 1) break
             // 控制push堆栈间隔
             await sleep(150)
             任务队列.push(
@@ -253,10 +254,15 @@ async function javdb_(domain, 关键词, 区间, 演员, 类别, 导演, 制作�
                         // throw  new Error('cust')
                         // ws.write( (await ax.get(单个搜索)).data)
                         let _$_ = cheerio.load((await ax.get(单个搜索)).data)
-                        let _$_$_ = cheerio.load((await ax.get(`${单个搜索}/reviews/lastest`)))
-                        let 评论预览 = _$_$_('.review-item .content').map((idx, el) => {
-                            return _$_$_(el).text().trim()
+                        let _$_$_ = cheerio.load((await ax.get(`${单个搜索}/reviews/lastest`)).data,{
+                            headers: {
+                                cookie: auth
+                            }
+                        })
+                        let 评论预览 = _$_$_('.review-item .content p').map((idx, el) => {
+                            return _$_$_(el).text().replace(/\s/g, '')
                         }).get()
+                        console.log(评论预览);
                         let 归属信息 = _$_('.video-detail .video-meta-panel .movie-panel-info > .panel-block .value').map((idx, el) => {
                             let belong = [_$_('a[href^="/directors/"]', el), _$_('a[href^="/makers/"]', el), _$_('a[href^="/publishers/"]', el), _$_('a[href^="/series/"]', el)]
                             let target = belong.find(b => (b.length == 1) && b)

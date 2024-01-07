@@ -160,6 +160,7 @@
             "error": false,
             "serial": false,
             "magnet": false,
+            "comment":false,
             "reflow": false,
             "sidenav": false,
             "proxies": false,

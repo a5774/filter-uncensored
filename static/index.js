@@ -32,6 +32,7 @@
                 proxies: false,
                 sidenav: false,
                 dashboard: false,
+                comment: false
             },
             fragment: {
                 size: constant.dataOptionsNomarl.fragment.size,
@@ -107,8 +108,6 @@
                 picsFailed: '/debug.jpg',
                 touches: 0,
             },
-            magnet: [],
-            reflow: [],
             resource: {
                 instruction: [],
                 dbbookmark: [],
@@ -117,7 +116,11 @@
                 dbTaglist: {},
             },
             dynamiclist: [],
+            magnet: [],
+            comment: [],
+            reflow: [],
             history: [],
+            proxies: [],
             sconf: null,
             observer: null,
             offset: null,
@@ -160,9 +163,8 @@
                 rootEl: null,
                 os: null
             },
-            proxies: [],
-            theme: 'normal',
             archive: '',
+            theme: 'normal',
             description: 'standard',
         },
         methods: {
@@ -437,11 +439,6 @@
                 }
                 return sliced;
             },
-            zoomPics({ i }) {
-                this.preview.pics = i || []
-                this.overlay.pics = i.length
-                return null
-            },
             async openSwipe(idx, { target }) {
                 this.preview.picsIndex = idx
                 this.preview.picsEl = target
@@ -496,6 +493,16 @@
             expandMagnet(m) {
                 this.magnet = m
                 this.overlay.magnet = m.length
+                return null
+            },
+            expandComment(c) {
+                this.comment = c
+                this.overlay.comment = c.length
+                return null
+            },
+            expandPicture(i) {
+                this.preview.pics = i
+                this.overlay.pics = i.length
                 return null
             },
             async updateBookmark(_data, { target }) {

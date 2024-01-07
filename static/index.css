@@ -346,7 +346,7 @@
     justify-content: space-between;
     align-items: center;
     /* border-radius: .25rem; */
-   
+
 }
 
 .error-full-log {
@@ -663,7 +663,9 @@
     padding: .1875rem;
 }
 
-.reflow-action * {
+.reflow-action button,
+.reflow-action input,
+.reflow-action label {
     margin-right: .5rem;
 }
 
@@ -988,6 +990,36 @@
     flex-shrink: 0;
 }
 
+.over-lay-comment {
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background: rgba(11, 11, 11, 0.8);
+    position: fixed;
+    padding: 0px .3125rem;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 5;
+}
+
+.over-lay-comment .comment-box {
+    box-sizing: border-box;
+    width: 100%;
+    border: 1px var(--br-color) solid;
+    border-radius: .25rem;
+    overflow-y: scroll;
+}
+
+.comment-box .comment-text {
+    box-sizing: border-box;
+    padding: .875rem 0;
+    border-bottom: 1px solid rgb(221, 221, 221);
+}
+
 .instruction-box {
     display: none;
     box-sizing: border-box;
@@ -1045,6 +1077,7 @@
 .serial-textarea::-webkit-scrollbar,
 .pics-contains-expand::-webkit-scrollbar,
 .over-lay-magnet .magnet-box::-webkit-scrollbar,
+.over-lay-comment .comment-box::-webkit-scrollbar,
 .proxies-container::-webkit-scrollbar {
     width: 0;
 }
