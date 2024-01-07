@@ -72,24 +72,33 @@ attrInject(a_,{y:3},{})
  */
 
 
-function  convert(){
+function convert() {
     let bm = require('./static/bus-bookmark.json')
-    bm = bm.map(item=>{
-        return {...item,f:`https://www.javbus.com/${item.n}`}
+    bm = bm.map(item => {
+        return { ...item, f: `https://www.javbus.com/${item.n}` }
     })
-    fs.writeFileSync('./static/bus-bookmark.json',JSON.stringify(bm))
+    fs.writeFileSync('./static/bus-bookmark.json', JSON.stringify(bm))
 }
 // convert()
-function getAllName(){
-    let bm = JSON.parse(fs.readFileSync('./static/db-bookmark.json'))
-    console.log(bm.map(any=>any.n).join(','));
+function getAllName() {
+    let bm = JSON.parse(fs.readFileSync('./static/bus-bookmark.json'))
+    console.log(bm.map(any => any.n).join(','));
 }
 getAllName()
 
-// SSIS-840,MIDV-253,JUKF-093,MUDR-197,MUDR-200,MIAA-828,TENN-006,SDAB-278,JRBA-012,SSIS-736,CAWD-570,SSIS-862,MIAD-954,MIAA-702
-// MUDR-197,SSIS-736,MIDV-253,JRBA-012,SSIS-862,MIAA-828,MIFD-070,SSIS-840,CAWD-570,JUKF-093,MIAD-954,MUDR-200
-// bus
-// MIAD-954,SSIS-840,SSIS-736,MIAA-828,SDAB-278,MIAA-702,JUKF-093,CAWD-570,TENN-006,MUDR-200,MIDV-253,SSIS-862
-// db
-// MIFD-070,CAWD-404,STARS-978,STARS-771,MIAD-954
+// SDAB-278,MIAA-828,JUKF-093,SSIS-840,CAWD-570,MIAD-954,TENN-006,SSIS-736,MIDV-253,SSIS-862,MUDR-200,MIAA-702
+let bm = require('./static/bus-bookmark.json')
 
+
+function sorted(attr, convert, reverse = false) {
+    let fn = Function("v", `return v${attr}`)
+    let callback = (x, y) => {
+        x = convert(fn(x)); y = convert(fn(y));
+        return (reverse && (x - y)) || (y - x)
+    }
+    let { sort, slice, toSorted } = Array.prototype
+    return toSorted?.call(this, callback) || sort.call(slice.call(this), callback)
+}
+let sortd = sorted.call([{ v: [41, 87] }, { v: [74, 57] }], '.v[0]', x => x, false)
+
+console.log(sortd);

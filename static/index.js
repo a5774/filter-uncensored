@@ -2,8 +2,12 @@
 (async () => {
     let { protocol, host, search, origin } = location
     let { v, f, m } = Object.fromEntries(new URLSearchParams(search))
-    function sorted(attr, convert, flip = false) {
-        let callback = (x, y) => flip ? convert(x[attr]) - convert(y[attr]) : convert(y[attr]) - convert(x[attr])
+    function sorted(attr, convert, reverse = false) {
+        let fn = Function("v", `return v${attr}`)
+        let callback = (x, y) => {
+            x = convert(fn(x)); y = convert(fn(y));
+            return (reverse && (x - y)) || (y - x)
+        }
         let { sort, slice, toSorted } = Array.prototype
         return toSorted?.call(this, callback) || sort.call(slice.call(this), callback)
     }
@@ -273,19 +277,21 @@
                 this.search()
                 return null
             },
-            async sleep(time) {
+            async sleep(t) {
                 return new Promise(r => {
                     setTimeout(() => {
                         r(null);
-                    }, time);
+                    }, t);
                 })
             },
-            async loadView(item) {
-                this.main.log = item.n
+            async loadView(v) {
+                this.main.log = v.n
                 this.status.isdone = false
-                let view = (await fetch(`${constant.resourceRouter.views}${item.n}`).then(resp => resp.text()));
-                this.main.log = `${item.n}${constant.constantString.flagString.logFormat}${view}`
-                vm.$set(item, 'v', parseInt(view))
+                let view = (await fetch(`${constant.resourceRouter.views}${v.n}`).then(resp => resp.text()));
+                console.log(view);
+                this.main.log = `${v.n}${constant.constantString.flagString.logFormat}${view}`
+                // vm.$set(v, 'v', parseInt(view))
+                v['v'][0] = parseInt(view)
                 this.main.log = constant.constantString.flagString.done
                 this.status.isdone = true
                 return null
@@ -294,19 +300,20 @@
                 if (!this.dynamiclist.length) return null;
                 this.status.isdone = false;
                 let queueView = []
-                let pending = this.filterRule.filter(({ v }) => v == -1)
+                let pending = this.filterRule.filter(({ v }) => v[0] == -1)
                 this.main.log = pending.length
                 let fragment = this.snippetArray(pending, constant.snippet.views)
                 for (let i = 0; i <= fragment.length - 1; i++) {
                     await this.sleep(constant.timer.viewsLoadDealy);
-                    fragment[i].forEach(async (it, ix) => {
+                    fragment[i].forEach(async v => {
                         queueView.push(
                             (async () => {
-                                if (it.v == -1) {
-                                    let view = (await fetch(`${constant.resourceRouter.views}${it.n}`).then(resp => resp.text()))
-                                    this.main.log = `${it.n}${constant.constantString.flagString.logFormat}${view}`
-                                    vm.$set(it, 'v', parseInt(view))
-                                    return { n: it.n, view }
+                                if (v['v'] == -1) {
+                                    let view = (await fetch(`${constant.resourceRouter.views}${v.n}`).then(resp => resp.text()))
+                                    this.main.log = `${v.n}${constant.constantString.flagString.logFormat}${view}`
+                                    // vm.$set(v, 'v', parseInt(view))
+                                    v['v'][0] = parseInt(view)
+                                    return { n: v.n, view }
                                 }
                             })()
                         )
@@ -319,7 +326,7 @@
                 })
                 return null
             },
-            reflowBack(n, idx) {
+            reflowBack(n) {
                 this.status.isdone = false
                 this.main.socket.send(JSON.stringify({ type: 'SEARCH', keyWord: n, javdb: this.manual.javdb, range: [1] }))
                 return null
@@ -713,10 +720,11 @@
                         // console.log(target, isIntersecting);
                         if (isIntersecting) {
                             !(target.src == target.dataset.src) && target.setAttribute('src', target.dataset.src)
-                            if (this.status.autoview && (this.filterRule[target.dataset.i]['v'] == -1)) {
+                            if (this.status.autoview && (this.filterRule[target.dataset.i]['v'][0] == -1)) {
                                 this.main.log = target.dataset.n
                                 const view = await fetch(`${constant.resourceRouter.views}${target.dataset.n}`).then(resp => resp.text());
-                                vm.$set(this.filterRule[target.dataset.i], 'v', parseInt(view))
+                                this.filterRule[target.dataset.i]['v'][0] = parseInt(view)
+                                // vm.$set(this.filterRule[target.dataset.i], 'v',[parseInt(view)] )
                             }
                             observer.unobserve(target)
                             // target.classList.add(constant.constantString.classString.loaded)
@@ -1184,14 +1192,14 @@
                     this.$nextTick(this.scrollToTop)
                     return this.bookmarkCurrent?.filter(cb) ?? []
                 }
-                let reverse = this.main.factor.includes(constant.constantString.flagString.atniSortFlag) ?? false
+                let reverse = this.main.factor.includes(constant.constantString.flagString.atniSortFlag) || false
                 switch (this.main.select) {
                     case "NONE":
                         return this.dynamiclist.filter(cb)
                     case "TIME":
-                        return sorted.call(this.dynamiclist.filter(cb), 'd', x => new Date(x).getTime(), reverse)
+                        return sorted.call(this.dynamiclist.filter(cb), '.d', x => new Date(x).getTime(), reverse)
                     case "VIEW":
-                        return sorted.call(this.dynamiclist.filter(cb), 'v', x => x, reverse)
+                        return sorted.call(this.dynamiclist.filter(cb), '.v[0]', x => x, reverse)
                 }
             },
             sliceReflow() {

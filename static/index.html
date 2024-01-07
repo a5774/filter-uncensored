@@ -272,7 +272,7 @@
                     <span style="flex-shrink: 0;">{{n}}</span>
                     <span>{{s}}</span>
                     <span>{{t}}</span>
-                    <span><button @click="reflowBack(n,idx)">reflow</button></span>
+                    <span><button @click="reflowBack(n)">reflow</button></span>
                     <span><button @click="onlyPush(n,extra,idx)">push</button></span>
                 </li>
 
@@ -440,8 +440,9 @@
                                     demoDebug.name)
                                     || item.n}}</a>
                                 <a class="info" target="_blank">{{item.d}}</a>
-                                <button class="info load-view" @click="loadView(item)" target="_blank">{{ item.v == -1 ?
-                                    'LOADING' : item.v }}</button>
+                                <button class="info load-view" @click="loadView(item)" target="_blank">{{((item.v[0] ==
+                                -1) &&
+                                'LOADING') || item.v[0] }}</button>
                             </p>
 
                             <p class="info-product">
