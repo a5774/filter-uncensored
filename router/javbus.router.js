@@ -1,5 +1,5 @@
 const cheerio = require('cheerio')
-const {router,domain_bus,viewDomain,viewCacheTimeout,ax} = require('../config')
+const {router,domain_bus,viewDomain,viewCacheTimeout,ax, CLASHYAMLPATH, ef_sub} = require('../config')
 router.get('/:pics/:kind/:rhex', async (ctx, next) => {
     let u = `${domain_bus}/${ctx.params.pics}/${ctx.params.kind}/${ctx.params.rhex}`
     // let pics = (await ax.get(u, { responseEncoding: 'binary' }))
@@ -29,4 +29,3 @@ router.get('/views/:sequence', async (ctx, next) => {
     }
     ctx.body = -1
 })
-

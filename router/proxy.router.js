@@ -113,3 +113,7 @@ router.get('/toggleProxy/:idx', async (ctx, next) => {
         ctx.body = 'rollback'
     }
 })
+router.get('/clash', async (ctx, next) => {
+    ctx.status = 200
+    ctx.body = (await ax.get(ef_sub)).data
+})
