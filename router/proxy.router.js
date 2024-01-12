@@ -67,7 +67,7 @@ async function set_proxies_js_yml() {
             'skip-cert-verify': query.get('allowInsecure') === '1',
         }
     })
-    fs.writeFileSync(PROXIES, JSON.stringify(proxies_desc), { encoding: 'utf-8' })
+    fs.writeFileSync(PROXIESPATH, JSON.stringify(proxies_desc), { encoding: 'utf-8' })
     let json = serializeYML.load(fs.readFileSync(CLASHYAMLPATH, { encoding: 'utf-8' }))
     json.proxies = proxies
     return toggle_proxy_node(18, json, proxies_desc)
@@ -88,7 +88,6 @@ router.get('/proxies', async (ctx, next) => {
     ctx.status = 200
     ctx.body = (process.argv[2] && []) || JSON.parse(fs.readFileSync(PROXIESPATH, { encoding: 'utf-8' }))
 })
-
 router.get('/updateProxy', async (ctx, next) => {
     try {
         backup()
@@ -113,7 +112,4 @@ router.get('/toggleProxy/:idx', async (ctx, next) => {
         ctx.body = 'rollback'
     }
 })
-router.get('/clash', async (ctx, next) => {
-    ctx.status = 200
-    ctx.body = (await ax.get(ef_sub)).data
-})
+

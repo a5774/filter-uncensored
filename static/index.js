@@ -1,7 +1,8 @@
-// import constant from '/constant.json' assert { type: 'json' };
+// import constant from '/constant.json' assert { type: 'json' };defaultStroageMeger
 (async () => {
     let { protocol, host, search, origin } = location
     let { v, f, m } = Object.fromEntries(new URLSearchParams(search))
+    let { dataOptionsNomarl, websocket, resourceRouter, demoDebug, flexibleSize, constantString: { flagString, alertString, classString, styleString }, themes, timer, numberSnippet, defaultStroageMeger } = await fetch("/constant").then(resp => resp.json())
     function sorted(attr, convert, reverse = false) {
         let fn = Function("v", `return v${attr}`)
         let callback = (x, y) => {
@@ -18,7 +19,7 @@
             return !s.has(n) ? s.add(n) : null
         });
     }
-    let constant = await fetch("/constant").then(resp => resp.json())
+
     let vm = new Vue({
         data: {
             overlay: {
@@ -35,8 +36,8 @@
                 comment: false
             },
             fragment: {
-                size: constant.dataOptionsNomarl.fragment.size,
-                idx: constant.dataOptionsNomarl.fragment.idx
+                size: dataOptionsNomarl.fragment.size,
+                idx: dataOptionsNomarl.fragment.idx
             },
             chat: {
                 overlay: {
@@ -44,7 +45,7 @@
                 },
                 textMessage: '',
                 group: [],
-                state: constant.dataOptionsNomarl.chat.state,
+                state: dataOptionsNomarl.chat.state,
                 enable: false,
                 session: '',
                 socket: null,
@@ -53,24 +54,24 @@
             },
             main: {
                 page: 0,
-                actors: constant.dataOptionsNomarl.main.actors,
-                log: constant.dataOptionsNomarl.main.log,
-                select: constant.dataOptionsNomarl.main.select,
-                review: constant.dataOptionsNomarl.main.review,
-                state: constant.dataOptionsNomarl.main.state,
+                actors: dataOptionsNomarl.main.actors,
+                log: dataOptionsNomarl.main.log,
+                select: dataOptionsNomarl.main.select,
+                review: dataOptionsNomarl.main.review,
+                state: dataOptionsNomarl.main.state,
                 error: '',
-                factor: '',
                 serial: '',
                 keyWord: '',
-                dbsort: constant.dataOptionsNomarl.main.dbsort,
-                dbsortsb: constant.dataOptionsNomarl.main.dbsortsb,
-                dbsortvst: constant.dataOptionsNomarl.main.dbsortvst,
+                filterFactor: '',
+                dbsort: dataOptionsNomarl.main.dbsort,
+                dbsortsb: dataOptionsNomarl.main.dbsortsb,
+                dbsortvst: dataOptionsNomarl.main.dbsortvst,
                 heartbeat: null,
                 currboundel: null,
-                sliderate: constant.dataOptionsNomarl.main.sliderate,
+                sliderate: dataOptionsNomarl.main.sliderate,
                 socket: null,
                 reconn: true,
-                reconintval: constant.dataOptionsNomarl.main.reconintval
+                reconintval: dataOptionsNomarl.main.reconintval
             },
             manual: {
                 javdb: false,
@@ -101,12 +102,14 @@
                 picsIndex: -1,
                 picsEl: null,
                 viewerEl: null,
-                prevRevealEl: null,
                 picsSwipe: false,
                 picsSwipeSize: 0,
                 desktopSwipeScale: 2,
                 picsFailed: '/debug.jpg',
-                touches: 0,
+            },
+            reveal: {
+                touches: 1,
+                prevRevealEl: null,
             },
             resource: {
                 instruction: [],
@@ -141,17 +144,17 @@
                 slowSwipe: null,
             },
             demoDebug: {
-                name: constant.demoDebug.name,
-                enable: constant.demoDebug.enable,
-                magnet: constant.demoDebug.magnet,
-                genre: constant.demoDebug.genre,
-                single: constant.demoDebug.single,
-                vendor: constant.demoDebug.vendor,
-                actor: constant.demoDebug.actor,
-                actorOrigin: constant.demoDebug.actorOrigin,
-                previewOrigin: constant.demoDebug.previewOrigin
+                name: demoDebug.name,
+                enable: demoDebug.enable,
+                magnet: demoDebug.magnet,
+                genre: demoDebug.genre,
+                single: demoDebug.single,
+                vendor: demoDebug.vendor,
+                actor: demoDebug.actor,
+                actorOrigin: demoDebug.actorOrigin,
+                previewOrigin: demoDebug.previewOrigin
             },
-            deviceMeta: {
+            device: {
                 viewWidth: 0,
                 viewHeight: 0,
                 isMobile: false,
@@ -173,20 +176,20 @@
                     this.status.isdone = false
                     this.overlay.reflow = false;
                     this.overlay.proxies = false;
-                    this.main.log = await fetch(`${constant.resourceRouter.toggleProxy}${idx + constant.constantNumber.passProxy}`).then(r => r.text())
-                    this.proxies = this.snippetArray((await fetch(constant.resourceRouter.proxies).then(resp => resp.json())).slice(constant.constantNumber.passProxy), constant.snippet.proxy)
+                    this.main.log = await fetch(`${resourceRouter.toggleProxy}${idx + numberSnippet.passProxy}`).then(r => r.text())
+                    this.proxies = this.snippetArray((await fetch(resourceRouter.proxies).then(resp => resp.json())).slice(numberSnippet.passProxy), numberSnippet.proxy)
                     this.status.isdone = true
                     return null
                 }
-                alert(constant.constantString.alertString.selectProxy)
+                alert(alertString.selectProxy)
             },
             async updateProxy() {
                 this.overlay.reflow = false;
-                this.main.log = await fetch(constant.resourceRouter.updateProxy).then(r => r.text());
+                this.main.log = await fetch(resourceRouter.updateProxy).then(r => r.text());
             },
             flushHistory() {
                 this.overlay.history = this.history.length
-                this.history = Object.keys(localStorage).filter(h => h != constant.constantString.flagString._data);
+                this.history = Object.keys(localStorage).filter(h => h != flagString._data);
                 return null
             },
             loadHistory(key) {
@@ -195,7 +198,6 @@
                 return null
             },
             import_() {
-                console.log(this.main.serial);
                 if (/^[a-zA-Z]+-\d+(\s*,\s*[a-zA-Z]+-\d+)*$/.test(this.main.serial)) {
                     this.dynamiclist = []
                     this.overlay.reflow = false
@@ -204,15 +206,15 @@
                     serial.forEach(k => {
                         this.main.socket.send(JSON.stringify({ type: 'SEARCH', keyWord: k, javdb: this.manual.javdb, range: [1] }))
                     })
-                    this.main.log = `${constant.constantString.flagString.import}:${serial.length}`
+                    this.main.log = `${flagString.import}:${serial.length}`
                     return null
                 }
-                alert(constant.constantString.alertString.import_)
+                alert(alertString.import_)
             },
             export_() {
                 let text = this.filterRule.map(({ m }) => m.find(({ href, text: [desc] }) => /uncen/ig.test(desc) ? href : null)).map(um => um.href).join(';')
                 navigator.clipboard.writeText(text)
-                this.main.log = constant.constantString.alertString.export_
+                this.main.log = alertString.export_
                 return null
 
             },
@@ -243,8 +245,8 @@
             // can be optimized
             search() {
                 if (this.searchAction == 'abort') return this.abort()
-                if (!this.status.isdone) return alert(constant.constantString.alertString.search)
-                if (!this.main.socket.readyState == 3) return this.main.log = constant.constantString.flagString.socketDisconnect
+                if (!this.status.isdone) return alert(alertString.search)
+                if (this.main.socket.readyState != WebSocket.OPEN) return this.main.log = flagString.socketDisconnect
                 this.reflow = [];
                 this.dynamiclist = [];
                 this.status.isdone = false;
@@ -252,16 +254,16 @@
                 this.archive = (this.manual.javdb && 'javdb') || (this.manual.javbus && 'javbus')
                 this.description = (this.status.star && 'star') || (this.status.genre && 'genre') || (this.status.studio && 'studio') || (this.status.label && 'label') || (this.status.actors && 'actors') || (this.status.tags && 'tags') || (this.status.directors && 'directors') || (this.status.directors && 'directors') || (this.status.makers && 'makers') || (this.status.publishers && 'publishers') || (this.status.series && 'series') || 'standard'
                 let template = { type: 'SEARCH', star: this.status.star, genre: this.status.genre, director: this.status.director, studio: this.status.studio, label: this.status.label, actors: this.status.actors, tags: this.status.tags, directors: this.status.directors, makers: this.status.makers, publishers: this.status.publishers, series: this.status.series, codes: this.status.codes, deny: this.status.deny, javdb: this.manual.javdb, dbsorts: { dbsort: this.main.dbsort, dbsortsb: this.main.dbsortsb, dbsortvst: this.main.dbsortvst } };
-                if (this.main.keyWord.includes(constant.constantString.flagString.searchSplit)) {
-                    let [keyWord, range] = this.main.keyWord.split(constant.constantString.flagString.searchSplit);
-                    range = range.split(constant.constantString.flagString.searchPageSplit);
+                if (this.main.keyWord.includes(flagString.searchSplit)) {
+                    let [keyWord, range] = this.main.keyWord.split(flagString.searchSplit);
+                    range = range.split(flagString.searchPageSplit);
                     this.main.page = range.length > 1 ? range[1] : range[0]
                     this.sconf = { ...template, keyWord, range }
                     this.main.socket.send(JSON.stringify(this.sconf))
                     return null;
                 }
-                if (this.main.keyWord.includes(constant.constantString.flagString.searchPageAll)) {
-                    let [keyWord] = this.main.keyWord.split(constant.constantString.flagString.searchPageAll);
+                if (this.main.keyWord.includes(flagString.searchPageAll)) {
+                    let [keyWord] = this.main.keyWord.split(flagString.searchPageAll);
                     let range = [1, Number.MAX_SAFE_INTEGER];
                     this.main.page = range[1];
                     this.sconf = { ...template, keyWord, range };
@@ -289,12 +291,11 @@
             async loadView(v) {
                 this.main.log = v.n
                 this.status.isdone = false
-                let view = (await fetch(`${constant.resourceRouter.views}${v.n}`).then(resp => resp.text()));
-                console.log(view);
-                this.main.log = `${v.n}${constant.constantString.flagString.logFormat}${view}`
+                let view = (await fetch(`${resourceRouter.views}${v.n}`).then(resp => resp.text()));
+                this.main.log = `${v.n}${flagString.logFormat}${view}`
                 // vm.$set(v, 'v', parseInt(view))
                 v['v'][0] = parseInt(view)
-                this.main.log = constant.constantString.flagString.done
+                this.main.log = flagString.done
                 this.status.isdone = true
                 return null
             },
@@ -304,15 +305,15 @@
                 let queueView = []
                 let pending = this.filterRule.filter(({ v }) => v[0] == -1)
                 this.main.log = pending.length
-                let fragment = this.snippetArray(pending, constant.snippet.views)
+                let fragment = this.snippetArray(pending, numberSnippet.views)
                 for (let i = 0; i <= fragment.length - 1; i++) {
-                    await this.sleep(constant.timer.viewsLoadDealy);
+                    await this.sleep(timer.viewsLoadDealy);
                     fragment[i].forEach(async v => {
                         queueView.push(
                             (async () => {
                                 if (v['v'] == -1) {
-                                    let view = (await fetch(`${constant.resourceRouter.views}${v.n}`).then(resp => resp.text()))
-                                    this.main.log = `${v.n}${constant.constantString.flagString.logFormat}${view}`
+                                    let view = (await fetch(`${resourceRouter.views}${v.n}`).then(resp => resp.text()))
+                                    this.main.log = `${v.n}${flagString.logFormat}${view}`
                                     // vm.$set(v, 'v', parseInt(view))
                                     v['v'][0] = parseInt(view)
                                     return { n: v.n, view }
@@ -323,7 +324,7 @@
                 }
                 Promise.allSettled(queueView).then((ps) => {
                     // console.log(ps);
-                    this.main.log = constant.constantString.flagString.done
+                    this.main.log = flagString.done
                     this.status.isdone = true
                 })
                 return null
@@ -383,7 +384,7 @@
                     let paths = v.pathname.split('/');
                     v.search && (paths[2] = v.search.match(/([^?]+)$/)[0])
                     this.jumpLocation(paths[2], paths[1], m)
-                }, constant.timer.jumpTagTimeout)
+                }, timer.jumpTagTimeout)
             },
 
             cancelJump() {
@@ -391,21 +392,21 @@
             },
             // closure
             debouncefn(fu, delay) {
-                let timerID;
+                let timerd;
                 return function (...args) {
-                    clearTimeout(timerID);
-                    timerID = setTimeout(() => {
+                    clearTimeout(timerd);
+                    timerd = setTimeout(() => {
                         fu(...args);
                     }, delay);
                 };
             },
             throttledfn(fn, delay) {
-                let timerID = null;
+                let timerd = null;
                 return function (...args) {
-                    if (!timerID) {
+                    if (!timerd) {
                         fn(...args);
-                        timerID = setTimeout(() => {
-                            timerID = null;
+                        timerd = setTimeout(() => {
+                            timerd = null;
                         }, delay);
                     }
                 };
@@ -423,9 +424,9 @@
                         // 防止在加载开始之前再次触发
                         this.throttled.load = setTimeout(() => {
                             this.throttled.load = null
-                        }, constant.timer.morePageInterval)
+                        }, timer.morePageInterval)
                     }
-                }, constant.timer.scrollDebounce);
+                }, timer.scrollDebounce);
                 return null
             },
             snippetArray(arr, size) {
@@ -442,21 +443,21 @@
             async openSwipe(idx, { target }) {
                 this.preview.picsIndex = idx
                 this.preview.picsEl = target
-                this.preview.picsEl.classList.add(constant.constantString.classString.swipe)
-                await this.sleep(constant.timer.openSwipeTimeout)
+                this.preview.picsEl.classList.add(classString.swipe)
+                await this.sleep(timer.openSwipeTimeout)
                 this.preview.picsSwipe = !this.preview.picsSwipe
 
             },
             async closeSwipe() {
                 this.preview.picsIndex = -1
                 this.preview.picsSwipe = !this.preview.picsSwipe
-                await this.sleep(constant.timer.closeSwipeTimeout)
-                this.preview.picsEl.classList.remove(constant.constantString.classString.swipe)
+                await this.sleep(timer.closeSwipeTimeout)
+                this.preview.picsEl.classList.remove(classString.swipe)
                 return null
             },
             nextSwipePics() {
                 let el = this.preview.viewerEl
-                el.style.transitionDuration = `${constant.timer.swipeTransitionTimeout}ms`
+                el.style.transitionDuration = `${timer.swipeTransitionTimeout}ms`
                 if (!el.lock) {
                     el.lock = true
                     this.preview.picsIndex++
@@ -467,7 +468,7 @@
                                 this.preview.picsIndex = 1
                             }
                             el.lock = false
-                        }, constant.timer.swipeTransitionTimeout);
+                        }, timer.swipeTransitionTimeout);
                     })
                 }
                 return null
@@ -475,7 +476,7 @@
             },
             prevSwipePics() {
                 let el = this.preview.viewerEl
-                el.style.transitionDuration = `${constant.timer.swipeTransitionTimeout}ms`
+                el.style.transitionDuration = `${timer.swipeTransitionTimeout}ms`
                 if (!el.lock) {
                     el.lock = true
                     this.preview.picsIndex--
@@ -486,7 +487,7 @@
                                 this.preview.picsIndex = this.preview.pics.length
                             }
                             el.lock = false
-                        }, constant.timer.swipeTransitionTimeout);
+                        }, timer.swipeTransitionTimeout);
                     })
                 }
             },
@@ -505,11 +506,9 @@
                 this.overlay.pics = i.length
                 return null
             },
-            async updateBookmark(_data, { target }) {
-                this.main.log = `${this.markAction}${constant.constantString.flagString.logFormat}${_data.n}`
-                let el = target.closest(constant.constantString.classString.revealBox).querySelector(constant.constantString.classString.revealEl)
-                let config = constant.bookmark[this.markAction]
+            async updateBookmark(_data) {
                 let df = _data.df
+                this.main.log = `${this.markAction}${flagString.logFormat}${_data.n}`
                 switch (this.markAction) {
                     case 'insert':
                         this.main.socket.send(JSON.stringify({ type: 'INSERT', data: _data, df }))
@@ -518,16 +517,16 @@
                         this.main.socket.send(JSON.stringify({ type: 'REMOVE', data: _data, df }))
                         break;
                 }
-                el.__recoverReveal()
-                await this.sleep(config.delay)
+                this.reveal.prevRevealEl.__recoverReveal()
+                await this.sleep(timer.updateBookmarkTimeout)
                 this.flushBookMark()
                 return null
             },
 
             async flushBookMark(lock) {
                 lock && (this.status.isdone = !lock)
-                this.resource.dbbookmark = await fetch(constant.resourceRouter.dbBookmark).then(resp => resp.json())
-                this.resource.busbookmark = await fetch(constant.resourceRouter.busBookmark).then(resp => resp.json())
+                this.resource.dbbookmark = await fetch(resourceRouter.dbBookmark).then(resp => resp.json())
+                this.resource.busbookmark = await fetch(resourceRouter.busBookmark).then(resp => resp.json())
                 return null
             },
             visibNav() {
@@ -535,13 +534,13 @@
                 clearTimeout(this.debounce.nav)
                 this.debounce.nav = setTimeout(() => {
                     this.overlay.sidenav = false
-                }, constant.timer.visibilityNavBar);
+                }, timer.visibilityNavBar);
                 return null
             },
             connect() {
                 console.log('connect');
                 return new Promise(r => {
-                    this.main.socket = new WebSocket(`${protocol.includes('https:') ? 'wss' : 'ws'}://${host}${constant.websocket.main}`)
+                    this.main.socket = new WebSocket(`${protocol.includes('https:') ? 'wss' : 'ws'}://${host}${websocket.main}`)
                     this.main.socket.onopen = () => {
                         r(null)
                         console.log('WebSocket OPEN');
@@ -555,7 +554,7 @@
                                     clearInterval(this.debounce.heartbeat)
                                     this.debounce.heartbeat = setInterval(() => {
                                         this.main.socket.close();
-                                    }, constant.timer.heartbeatDetectCycle)
+                                    }, timer.heartbeatDetectCycle)
                                     break;
                                 case 'LOG':
                                     this.main.log = `${message.data.n}<==>${message.data.c}`
@@ -566,7 +565,7 @@
                                     this.status.isdone = true
                                     if (this.sconf?.keyWord) {
                                         // save history 
-                                        localStorage.setItem(`${this.sconf?.keyWord}${constant.constantString.flagString._data}`, JSON.stringify({ ...vm._data, resource: { busTaglist: null, dbTaglist: null, busbookmark: null, dbbookmark: null, instruction: null, bookmark: null } }))
+                                        localStorage.setItem(`${this.sconf?.keyWord}${flagString._data}`, JSON.stringify({ ...vm._data, resource: { busTaglist: null, dbTaglist: null, busbookmark: null, dbbookmark: null, instruction: null, bookmark: null } }))
                                     }
                                     break;
                                 case 'ERROR':
@@ -602,7 +601,7 @@
             scrollToTop(offset, behavior) {
                 this.$refs.box.scrollTo({
                     top: offset || this.offset || 0,
-                    behavior: behavior || constant.constantString.flagString.scrollBehavior
+                    behavior: behavior || flagString.scrollBehavior
                 });
                 return null
             },
@@ -612,14 +611,14 @@
                     this.main.socket.send(JSON.stringify({ ...this.sconf, range: [this.main.page] }))
                     this.status.isdone = false;
                 } else {
-                    alert(constant.constantString.alertString.loadNext)
+                    alert(alertString.loadNext)
                 }
                 return null
             },
             filterCallback() {
                 let conditions = [];
-                !(this.main.select == 'NONE' && this.main.factor) || (conditions.push('(i.n?.toLocaleLowerCase()?.includes(this.main.factor))'));
-                !(this.main.select == 'TIME' && (this.main.factor.length == 4)) || (conditions.push('(i.d?.slice(0, 4) >= this.main.factor)'));
+                !(this.main.select == 'NONE' && this.main.filterFactor) || (conditions.push('(i.n?.toLocaleLowerCase()?.includes(this.main.filterFactor))'));
+                !(this.main.select == 'TIME' && (this.main.filterFactor.length == 4)) || (conditions.push('(i.d?.slice(0, 4) >= this.main.filterFactor)'));
                 !this.status.single || conditions.push('(i.s?.length || -1) == this.main.actors');
                 !(this.main.review == 'censored') || conditions.push('i');
                 !(this.main.review == 'uncensored') || conditions.push('i?.u');
@@ -628,27 +627,31 @@
             },
             connectDetect() {
                 setInterval(() => {
+                    let { connectState } = websocket
                     switch (this.main.socket.readyState) {
                         case this.main.socket.CONNECTING:
-                            this.main.state = constant.websocket.connectState.connecting
+                            this.main.state = connectState.connecting
                             break;
                         case this.main.socket.OPEN:
-                            this.main.state = constant.websocket.connectState.open
+                            this.main.state = connectState.open
                             break;
                         case this.main.socket.CLOSING:
-                            this.main.state = constant.websocket.connectState.closing
+                            this.main.state = connectState.closing
                             break;
                         case this.main.socket.CLOSED:
-                            this.main.state = constant.websocket.connectState.closed
+                            this.main.state = connectState.closed
                             break;
                     }
-                }, constant.timer.connectDetect);
+                }, timer.connectDetect);
                 return null
             },
             initTheme() {
                 let hours = new Date().getHours()
-                // return (8 <= hours && hours <= 17) ? 'day' : (18 <= hours && hours <= 24) ? 'night' : 'night'
-                this.theme = (constant.themes.day.range[0] <= hours && hours <= constant.themes.day.range[1]) ? constant.themes.day.name : (constant.themes.night.range[0] <= hours && hours <= constant.themes.night.range[1]) ? constant.themes.night.name : constant.themes.normal.name
+                if (themes.day.range[0] <= hours && hours <= themes.day.range[1]) {
+                    this.theme = themes.day.name
+                } else {
+                    this.theme = themes.night.name
+                }
             },
             cssTemplate(cssObject) {
                 return Object.keys(cssObject).map(key => {
@@ -658,11 +661,9 @@
                     }
                     return `${key}{${cssStatements.join('')}}`
                 }).join('')
-                sett
             },
             thumbSucess({ target }) {
-                // console.log('thumb');
-                target.classList.add(constant.constantString.classString.loaded)
+                target.classList.add(classString.loaded)
                 return null
             },
             //onloadstart 
@@ -671,40 +672,53 @@
             },
             listenTouches() {
                 window.addEventListener('touchstart', (e) => {
-                    //   console.log(  e.target.closest('.info-swipe-reveal'));
-                    this.preview.touches = e.touches.length
+                    //console.log(  e.target.closest('.info-swipe-reveal'));
+                    this.reveal.touches = e.touches.length
+                    // 禁用缩放
                     e.touches.length >= 2 && e.preventDefault();
                 }, { passive: false });
             },
             listenResize() {
-                window.addEventListener('resize', this.debouncefn(this.initDeviceMeta, constant.timer.initSwipeDebounce))
+                // resize被推迟至宏任务阶段,devTool无法监听数据变化
+                window.addEventListener('resize', this.debouncefn(this.initDevice, timer.initSwipeDebounce))
             },
-            initDeviceMeta() {
-                // offsetH/W w+p+b+s ,clientH/W, w+p  windowH/W w+p+b+s  rectH/W w+p+b
+            // offsetH/W w+p+b+s ,clientH/W, w+p  windowH/W w+p+b+s  rectH/W w+p+b
+            initDevice() {
                 const platform = navigator.platform.toLowerCase();
                 const userAgent = navigator.userAgent.toLowerCase();
                 //  const { width } = document.documentElement.getBoundingClientRect()
-                this.deviceMeta.os = platform.includes('win') && 'Windows' || platform.includes('mac') && 'MacOS' || platform.includes('linux') && 'Linux' || 'Unknown'
-                this.deviceMeta.isMobile = /mobile|android|iphone|ipad|ipod|blackberry|windows phone/i.test(userAgent) || ('ontouchstart' in window || navigator.maxTouchPoints || false);
-                this.deviceMeta.isTablet = /ipad|android/i.test(userAgent) && !this.deviceMeta.isMobile;
-                this.deviceMeta.isDesktop = !this.deviceMeta.isMobile && !this.deviceMeta.isTablet;
+                this.device.os = platform.includes('win') && 'Windows' || platform.includes('mac') && 'MacOS' || platform.includes('linux') && 'Linux' || 'Unknown'
+                this.device.isMobile = /mobile|android|iphone|ipad|ipod|blackberry|windows phone/i.test(userAgent) || !navigator.maxTouchPoints
+                this.device.isTablet = /ipad|android/i.test(userAgent) && this.device.isMobile;
+                this.device.isDesktop = !this.device.isMobile && !this.device.isTablet;
                 // this.$refs.box.style.height = `${visualViewport.height}px`
-                this.deviceMeta.rootEl = document.documentElement;
-                this.deviceMeta.viewWidth = window.innerWidth;
-                this.deviceMeta.viewHeight = window.innerHeight;
-                this.deviceMeta.fontSize = this.flexible()
-                this.$refs.box.style.height = `${this.deviceMeta.viewHeight}px`;
-                this.deviceMeta.rootEl.style.fontSize = `${this.deviceMeta.fontSize}px`;
+                this.device.rootEl = document.documentElement;
+                this.device.viewWidth = window.innerWidth;
+                this.device.viewHeight = window.innerHeight;
+                this.device.fontSize = this.flexible()
+                this.$refs.box.style.height = `${this.device.viewHeight}px`;
+                this.device.rootEl.style.fontSize = `${this.device.fontSize}px`;
+                vm.$forceUpdate();
                 return null
+                // this.main.error = this.device.viewWidth
+            },
+            initReveal() {
+                return
+                // directive在渲染中绑定，需要等待渲染完成获取
+                vm.$nextTick(() => {
+                    let { width, height } = el.getBoundingClientRect()
+                    el.__revealY = height
+                    el.__halfY = el.__revealY / 2
+                })
             },
             flexible() {
-                const { viewWidth } = this.deviceMeta;
-                const { small, big } = constant.flexibleSize;
-                const { smallScreenWidth, largeScreenWidth } = constant.snippet;
+                const { viewWidth } = this.device;
+                const { small, big } = flexibleSize;
+                const { smallScreenWidth, largeScreenWidth } = numberSnippet;
                 if (viewWidth >= smallScreenWidth && viewWidth <= largeScreenWidth) {
                     return small + ((viewWidth - smallScreenWidth) / (largeScreenWidth - smallScreenWidth)) * (big - small);
                 }
-                return (viewWidth >= constant.largeScreenWidth) && big || (viewWidth <= smallScreenWidth) && small
+                return ((viewWidth >= largeScreenWidth) && big) || ((viewWidth <= smallScreenWidth) && small)
             },
             initVueOption($data, data, overWrite = {}) {
                 let _data = {
@@ -727,20 +741,15 @@
                         // console.log(target, isIntersecting);
                         if (isIntersecting) {
                             !(target.src == target.dataset.src) && target.setAttribute('src', target.dataset.src)
-                            if (this.status.autoview && (this.filterRule[target.dataset.i]['v'][0] == -1)) {
+                            let v = this.status.autoview && this.filterRule[target.dataset.i]
+                            if (v && (v['v'][0] == -1)) {
                                 this.main.log = target.dataset.n
-                                const view = await fetch(`${constant.resourceRouter.views}${target.dataset.n}`).then(resp => resp.text());
-                                this.filterRule[target.dataset.i]['v'][0] = parseInt(view)
+                                let view = await fetch(`${resourceRouter.views}${target.dataset.n}`).then(resp => resp.text());
+                                v['v'][0] = parseInt(view)
                                 // vm.$set(this.filterRule[target.dataset.i], 'v',[parseInt(view)] )
                             }
                             observer.unobserve(target)
-                            // target.classList.add(constant.constantString.classString.loaded)
-                        } else {
-                            if (!target.src) {
-                                // target.classList.remove(constant.constantString.classString.loaded)
-                            }
                         }
-
                     });
                 }, {
                     root: this.$refs.box,
@@ -778,7 +787,7 @@
             chatConnect() {
                 return new Promise(r => {
                     // this.chatDeviceRequest()
-                    this.chat.socket = new WebSocket(`${protocol.includes('https:') ? 'wss' : 'ws'}://${host}${constant.websocket.chat}`)
+                    this.chat.socket = new WebSocket(`${protocol.includes('https:') ? 'wss' : 'ws'}://${host}${websocket.chat}`)
                     this.chat.socket.onopen = () => {
                         r(null)
                         console.log('WebSocket OPEN');
@@ -824,7 +833,7 @@
             actorTotal(v) {
                 return v?.length || -1
             },
-            extract(v, o) {
+            extractParma(v, o) {
                 v = (v && /\?/.test(v)) ? v.match(/([^?]+)$/)[0] : v.match(/([^/]+)$/)[0]
                 return o ? (o?.[v] ?? v) : v
             },
@@ -832,13 +841,16 @@
                 return v?.filter(({ loaded }) => (loaded == true))?.length ?? 0
             },
             purgeSuffix(v) {
-                return v?.replace(constant.constantString.flagString._data, '')
+                return v?.replace(flagString._data, '')
+            },
+            viemTemplate(v) {
+                return (v == -1 && flagString.viewEmpty) || v
             },
             uniqueKey(v) {
                 return `${Date.now()}`
             },
             lastSuffix(v, len) {
-                return (v >= len - constant.snippet.endFlag) && `${v}${constant.constantString.flagString.endFlag}` || v
+                return (v >= len - numberSnippet.endFlag) && `${v}${flagString.endFlag}` || v
             },
         },
         directives: {
@@ -867,11 +879,11 @@
                             cancelAnimationFrame(vm.debounce.slide)
                             let animateScroll = () => {
                                 vm.offset += (up ? vm.main.sliderate : -vm.main.sliderate)
-                                vm.scrollToTop(null, constant.constantString.flagString.autoScrollBehavior)
+                                vm.scrollToTop(null, flagString.autoScrollBehavior)
                                 vm.debounce.slide = requestAnimationFrame(animateScroll)
                             }
                             animateScroll()
-                        }, constant.timer.invokeAutoScroll)
+                        }, timer.invokeAutoScroll)
                     }
                     el.addEventListener("touchstart", el.__autoScroll, { passive: true })
                     el.addEventListener("touchmove", el.__stopScroll, { passive: true })
@@ -891,12 +903,12 @@
                     el.__startScale = (e) => {
                         e.stopPropagation();
                         vm.debounce.prefixScale = setTimeout(() => {
-                            el.classList.add(constant.constantString.classString.thumbScale)
-                        }, constant.timer.scaleThumbTimeout);
+                            el.classList.add(classString.thumbScale)
+                        }, timer.scaleThumbTimeout);
                     }
                     el.__stopScale = () => {
                         clearTimeout(vm.debounce.prefixScale)
-                        el.classList.remove(constant.constantString.classString.thumbScale)
+                        el.classList.remove(classString.thumbScale)
                     }
                     el.addEventListener('touchstart', el.__startScale, { passive: true })
                     el.addEventListener('touchend', el.__stopScale, { passive: true })
@@ -914,7 +926,7 @@
                     el.enterSwipePics = (deltaX, currentX) => {
                         clearTimeout(vm.throttled.slowSwipe)
                         // clearTimeout(vm.debounce.swipeInterval)
-                        el.style.transitionDuration = `${constant.timer.swipeTransitionTimeout}ms`
+                        el.style.transitionDuration = `${timer.swipeTransitionTimeout}ms`
                         if (Math.abs(deltaX) >= (((el.swipeMode == 'fast') && el.threshold) || ((el.swipeMode == 'slow') && el.slowSwipe))) {
                             if (!((vm.preview.picsIndex == (vm.preview.pics.length + 1)) && (vm.preview.picsIndex == 0))) {
                                 deltaX > 0 ? vm.preview.picsIndex++ : vm.preview.picsIndex--
@@ -929,7 +941,7 @@
                                 vm.$nextTick(() => [
                                     el.lock = false
                                 ])
-                            }, constant.timer.swipeTransitionTimeout);
+                            }, timer.swipeTransitionTimeout);
                         })
                         el.style.transform = `translate3d(${currentX}px,0,0)`
                     }
@@ -940,8 +952,8 @@
                     // moblie
                     vm.preview.viewerEl = el
                     vm.$nextTick(el.initPicsSwipeSize)
-                    window.addEventListener('resize', vm.debouncefn(el.initPicsSwipeSize, constant.timer.initSwipeDebounce))
-                    el.threshold = constant.snippet.swipeThreshold
+                    window.addEventListener('resize', vm.debouncefn(el.initPicsSwipeSize, timer.initSwipeDebounce))
+                    el.threshold = numberSnippet.swipeThreshold
                     el.__handleTouchStart = ({ touches: [point] }) => {
                         if (!el.lock) {
                             el.touchDeltaX = 0
@@ -953,14 +965,13 @@
                             clearTimeout(vm.throttled.slowSwipe)
                             vm.throttled.slowSwipe = setTimeout(() => {
                                 el.swipeMode = 'slow'
-                            }, constant.timer.swipeSlowTimeout);
+                            }, timer.swipeSlowTimeout);
                         }
 
                     }
                     el.__handleTouchMove = ({ touches: [point] }) => {
                         if (!el.lock) {
                             // requestAnimationFrame(()=>{
-
                             el.touchDeltaX = el.touchStartX - point['clientX'];
                             el.style.transform = `translate3d(${el.touchCurrentX - el.touchDeltaX}px,0,0)`
                             // })
@@ -987,7 +998,7 @@
                         el.swipeMode = 'fast'
                         vm.throttled.slowSwipe = setTimeout(() => {
                             el.swipeMode = 'slow'
-                        }, constant.timer.swipeSlowTimeout);
+                        }, timer.swipeSlowTimeout);
                     }
                     el.__handleMouseMove = (e) => {
                         if (!el.lock) {
@@ -1018,10 +1029,10 @@
             swipeToReveal: {
                 bind(el, binding) {
                     let vm = binding.value;
+                    let data = binding.arg
                     // directive在渲染中绑定，需要等待渲染完成获取
                     vm.$nextTick(() => {
-                        let { width, height } = el.getBoundingClientRect()
-                        el.__halfX = width / 2
+                        let { height } = el.getBoundingClientRect()
                         el.__revealY = height
                         el.__halfY = el.__revealY / 2
                     })
@@ -1032,15 +1043,23 @@
                         this.style.transform = `translate3d(0,0,0)`
                         this.isOpen = false
                     }
+                    el.__focusOutline = function () {
+                        this.style.borderBottomColor = styleString.focusColor;
+                    }
+                    el.__blurOutline = function () {
+                        this.style.borderBottomColor = ''
+                    }
                     el.__handleTouchStart = ({ touches: [point] }) => {
-                        if (vm.preview.touches == 1) {
-                            if (vm.preview.prevRevealEl == null) {
-                                vm.preview.prevRevealEl = el
+                        if (vm.reveal.touches == 1) {
+                            if (vm.reveal.prevRevealEl == null) {
+                                vm.reveal.prevRevealEl = el;
                             }
-                            if (vm.preview.prevRevealEl != el) {
-                                vm.preview.prevRevealEl.__recoverReveal()
-                                vm.preview.prevRevealEl = el
+                            if (vm.reveal.prevRevealEl != el) {
+                                vm.reveal.prevRevealEl.__blurOutline();
+                                vm.reveal.prevRevealEl.__recoverReveal()
+                                vm.reveal.prevRevealEl = el
                             }
+                            el.__focusOutline()
                             el.touchDeltaX = 0
                             el.touchStartX = 0
                             el.touchDeltaY = 0
@@ -1054,13 +1073,13 @@
                         }
                     }
                     el.__handleTouchMove = (e) => {
-                        if (vm.preview.touches == 1) {
+                        if (vm.reveal.touches == 1) {
                             el.touchDeltaX = el.touchStartX - e.touches[0]['clientX'];
                             el.touchDeltaY = el.touchStartY - e.touches[0]['clientY'];
                             !el.revealing && (el.slope = el.touchDeltaY / el.touchDeltaX)
-                            if ((Math.abs(el.slope) <= constant.snippet.tiltFactor) || el.revealing) {
+                            if ((Math.abs(el.slope) <= numberSnippet.tiltFactor) || el.revealing) {
                                 e.preventDefault()
-                                el.opacity = ((Math.abs(el.touchDeltaX) * constant.snippet.revealOpacityFactor) / el.__revealY)
+                                el.opacity = ((Math.abs(el.touchDeltaX) * numberSnippet.revealOpacityFactor) / el.__revealY)
                                 if (!el.isOpen && (Math.abs(el.touchDeltaX) <= el.__revealY) && (el.touchDeltaX > 0)) {
                                     el.opacityCurrent = 1 - el.opacity
                                     el.style.opacity = el.opacityCurrent
@@ -1078,9 +1097,13 @@
                         }
                     }
                     el.__handleTouchEnd = () => {
-                        el.style.transitionDuration = `${constant.timer.revealTransitionTimeout}ms`;
-                        if (!el.isOpen && (Math.abs(el.touchDeltaX) >= el.__halfY) && (el.touchDeltaX >= 0) && (Math.abs(el.slope) <= constant.snippet.tiltFactor)) {
-                            el.style.opacity = constant.snippet.revealOpacityFactor
+                        el.style.transitionDuration = `${timer.revealTransitionTimeout}ms`;
+                        if ((el.touchDeltaX <= 0) && (Math.abs(el.touchDeltaX) >= el.__halfY)) {
+                            vm.manual.javdb = true;
+                            vm.main.keyWord = data.n
+                        }
+                        if (!el.isOpen && (el.touchDeltaX >= 0) && (Math.abs(el.touchDeltaX) >= el.__halfY) && (Math.abs(el.slope) <= numberSnippet.tiltFactor)) {
+                            el.style.opacity = numberSnippet.revealOpacityFactor
                             el.style.transform = `translate3d(${-el.__revealY}px,0,0)`
                             el.isOpen = true
                         } else {
@@ -1112,13 +1135,13 @@
                             // console.log(this.$refs.monitor?.length);//n+1
                             this.$refs.monitor?.forEach(this.observer.observe.bind(this.observer))
                         })
-                    }, constant.timer.observerDebounce);
+                    }, timer.observerDebounce);
                 },
                 deep: false
             },
-            "main.factor": {
+            "main.filterFactor": {
                 handler(v) {
-                    return this.main.factor = v.length >= 4 ? this.main.factor.slice(0, 4) : v
+                    return this.main.filterFactor = v.length >= 4 ? this.main.filterFactor.slice(0, 4) : v
                 },
                 deep: false
             },
@@ -1182,7 +1205,7 @@
                         this.overlay.error = true
                         setTimeout(() => {
                             this.main.error = ''
-                        }, constant.timer.errorMessageTimeout);
+                        }, timer.errorMessageTimeout);
                     }
                 }
             }
@@ -1199,7 +1222,7 @@
                     this.$nextTick(this.scrollToTop)
                     return this.bookmarkCurrent?.filter(cb) ?? []
                 }
-                let reverse = this.main.factor.includes(constant.constantString.flagString.atniSortFlag) || false
+                let reverse = this.main.filterFactor.includes(flagString.atniSortFlag) || false
                 switch (this.main.select) {
                     case "NONE":
                         return this.dynamiclist.filter(cb)
@@ -1219,8 +1242,8 @@
             },
             switchTheme() {
                 let style = document.createElement('style')
-                let color = constant.themes[this.theme]['color'];
-                let bgcColor = constant.themes[this.theme]['backgroundColor'];
+                let color = themes[this.theme]['color'];
+                let bgcColor = themes[this.theme]['backgroundColor'];
                 style.textContent = this.cssTemplate({
                     "*": {
                         "color": color,
@@ -1263,8 +1286,8 @@
                 vm.main.error = err
             };
             // init Vue Option
-            let data = JSON.parse(localStorage.getItem(`${v || ''}${constant.constantString.flagString._data}`) ?? '{}')
-            this.initVueOption(this.$data, data, constant.defaultStroageMeger)
+            let data = JSON.parse(localStorage.getItem(`${v || ''}${flagString._data}`) ?? '{}')
+            this.initVueOption(this.$data, data, defaultStroageMeger)
             // init websocket
             await this.connect();
             // await this.chatConnect();
@@ -1282,20 +1305,22 @@
             console.log('mounted');
             this.listenTouches()
             // init device info 
-            this.initDeviceMeta()
             this.listenResize()
+            this.initDevice()
             // init observer
             this.initObserver()
+            // init Reveal
+            // this.initReveal();
             // init theme
             this.initTheme()
             // load scroll position
             this.scrollToTop()
             // init resource
-            this.proxies = this.snippetArray((await fetch(constant.resourceRouter.proxies).then(resp => resp.json())).slice(constant.constantNumber.passProxy), constant.snippet.proxy)
-            this.resource.busTaglist = await fetch(constant.resourceRouter.busTag).then(resp => resp.json())
-            this.resource.dbTaglist = await fetch(constant.resourceRouter.dbTag).then(resp => resp.json())
-            this.resource.instruction = await fetch(constant.resourceRouter.instruction).then(resp => resp.json())
-            this.history = Object.keys(localStorage).filter(h => h != constant.constantString.flagString._data);
+            this.proxies = this.snippetArray((await fetch(resourceRouter.proxies).then(resp => resp.json())).slice(numberSnippet.passProxy), numberSnippet.proxy)
+            this.resource.busTaglist = await fetch(resourceRouter.busTag).then(resp => resp.json())
+            this.resource.dbTaglist = await fetch(resourceRouter.dbTag).then(resp => resp.json())
+            this.resource.instruction = await fetch(resourceRouter.instruction).then(resp => resp.json())
+            this.history = Object.keys(localStorage).filter(h => h != flagString._data);
             /* 
              new IntersectionObserver((entries, observer) => {
                    entries.forEach(async entry => {
@@ -1315,9 +1340,9 @@
                 if (this.main.socket) {
                     console.log('updated');
                     // save current 解决 v 存档被覆盖
-                    localStorage.setItem(`${(v && (v == this.sconf.keyWord) && v) || ''}${constant.constantString.flagString._data}`, JSON.stringify({ ...vm._data, resource: { busTaglist: null, dbTaglist: null, busbookmark: null, dbbookmark: null, instruction: null, bookmark: null } }))
+                    localStorage.setItem(`${(v && (v == this.sconf.keyWord) && v) || ''}${flagString._data}`, JSON.stringify({ ...vm._data, resource: { busTaglist: null, dbTaglist: null, busbookmark: null, dbbookmark: null, instruction: null, bookmark: null } }))
                 }
-            }, constant.timer.updateHookDebounce);
+            }, timer.updateHookDebounce);
         },
     })
     vm.$mount('#box')

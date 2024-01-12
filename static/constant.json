@@ -1,14 +1,4 @@
 {
-    "bookmark": {
-        "insert": {
-            "color": "yellow",
-            "delay": 1500
-        },
-        "remove": {
-            "color": "red",
-            "delay": 1500
-        }
-    },
     "dataOptionsNomarl": {
         "fragment": {
             "size": 5,
@@ -49,7 +39,7 @@
         "busBookmark": "/bus-bookmark",
         "dbBookmark": "/db-bookmark",
         "busTag": "/bus-tag-table",
-        "dbTag":"/db-tag-table"
+        "dbTag": "/db-tag-table"
     },
     "demoDebug": {
         "enable": false,
@@ -81,12 +71,13 @@
             "import": "import",
             "searchSplit": "$",
             "searchPageSplit": "-",
-            "searchPageAll":"*",
+            "searchPageAll": "*",
             "logFormat": "<==>",
             "atniSortFlag": "@",
             "socketDisconnect": "disconnected",
             "scrollBehavior": "smooth",
-            "autoScrollBehavior": "auto"
+            "autoScrollBehavior": "auto",
+            "viemEmpty": "load"
         },
         "alertString": {
             "selectProxy": "更新订阅中你点你妈呢！",
@@ -94,6 +85,9 @@
             "export_": "已复制至剪贴板!",
             "search": "还tm没搜索完成，点你妈呢，傻狗!",
             "loadNext": "点你妈逼!"
+        },
+        "styleString": {
+            "focusColor": "#2FD4BD"
         }
     },
     "themes": {
@@ -109,7 +103,7 @@
         "night": {
             "range": [
                 18,
-                24
+                7
             ],
             "name": "night",
             "color": "#fff",
@@ -121,10 +115,11 @@
             "backgroundColor": "#2FD4BD"
         }
     },
-    "snippet": {
+    "numberSnippet": {
         "views": 2,
         "proxy": 4,
         "endFlag": 5,
+        "passProxy":3,
         "tiltFactor": 0.5,
         "swipeThreshold": 25,
         "smallScreenWidth": 360,
@@ -149,10 +144,8 @@
         "openSwipeTimeout": 300,
         "closeSwipeTimeout": 100,
         "initSwipeDebounce": 100,
-        "scaleThumbTimeout": 200
-    },
-    "constantNumber": {
-        "passProxy": 3
+        "scaleThumbTimeout": 200,
+        "updateBookmarkTimeout": 1500
     },
     "defaultStroageMeger": {
         "overlay": {
@@ -160,7 +153,7 @@
             "error": false,
             "serial": false,
             "magnet": false,
-            "comment":false,
+            "comment": false,
             "reflow": false,
             "sidenav": false,
             "proxies": false,
@@ -178,27 +171,29 @@
             "studio": false,
             "label": false,
             "actors": false,
-            "tags":false,
-            "directors":false,
-            "makers":false,
-            "publishers":false,
-            "series":false,
-            "codes":false, 
+            "tags": false,
+            "directors": false,
+            "makers": false,
+            "publishers": false,
+            "series": false,
+            "codes": false,
             "deny": false
         },
         "preview": {
             "pics": [],
             "picsEl": null,
             "viewerEl": null,
-            "prevRevealEl": null,
             "picsSwipe": false,
             "picsIndex": -1,
             "picsSwipeSize": 0,
             "desktopSwipeScale": 2,
-            "picsFailed": "/debug.jpg",
-            "touches": 0
+            "picsFailed": "/debug.jpg"
         },
-        "deviceMeta": {
+        "reveal": {
+            "touches": 1,
+            "prevRevealEl": null
+        },
+        "device": {
             "viewWidth": 0,
             "viewHeight": 0,
             "isMobile": false,
@@ -206,6 +201,8 @@
             "isDesktop": false,
             "destopExpandWScale": 2,
             "destopExpandHScale": 1.2,
+            "fontSize": null,
+            "rootEl": null,
             "os": null
         }
     }

@@ -1,4 +1,4 @@
-const { wsOption, domain_bus, domain_db, ax, sleep, denyGenre, BookMarker, DBBOOKMARKPATH, BUSBOOKMARKPATH, ws } = require('../config')
+const { wsOption, domain_bus, domain_db, ax, sleep, denyGenre, BookMarker, DBBOOKMARKPATH, BUSBOOKMARKPATH, ws, regx } = require('../config')
 const fs = require('fs')
 const cheerio = require('cheerio')
 const { WebSocketServer } = require('ws');
@@ -10,11 +10,9 @@ const bookmarkers = {
 }
 bookmarkers.javbus.init()
 bookmarkers.javdb.init()
-let abort = false
-let auth = '_jdb_session=74ZwY3pQzbHVbrI%2Bep24Dvljx6SQp%2F4FLV%2BUkic8IKhF1cJqceCkdnmCLHcku%2BYY0ZiurtVgNAr9qhRQcj6R%2BgmKYcyEZFsYe2EQkpZj5SrWLJNXfmEaR1Uv7U%2FFSxzDhww2avNHf4rvxeQzqewBStjVK2zohIwZGbrU7%2BIras6%2BretyqJFL7SRf%2F6tfSYbFnuX8l3ERizvGT%2FmOxzhZ%2BJUQmMlIDRvRPCJ1nd9hOAavgcIA65JRCcoooRhSGwke%2BLkWMUvQZB6S%2BU%2BHyy7%2F4t4m1fh2C5vQk%2FL8TfSofnsNaZT6k69tmmdM4ZFFczvmr8499fMiPUH3N0lKbeH55qhK5PGpCRM0636lHQLnpO8dKtQOEp9MsObNX444nTWr%2FTI%3D--Ilist0HwOgXQNRWS--Q8yd637lQmB1Hxye%2ByPk5A%3D%3D'
+let auth = '_jdb_session=U3L1ySgPQqfo%2FyH%2B9A0T0pwbebuPTnBRgDQHt9RgOpu2mJOaj0urTGAS8OIhIPro69ItdvlIWARGG41lv9rW3EY0tiNWLLXQRChQHDB1llGLyeyUuTcA2EYUcIUSbjQZ%2FYWDgp6fHYfA5XrBDofQplBRDiFphmiTgqseshfOUyouopHuxmQyyIex3UCc83TLsTuC2S8S2TTs1be5jf%2F40IzQj0tVaFyqs9NcO9yk49X%2FZzahREN8MQ%2Be9mu3T7w6nNj%2BG03AxwjOVUrJXbyYui4rylxfLMFccIEDnugIdZsPPIZ0NEPouAGNzcxYCqWQXBmouZ4850r1RhP7mZJWMLwPwcV4rtDzxBaCWIiEC7iOCfRFMsN5JKEnyFf9FJLTuD0%3D--Mf8fk5VicLq10KQS--h7dPN3PsJFuYNc6E5iCcGQ%3D%3D'
 // 函数作用域在定义时被确定在不改变this指向下,全局函数无法访问局部变量
 async function javbus_(domain, 关键词, 区间, 演员, 类别, 导演, 制作商, 发行商, deny, socket, df) {
-    abort = false
     let 搜索 = '';
     let 任务队列 = [];
     let 页面计数 = 1;
@@ -64,7 +62,7 @@ async function javbus_(domain, 关键词, 区间, 演员, 类别, 导演, 制作
         // console.log(略缩图集);
         if (牛马们.length == 0) break;
         for (let 计数 = 0; 计数 <= 牛马们.length - 1; 计数++) {
-            if (abort) break;
+            if (socket.abort) break;
             // 控制push堆栈间隔
             await sleep(150)
             任务队列.push(
@@ -82,16 +80,16 @@ async function javbus_(domain, 关键词, 区间, 演员, 类别, 导演, 制作
                     let 牛马的日期 = 牛马们的日期[计数]
                     let 单个搜索 = `${domain}/${牛马}`
                     let 牛马的略缩图 = 略缩图集[计数]
-                    let pre = { df, d: 牛马的日期, f: 单个搜索, p: 牛马的略缩图, g: [], s: [], i: [], b: [], m: [], v: [-1] }
                     // if (!(牛马的日期.slice(0, 4) >= 时间)) return { n: 牛马, s: 0x04, t: 'expire', extra: { d: 牛马的日期, p: 牛马的略缩图 } }
                     try {
                         // throw  new Error('cust')
+                        let pre = { df, d: 牛马的日期, f: 单个搜索, p: 牛马的略缩图, g: [], s: [], i: [], b: [], m: [], c: [], v: [-1] }
                         let _$_ = cheerio.load((await ax.get(单个搜索)).data)
                         let 类别标签 = _$_('.genre label a').map((idx, el) => {
                             return _$_(el).attr('href')
                         }).get()
                         if (deny && 类别标签.find(g => denyGenre.some(d => g.includes(d)))) { return { n: 牛马, s: 0x05, t: 'deny', extra: { ...pre, g: 类别标签 } } }
-                        let 磁力参数 = _$_('script:not([src]):nth-of-type(3)').text().match(/gid\s*=\s*(\d+)/)?.[1]
+                        let 磁力参数 = _$_('script:not([src]):nth-of-type(3)').text().match(regx.magnet)?.[1]
                         let 预览图集 = _$_('#sample-waterfall .sample-box').map((idx, el) => {
                             return _$_(el).attr('href')
                         }).get()
@@ -125,9 +123,10 @@ async function javbus_(domain, 关键词, 区间, 演员, 类别, 导演, 制作
                                     i: 预览图集,
                                     b: 归属信息,
                                     m: 磁力列表,
-                                    u: /uncen|\u65E0\u7801\u7834\u89E3/ig.test(磁力),
-                                    r: /\u65E0\u7801\u6D41\u51FA/ig.test(磁力),
+                                    u: regx.unc.test(磁力),
+                                    r: regx.rev.test(磁力),
                                     v: [-1],
+                                    c: [],
                                 }
                             }
                         ))
@@ -169,7 +168,6 @@ async function javbus_(domain, 关键词, 区间, 演员, 类别, 导演, 制作
 
 
 async function javdb_(domain, 关键词, 区间, 演员, 类别, 导演, 制作商, 发行商, 系列, 番号集, dbsorts, socket, df) {
-    abort = false
     let 搜索 = '';
     let 任务队列 = [];
     let 页面计数 = 1;
@@ -213,10 +211,12 @@ async function javdb_(domain, 关键词, 区间, 演员, 类别, 导演, 制作�
             }
         })
         auth = full.headers['set-cookie']?.map(auth => auth.split(';')[0]).join(';') || auth
+        ws.write(full.data)
         let $ = cheerio.load(full.data);
         let 牛马们 = $('.movie-list .item .video-title strong').map((idx, el) => {
             return $(el).text().trim()
         }).get()
+        // console.log(牛马们);
         let 牛马们的日期 = $('.movie-list .item .meta').map((idx, el) => {
             return $(el).text().trim()
         }).get()
@@ -231,10 +231,10 @@ async function javdb_(domain, 关键词, 区间, 演员, 类别, 导演, 制作�
         // console.log(牛马们详细);
         if (牛马们.length == 0) break;
         for (let 计数 = 0; 计数 <= 牛马们.length - 1; 计数++) {
-            if (abort) break;
-            if (计数 == 1) break
+            if (socket.abort) break;
+            // if (计数 == 1) break
             // 控制push堆栈间隔
-            await sleep(150)
+            await sleep(200)
             任务队列.push(
                 (async (牛马, 计数) => {
                     let c = (页面计数 - 1) * 牛马们.length + 计数
@@ -252,22 +252,21 @@ async function javdb_(domain, 关键词, 区间, 演员, 类别, 导演, 制作�
                     let 牛马的略缩图 = 略缩图集[计数]
                     try {
                         // throw  new Error('cust')
-                        // ws.write( (await ax.get(单个搜索)).data)
                         let _$_ = cheerio.load((await ax.get(单个搜索)).data)
-                        let _$_$_ = cheerio.load((await ax.get(`${单个搜索}/reviews/lastest`)).data,{
+                        let _$_$_ = cheerio.load((await ax.get(`${单个搜索}/reviews/lastest`)).data, {
                             headers: {
                                 cookie: auth
                             }
                         })
                         let 评论预览 = _$_$_('.review-item .content p').map((idx, el) => {
-                            return _$_$_(el).text().replace(/\s/g, '')
+                            return _$_$_(el).text().replace(regx.emtpy, ' ')
                         }).get()
-                        console.log(评论预览);
+                        // console.log(评论预览);
                         let 归属信息 = _$_('.video-detail .video-meta-panel .movie-panel-info > .panel-block .value').map((idx, el) => {
                             let belong = [_$_('a[href^="/directors/"]', el), _$_('a[href^="/makers/"]', el), _$_('a[href^="/publishers/"]', el), _$_('a[href^="/series/"]', el)]
                             let target = belong.find(b => (b.length == 1) && b)
                             if (target) {
-                                return { text: target.text().trim(), href: `${domain}${target.attr('href')}`.replace(/\?.*$/g, '') }
+                                return { text: target.text().trim(), href: `${domain}${target.attr('href')}`.replace(regx.query, '') }
                             }
                         }).get()
                         // console.log(归属信息);
@@ -283,9 +282,9 @@ async function javdb_(domain, 关键词, 区间, 演员, 类别, 导演, 制作�
                             return `${domain}${_$_(el).attr('href')}`
                         }).get()
                         // console.log(类别标签);
-                        let 老司机的看法 = _$_('.video-detail .video-meta-panel .movie-panel-info > .panel-block .has-text-grey').text().match(/\d+/g)
+                        let 老司机的看法 = _$_('.video-detail .video-meta-panel .movie-panel-info > .panel-block .has-text-grey').text()?.match(regx.number) ?? [-1]
                         // console.log(老司机的看法);
-                        let 磁力 = _$_('.video-panel .message-body .magnet-links').text().replace(/\s/g, '')
+                        let 磁力 = _$_('.video-panel .message-body .magnet-links').text().replace(regx.emtpy, '')
                         // console.log(磁力);
                         let 磁力列表 = _$_('.video-panel .message-body .magnet-links .item').map((idx, el) => {
                             return { text: [_$_('.magnet-name a .name', el).text().trim(), _$_('.magnet-name a .meta', el).text().trim(), _$_('.date .time', el).text().trim()], href: _$_('.magnet-name a', el).attr('href') }
@@ -304,8 +303,8 @@ async function javdb_(domain, 关键词, 区间, 演员, 类别, 导演, 制作�
                                     g: 类别标签,
                                     m: 磁力列表,
                                     b: 归属信息,
-                                    u: /uncen|\u65E0\u7801\u7834\u89E3/ig.test(磁力),
-                                    r: /\u65E0\u7801\u6D41\u51FA/ig.test(磁力),
+                                    u: regx.unc.test(磁力),
+                                    r: regx.rev.test(磁力),
                                     v: 老司机的看法,
                                     c: 评论预览
                                 }
@@ -344,6 +343,7 @@ async function javdb_(domain, 关键词, 区间, 演员, 类别, 导演, 制作�
             }
         ))
     })
+    return true
 }
 
 
@@ -369,16 +369,15 @@ ws_main.addListener('connection', (socket, req) => {
                 socket.isAlive = true
                 break;
             case 'SEARCH':
+                socket.abort = false;
                 let { keyWord, range, star, genre, director, studio, label, deny, javdb, actors, tags, directors, makers, publishers, series, codes, dbsorts = { dbsort: 1, dbsortsb: 0, dbsortvst: 1 } } = message
                 console.log(message);
-                if (javdb) {
-                    javdb_(domain_db, keyWord, range, actors, tags, directors, makers, publishers, series, codes, dbsorts, socket, 'javdb')
-                } else {
+                javdb &&
+                    javdb_(domain_db, keyWord, range, actors, tags, directors, makers, publishers, series, codes, dbsorts, socket, 'javdb') ||
                     javbus_(domain_bus, keyWord, range, star, genre, director, studio, label, deny, socket, 'javbus')
-                }
                 break;
             case 'ABORT':
-                abort = true
+                socket.abort = true
                 break;
             case 'INSERT':
                 bookmarkers[message.data['df']].insert(message.data)

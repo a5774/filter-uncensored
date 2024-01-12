@@ -169,7 +169,8 @@
             </div>
         </transition>
 
-        <div :class="{'over-lay-option-transform':overlay.dashboard && overlay.reflow}" class="over-lay-option">
+        <div :class="{'over-lay-option-transform':overlay.dashboard && overlay.reflow}" :style="{color:'red'}"
+            class="over-lay-option">
             <p class="caption-control">THEME</p>
             <span class="status-control">
                 <label for="theme-day">day</label> <input type="radio" name="theme" id="theme-day" value="day"
@@ -260,8 +261,7 @@
 
 
         <transition name="fade" mode="out-in">
-            <ul v-if="overlay.reflow" :style="!reflow.length && {'min-height':'245px'}" class="over-lay-reflow"
-                @click.self="overlay.reflow=!overlay.reflow">
+            <ul v-if="overlay.reflow" class="over-lay-reflow" @click.self="overlay.reflow=!overlay.reflow">
                 <div class="reflow-action">
                     <button class="" @click="reflowList">reflow</button>
                     <button class="" @click="reflowClear">remove</button>
@@ -310,12 +310,12 @@
                     <button class="previous" @click="prevSwipePics"></button>
                     <button class="next" @click="nextSwipePics"></button>
                     <div class="pics-wrapper-swipe"
-                        :style="deviceMeta.isDesktop && `width:${deviceMeta.viewWidth / preview.desktopSwipeScale}px`">
+                        :style="{width : device.isDesktop && `${device.viewWidth / preview.desktopSwipeScale}px`}">
                         <div class="pics-contains-swipe"
-                            :style="`transform : translate3d(${preview.picsIndex * preview.picsSwipeSize}px,0,0)`"
+                            :style="{transform : `translate3d(${preview.picsIndex * preview.picsSwipeSize}px,0,0)`}"
                             v-swipe-carousel-pics="this">
                             <!-- <img class="img-preview-swipe":src="((!status.vthumb || demoDebug.enable) && preview.picsFailed) || preview.pics[preview.picsIndex]?.['pt']" alt=""> -->
-                            <div class="pics-swipe-slide">
+                            <div class="pics-swipe-slide">  
                                 <img class="img-preview-swipe" draggable="false" @mousedown.self="closeSwipe"
                                     :src="((!status.vthumb || demoDebug.enable) && preview.picsFailed) ||  preview.pics[overlay.pics -1]?.['pt']"
                                     alt="">
@@ -323,7 +323,7 @@
                             <div class="pics-swipe-slide" v-for="(item,index) in preview.pics"
                                 @mousedown.self="closeSwipe">
                                 <img class="img-preview-swipe" draggable="false"
-                                    :src="((!status.vthumb || demoDebug.enable) && preview.picsFailed) || item?.['pt']"
+                                    :src="((!status.vthumb || demoDebug.enable) && preview.picsFailed) || item['pt']"
                                     alt="">
                             </div>
                             <div class="pics-swipe-slide">
@@ -347,8 +347,8 @@
             </transition>
 
             <transition name="fade" mode="out-in">
-                <div v-if="overlay.pics" class="pics-contains-expand" :style="deviceMeta.isDesktop && `width:${deviceMeta.viewWidth / deviceMeta.destopExpandWScale}px;
-                    height:${deviceMeta.viewHeight / deviceMeta.destopExpandHScale}px`">
+                <div v-if="overlay.pics" class="pics-contains-expand" :style="{width: device.isDesktop && `${device.viewWidth / device.destopExpandWScale}px`,
+                    height:device.isDesktop && `${device.viewHeight / device.destopExpandHScale}px`}">
                     <a class="pics-preview-expand" v-for="(item,index) in preview.pics"
                         :class="index % 2 == 0 ? 'pics-preview-expand-left':'pics-preview-expand-right'">
                         <img :class="index % 2 == 0 ? 'swipe-zoomed-origin-left':'swipe-zoomed-origin-right'"
@@ -419,25 +419,21 @@
                                 :data-i="index" :data-n="item.n">
                         </div>
                         <div class="info-item">
+
                             <transition name="fade" mode="out-in">
                                 <p v-if="item.gs" @click.self="item.gs=!item.gs" class="info-genre">
                                     <a class="info info-gs" v-for="(g,idx) in item.g"
                                         @touchstart.slef="jumpTag(g,item.df)" @touchend.self="cancelJump"
                                         :key="idx">{{((demoDebug.enable && demoDebug.genre) || g
                                         ) |
-                                        extract(taglistCurrent)}}</a>
+                                        extractParma(taglistCurrent)}}</a>
                                 </p>
-                            </transition>
-
-                            <transition name="fade" mode="out-in">
                                 <p v-if="item.vs" @click.self="item.vs=!item.vs" class="info-vendor">
                                     <a class="info info-vs" v-for="(b,idx) in item.b"
                                         @touchstart.slef="jumpTag(b.href,item.df)" @touchend.self="cancelJump"
                                         :key="idx">{{(demoDebug.enable && demoDebug.vendor) ||
                                         b.text}}</a>
                                 </p>
-                            </transition>
-                            <transition name="fade" mode="out-in">
                                 <p v-if="item.as" @click.self="item.as=!item.as" class="info-actor">
                                     <a class="info info-as" v-for="(s,idx) in item.s"
                                         @touchstart.slef="jumpTag(s.href,item.df)" @touchend.self="cancelJump"
@@ -450,9 +446,8 @@
                                     demoDebug.name)
                                     || item.n}}</a>
                                 <a class="info" target="_blank" @click.self="expandComment(item.c)">{{item.d}}</a>
-                                <button class="info load-view" @click="loadView(item)" target="_blank">{{((item.v[0] ==
-                                    -1) &&
-                                    'LOADING') || item.v[0] }}</button>
+                                <button class="info load-view" @click="loadView(item)" target="_blank">{{
+                                    item.v[0] | viemTemplate }}</button>
                             </p>
 
                             <p class="info-product">
@@ -466,7 +461,6 @@
                                     target="_blank">PREVIEW</a>
                                 <a class="info" target="_blank">ACTORC:{{item.s | actorTotal}}</a>
 
-
                                 <a class="info actor" v-if="item.s.length == 1"
                                     :href="(demoDebug.enable && demoDebug.previewOrigin) || item.s[0].href"
                                     target="_blank" @touchstart.self="jumpTag(item.s[0].href,item.df)"
@@ -474,18 +468,17 @@
                                     demoDebug.single) || item.s[0].text}}</a>
                                 <a v-else class="info">null</a>
 
-
                                 <a class="info info-progress" style="font-weight: bold;">{{ item.i | getProgress}}/{{
-                                    item.i?.length || -1}}</a>
+                                    item.i.length || -1}}</a>
 
                                 <a class="info info-index" style="font-weight: bold;">{{index |
-                                    lastSuffix(filterRule?.length)}}</a>
+                                    lastSuffix(filterRule.length)}}</a>
                             </p>
                         </div>
                     </div>
                     <div class="swipe-reveal-action">
                         <div class="reveal-bookmark-action">
-                            <button class="bookmark-action-btn" @click="updateBookmark(item,$event)">
+                            <button class="bookmark-action-btn" @click="updateBookmark(item)">
                                 <svg v-if="manual.bookmark" class="bookmark-action-svg" viewBox="0 0 1024 1024"
                                     version="1.1" xmlns="http://www.w3.org/2000/svg">
                                     <path
