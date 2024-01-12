@@ -27,8 +27,8 @@ const regx = {
 }
 const ws = fs.createWriteStream('./index_full.html');
 const sslOption = {
-    key: fs.readFileSync(path.resolve(__dirname, './SSL/knockdoor.top.key'), { encoding: 'utf-8' }),
-    cert: fs.readFileSync(path.resolve(__dirname, './SSL/knockdoor.top.pem'), { encoding: 'utf-8' })
+    // key: fs.readFileSync(path.resolve(__dirname, './SSL/knockdoor.top.key'), { encoding: 'utf-8' }),
+    // cert: fs.readFileSync(path.resolve(__dirname, './SSL/knockdoor.top.pem'), { encoding: 'utf-8' })
 }
 const STATE = {
     BLOCKED: '你个傻逼被屏蔽了,重复请求将刷新屏蔽时间',

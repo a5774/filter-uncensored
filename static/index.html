@@ -21,7 +21,7 @@
 </head>
 
 <body>
-    <div id="box" ref="box" @click="visibNav" @dblclick.stop.prevent="manual.bookmark=!manual.bookmark"
+    <div id="box" ref="box" @click="visibNavigation" @dblclick.stop.prevent="manual.bookmark=!manual.bookmark"
         @scroll.passive="loadMorePage">
         {{switchTheme}}
         <div v-if="!filterRule.length" class="instruction-box">
@@ -51,7 +51,7 @@
                 <button>...</button>
             </div>
             <div class="chat-message-content">
-                <li class="msg" v-for="i in 10" :class="i % 2 == 0 && 'msg_reverse'">
+                <li class="msg" v-for="i in 10" :class="i | isOddIndex && 'msg_reverse'">
                     <p class="img">
                         avater
                     </p>
@@ -169,8 +169,7 @@
             </div>
         </transition>
 
-        <div :class="{'over-lay-option-transform':overlay.dashboard && overlay.reflow}" :style="{color:'red'}"
-            class="over-lay-option">
+        <div :class="{'over-lay-option-transform':overlay.dashboard && overlay.reflow}" class="over-lay-option">
             <p class="caption-control">THEME</p>
             <span class="status-control">
                 <label for="theme-day">day</label> <input type="radio" name="theme" id="theme-day" value="day"
@@ -235,7 +234,7 @@
                 <button @click="overlay.serial=!overlay.serial">import</button>
                 <button @click="export_">export</button>
                 <button @click="connect">connect</button>
-                <button @click="main.socket.close()">disconn</button>
+                <button @click="disconnect">disconn</button>
             </span>
             <span class="status-control">
                 <button @click="reset">reset</button>
@@ -245,13 +244,13 @@
         </div>
 
 
-        <div :class="overlay.proxies && 'proxies-container-transform'" @click.self="overlay.proxies=!overlay.proxies"
+        <div :class="{'proxies-container-transform': overlay.proxies}" @click.self="overlay.proxies=!overlay.proxies"
             class="proxies-container">
             <table class="proxy-table">
                 <tr v-for="(e,idx) in proxies" :key="idx">
                     <td class="proxy-switch-td" v-for="(p,idx_) in e" :key="idx_">
                         <span v-if="p.selected" class="proxy-selected-td"></span>
-                        <button class="proxy-btn-td" @click="!p.selected && selectProxy(idx * e.length + idx_)">
+                        <button class="proxy-btn-td" @click="!p.selected && switchProxy(idx * e.length + idx_)">
                             {{p.name}}
                         </button>
                     </td>
@@ -263,8 +262,8 @@
         <transition name="fade" mode="out-in">
             <ul v-if="overlay.reflow" class="over-lay-reflow" @click.self="overlay.reflow=!overlay.reflow">
                 <div class="reflow-action">
-                    <button class="" @click="reflowList">reflow</button>
-                    <button class="" @click="reflowClear">remove</button>
+                    <button @click="reflowList">reflow</button>
+                    <button @click="reflowClear">remove</button>
                     <label for="dashboard">dashboard</label><input id="dashboard" type="checkbox"
                         v-model="overlay.dashboard">
                     <label for="demoDebug">demoDebug</label><input id="demoDebug" type="checkbox"
@@ -283,13 +282,13 @@
                     <span>{{s}}</span>
                     <span>{{t}}</span>
                     <span><button @click="reflowBack(n)">reflow</button></span>
-                    <span><button @click="onlyPush(n,extra,idx)">push</button></span>
+                    <span><button @click="reflowPush(n,extra,idx)">push</button></span>
                 </li>
 
                 <div class="fragment-control">
-                    <span style="float:left;">offset:{{offset || 0}}</span>
+                    <span style="float:left;">offset:{{main.offset}}</span>
                     <button class="fragment-prev" @click="fragment.idx--">prev</button>
-                    <span>{{fragment.idx}}of{{pageTotal}}</span>
+                    <span>{{fragment.idx}}of{{totalReflow || 1}}</span>
                     <button class="fragment-next" @click="fragment.idx++">next</button>
                 </div>
             </ul>
@@ -306,7 +305,7 @@
             class="over-lay-pics">
             <transition name="fade" mode="out-in">
                 <!-- swipe component -->
-                <div v-if="preview.picsSwipe" @mousedown.self="closeSwipe" class="pics-control-swipe">
+                <div v-if="preview.picsSwipe" @mousedown.self="closeSwiper" class="pics-control-swipe">
                     <button class="previous" @click="prevSwipePics"></button>
                     <button class="next" @click="nextSwipePics"></button>
                     <div class="pics-wrapper-swipe"
@@ -315,19 +314,19 @@
                             :style="{transform : `translate3d(${preview.picsIndex * preview.picsSwipeSize}px,0,0)`}"
                             v-swipe-carousel-pics="this">
                             <!-- <img class="img-preview-swipe":src="((!status.vthumb || demoDebug.enable) && preview.picsFailed) || preview.pics[preview.picsIndex]?.['pt']" alt=""> -->
-                            <div class="pics-swipe-slide">  
-                                <img class="img-preview-swipe" draggable="false" @mousedown.self="closeSwipe"
-                                    :src="((!status.vthumb || demoDebug.enable) && preview.picsFailed) ||  preview.pics[overlay.pics -1]?.['pt']"
+                            <div class="pics-swipe-slide">
+                                <img class="img-preview-swipe" draggable="false" @mousedown.self="closeSwiper"
+                                    :src="((!status.vthumb || demoDebug.enable) && preview.picsFailed) ||  preview.pics[overlay.pics - 1]?.['pt']"
                                     alt="">
                             </div>
                             <div class="pics-swipe-slide" v-for="(item,index) in preview.pics"
-                                @mousedown.self="closeSwipe">
+                                @mousedown.self="closeSwiper">
                                 <img class="img-preview-swipe" draggable="false"
                                     :src="((!status.vthumb || demoDebug.enable) && preview.picsFailed) || item['pt']"
                                     alt="">
                             </div>
                             <div class="pics-swipe-slide">
-                                <img class="img-preview-swipe" draggable="false" @mousedown.self="closeSwipe"
+                                <img class="img-preview-swipe" draggable="false" @mousedown.self="closeSwiper"
                                     :src="((!status.vthumb || demoDebug.enable) && preview.picsFailed) ||  preview.pics[0]?.['pt']"
                                     alt="">
                             </div>
@@ -345,14 +344,13 @@
                     </div> -->
                 </div>
             </transition>
-
             <transition name="fade" mode="out-in">
                 <div v-if="overlay.pics" class="pics-contains-expand" :style="{width: device.isDesktop && `${device.viewWidth / device.destopExpandWScale}px`,
                     height:device.isDesktop && `${device.viewHeight / device.destopExpandHScale}px`}">
                     <a class="pics-preview-expand" v-for="(item,index) in preview.pics"
-                        :class="index % 2 == 0 ? 'pics-preview-expand-left':'pics-preview-expand-right'">
-                        <img :class="index % 2 == 0 ? 'swipe-zoomed-origin-left':'swipe-zoomed-origin-right'"
-                            @click="openSwipe(index + 1  ,$event)" class="img-preview-expand"
+                        :class="[ isOddIndex(index) ? 'pics-preview-expand-left':'pics-preview-expand-right']">
+                        <img :class="[isOddIndex(index) ? 'swipe-zoomed-origin-left':'swipe-zoomed-origin-right']"
+                            @click="openSwiper(index + 1  ,$event)" class="img-preview-expand"
                             @load="item['loaded'] = true"
                             :src="((!status.vthumb || demoDebug.enable) && preview.picsFailed) || item?.['pt']"
                             :key="index" alt="">
@@ -407,7 +405,6 @@
                 <label for="autoView">autoView</label>
                 <input id="autoView" type="checkbox" v-model=status.autoview>
             </div>
-
             <ul class="info-content" v-press-auto-scroll="this">
                 <li v-for="(item,index) in filterRule" class="info-contains" :key="index">
                     <div class="info-swipe-reveal" v-swipe-to-reveal:[item]="$root">

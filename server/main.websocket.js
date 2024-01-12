@@ -251,7 +251,6 @@ async function javdb_(domain, 关键词, 区间, 演员, 类别, 导演, 制作�
                     let 单个搜索 = 牛马们详细[计数]
                     let 牛马的略缩图 = 略缩图集[计数]
                     try {
-                        // throw  new Error('cust')
                         let _$_ = cheerio.load((await ax.get(单个搜索)).data)
                         let _$_$_ = cheerio.load((await ax.get(`${单个搜索}/reviews/lastest`)).data, {
                             headers: {

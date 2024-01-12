@@ -19,7 +19,62 @@
             return !s.has(n) ? s.add(n) : null
         });
     }
-
+    function debouncefn(fu, delay) {
+        let timerd;
+        return function (...args) {
+            clearTimeout(timerd);
+            timerd = setTimeout(() => {
+                fu(...args);
+            }, delay);
+        };
+    }
+    function throttledfn(fn, delay) {
+        let timerd = null;
+        return function (...args) {
+            if (!timerd) {
+                fn(...args);
+                timerd = setTimeout(() => {
+                    timerd = null;
+                }, delay);
+            }
+        };
+    }
+    function cssTemplate(cssObject) {
+        return Object.keys(cssObject).map(key => {
+            let cssStatements = [];
+            for (const [k, v] of Object.entries(cssObject[key])) {
+                cssStatements.push(`${k}:${v};`)
+            }
+            return `${key}{${cssStatements.join('')}}`
+        }).join('')
+    }
+    function snippetArray(arr, size) {
+        let i, j; i = j = 0;
+        const sliced = [];
+        while (j <= arr.length) {
+            [j, i] = [i + size, j]
+            if (!(i == j)) {
+                sliced.push(arr.slice(i, j))
+            }
+        }
+        return sliced;
+    }
+    async function sleep(t) {
+        return new Promise(r => {
+            setTimeout(() => {
+                r(null);
+            }, t);
+        })
+    }
+    function once(fn) {
+        var called = false;
+        return function () {
+            if (!called) {
+                called = true;
+                fn.apply(this, arguments);
+            }
+        }
+    }
     let vm = new Vue({
         data: {
             overlay: {
@@ -54,6 +109,7 @@
             },
             main: {
                 page: 0,
+                offset: 0,
                 actors: dataOptionsNomarl.main.actors,
                 log: dataOptionsNomarl.main.log,
                 select: dataOptionsNomarl.main.select,
@@ -101,7 +157,7 @@
                 pics: [],
                 picsIndex: -1,
                 picsEl: null,
-                viewerEl: null,
+                swiperEl: null,
                 picsSwipe: false,
                 picsSwipeSize: 0,
                 desktopSwipeScale: 2,
@@ -126,7 +182,6 @@
             proxies: [],
             sconf: null,
             observer: null,
-            offset: null,
             debounce: {
                 nav: null,
                 slide: null,
@@ -171,32 +226,6 @@
             description: 'standard',
         },
         methods: {
-            async selectProxy(idx) {
-                if (this.status.isdone) {
-                    this.status.isdone = false
-                    this.overlay.reflow = false;
-                    this.overlay.proxies = false;
-                    this.main.log = await fetch(`${resourceRouter.toggleProxy}${idx + numberSnippet.passProxy}`).then(r => r.text())
-                    this.proxies = this.snippetArray((await fetch(resourceRouter.proxies).then(resp => resp.json())).slice(numberSnippet.passProxy), numberSnippet.proxy)
-                    this.status.isdone = true
-                    return null
-                }
-                alert(alertString.selectProxy)
-            },
-            async updateProxy() {
-                this.overlay.reflow = false;
-                this.main.log = await fetch(resourceRouter.updateProxy).then(r => r.text());
-            },
-            flushHistory() {
-                this.overlay.history = this.history.length
-                this.history = Object.keys(localStorage).filter(h => h != flagString._data);
-                return null
-            },
-            loadHistory(key) {
-                let data_ = JSON.parse(localStorage.getItem(key))
-                this.jumpLocation(data_['sconf']['keyWord'], data_['description'], data_["archive"])
-                return null
-            },
             import_() {
                 if (/^[a-zA-Z]+-\d+(\s*,\s*[a-zA-Z]+-\d+)*$/.test(this.main.serial)) {
                     this.dynamiclist = []
@@ -206,7 +235,7 @@
                     serial.forEach(k => {
                         this.main.socket.send(JSON.stringify({ type: 'SEARCH', keyWord: k, javdb: this.manual.javdb, range: [1] }))
                     })
-                    this.main.log = `${flagString.import}:${serial.length}`
+                    this.logReuse(`${flagString.import}:${serial.length}`)
                     return null
                 }
                 alert(alertString.import_)
@@ -214,7 +243,7 @@
             export_() {
                 let text = this.filterRule.map(({ m }) => m.find(({ href, text: [desc] }) => /uncen/ig.test(desc) ? href : null)).map(um => um.href).join(';')
                 navigator.clipboard.writeText(text)
-                this.main.log = alertString.export_
+                this.logReuse(alertString.export_)
                 return null
 
             },
@@ -246,10 +275,10 @@
             search() {
                 if (this.searchAction == 'abort') return this.abort()
                 if (!this.status.isdone) return alert(alertString.search)
-                if (this.main.socket.readyState != WebSocket.OPEN) return this.main.log = flagString.socketDisconnect
+                if (this.main.socket.readyState != WebSocket.OPEN) return this.logReuse(flagString.socketDisconnect)
+                this.lockSyncReuse();
                 this.reflow = [];
                 this.dynamiclist = [];
-                this.status.isdone = false;
                 this.overlay.history = false;
                 this.archive = (this.manual.javdb && 'javdb') || (this.manual.javbus && 'javbus')
                 this.description = (this.status.star && 'star') || (this.status.genre && 'genre') || (this.status.studio && 'studio') || (this.status.label && 'label') || (this.status.actors && 'actors') || (this.status.tags && 'tags') || (this.status.directors && 'directors') || (this.status.directors && 'directors') || (this.status.makers && 'makers') || (this.status.publishers && 'publishers') || (this.status.series && 'series') || 'standard'
@@ -276,61 +305,13 @@
                 this.main.socket.send(JSON.stringify(this.sconf))
                 return null
             },
-            searchGenre(k) {
-                this.main.keyWord = k
+            searchGenre(v) {
+                this.main.keyWord = v
                 this.search()
                 return null
             },
-            async sleep(t) {
-                return new Promise(r => {
-                    setTimeout(() => {
-                        r(null);
-                    }, t);
-                })
-            },
-            async loadView(v) {
-                this.main.log = v.n
-                this.status.isdone = false
-                let view = (await fetch(`${resourceRouter.views}${v.n}`).then(resp => resp.text()));
-                this.main.log = `${v.n}${flagString.logFormat}${view}`
-                // vm.$set(v, 'v', parseInt(view))
-                v['v'][0] = parseInt(view)
-                this.main.log = flagString.done
-                this.status.isdone = true
-                return null
-            },
-            async loadViews() {
-                if (!this.dynamiclist.length) return null;
-                this.status.isdone = false;
-                let queueView = []
-                let pending = this.filterRule.filter(({ v }) => v[0] == -1)
-                this.main.log = pending.length
-                let fragment = this.snippetArray(pending, numberSnippet.views)
-                for (let i = 0; i <= fragment.length - 1; i++) {
-                    await this.sleep(timer.viewsLoadDealy);
-                    fragment[i].forEach(async v => {
-                        queueView.push(
-                            (async () => {
-                                if (v['v'] == -1) {
-                                    let view = (await fetch(`${resourceRouter.views}${v.n}`).then(resp => resp.text()))
-                                    this.main.log = `${v.n}${flagString.logFormat}${view}`
-                                    // vm.$set(v, 'v', parseInt(view))
-                                    v['v'][0] = parseInt(view)
-                                    return { n: v.n, view }
-                                }
-                            })()
-                        )
-                    })
-                }
-                Promise.allSettled(queueView).then((ps) => {
-                    // console.log(ps);
-                    this.main.log = flagString.done
-                    this.status.isdone = true
-                })
-                return null
-            },
             reflowBack(n) {
-                this.status.isdone = false
+                this.lockSyncReuse()
                 this.main.socket.send(JSON.stringify({ type: 'SEARCH', keyWord: n, javdb: this.manual.javdb, range: [1] }))
                 return null
             },
@@ -345,15 +326,9 @@
                 this.overlay.reflow = false
                 return null
             },
-            onlyPush(n, extra, idx) {
+            reflowPush(n, extra, idx) {
                 this.dynamiclist.push({ n, ...extra })
                 this.reflow.splice(idx, 1)
-                return null
-            },
-            reset() {
-                localStorage.clear()
-                this.main.socket.close()
-                location.href = origin
                 return null
             },
             home() {
@@ -362,6 +337,12 @@
             },
             abort() {
                 return this.main.socket.send(JSON.stringify({ type: 'ABORT' }))
+            },
+            reset() {
+                this.disconnect()
+                localStorage.clear()
+                location.href = origin
+                return null
             },
             save() {
                 let page = document.documentElement.outerHTML
@@ -374,7 +355,6 @@
                 document.body.removeChild(dl)
                 return null
             },
-
             jumpLocation(v, f, m) {
                 return location.href = `${origin}?v=${v}&f=${f}&m=${m}`
             },
@@ -386,40 +366,70 @@
                     this.jumpLocation(paths[2], paths[1], m)
                 }, timer.jumpTagTimeout)
             },
-
             cancelJump() {
                 return clearTimeout(this.throttled.press)
             },
-            // closure
-            debouncefn(fu, delay) {
-                let timerd;
-                return function (...args) {
-                    clearTimeout(timerd);
-                    timerd = setTimeout(() => {
-                        fu(...args);
-                    }, delay);
-                };
+            logReuse(v) {
+                this.main.log = v
+                return null
             },
-            throttledfn(fn, delay) {
-                let timerd = null;
-                return function (...args) {
-                    if (!timerd) {
-                        fn(...args);
-                        timerd = setTimeout(() => {
-                            timerd = null;
-                        }, delay);
-                    }
-                };
+            lockSyncReuse() {
+                this.status.isdone = false;
+                return null
+            },
+            unlockSyncReuse() {
+                this.status.isdone = true;
+                return null
+            },
+            async updateProxy() {
+                this.overlay.reflow = false;
+                this.logReuse(await fetch(resourceRouter.updateProxy).then(r => r.text()))
+            },
+            async flushNewProxy() {
+                this.proxies = snippetArray((await fetch(resourceRouter.proxies).then(resp => resp.json())).slice(numberSnippet.passProxy), numberSnippet.proxy)
+                return null
+            },
+            async switchProxy(idx) {
+                if (this.status.isdone) {
+                    this.lockSyncReuse()
+                    this.overlay.reflow = false;
+                    this.overlay.proxies = false;
+                    this.logReuse(await fetch(`${resourceRouter.toggleProxy}${idx + numberSnippet.passProxy}`).then(r => r.text()))
+                    this.flushNewProxy()
+                    this.unlockSyncReuse();
+                    return null
+                }
+                alert(alertString.switchProxy)
+            },
+            flushHistory() {
+                this.overlay.history = this.history.length
+                this.history = Object.keys(localStorage).filter(h => h != flagString._data);
+                return null
+            },
+            loadHistory(key) {
+                let data_ = JSON.parse(localStorage.getItem(key))
+                this.jumpLocation(data_['sconf']['keyWord'], data_['description'], data_["archive"])
+                return null
+            },
+            loadNext() {
+                if (this.status.isdone && this.sconf) {
+                    this.main.page++
+                    this.main.socket.send(JSON.stringify({ ...this.sconf, range: [this.main.page] }))
+                    this.lockSyncReuse()
+                } else {
+                    alert(alertString.loadNext)
+                }
+                return null
             },
             loadMorePage({ target }) {
                 clearTimeout(this.debounce.scroll)
                 this.debounce.scroll = setTimeout(() => {
                     let { clientHeight, scrollHeight, scrollTop } = target
                     let diff = scrollHeight - Math.ceil(scrollTop)
-                    this.offset = Math.floor(scrollTop)
-                    if (Math.abs(diff - clientHeight) <= 2 && !this.throttled.load && this.status.isdone && this.dynamiclist.length && !this.manual.bookmark) {
+                    this.main.offset = Math.floor(scrollTop)
+                    if (Math.abs(diff - clientHeight) <= numberSnippet.loadPageTolerance && !this.throttled.load && this.status.isdone && this.dynamiclist.length && !this.manual.bookmark) {
                         this.main.page++
-                        this.status.isdone = false
+                        this.syncReuse()
                         this.main.socket.send(JSON.stringify({ ...this.sconf, range: [this.main.page] }))
                         // 防止在加载开始之前再次触发
                         this.throttled.load = setTimeout(() => {
@@ -429,34 +439,64 @@
                 }, timer.scrollDebounce);
                 return null
             },
-            snippetArray(arr, size) {
-                let i, j; i = j = 0;
-                const sliced = [];
-                while (j <= arr.length) {
-                    [j, i] = [i + size, j]
-                    if (!(i == j)) {
-                        sliced.push(arr.slice(i, j))
-                    }
-                }
-                return sliced;
+            async loadView(v) {
+                this.logReuse(v.n)
+                this.lockSyncReuse();
+                let view = (await fetch(`${resourceRouter.views}${v.n}`).then(resp => resp.text()));
+                this.logReuse(`${v.n}${flagString.logFormat}${view}`)
+                // vm.$set(v, 'v', parseInt(view))
+                v['v'][0] = parseInt(view)
+                this.logReuse(flagString.done)
+                this.unlockSyncReuse();
+                return null
             },
-            async openSwipe(idx, { target }) {
+            async loadViews() {
+                if (!this.dynamiclist.length) return null;
+                this.lockSyncReuse()
+                let queueView = []
+                let pending = this.filterRule.filter(({ v }) => v[0] == -1)
+                this.logReuse(pending.length)
+                let fragment = snippetArray(pending, numberSnippet.views)
+                for (let i = 0; i <= fragment.length - 1; i++) {
+                    await sleep(timer.viewsLoadDealy);
+                    fragment[i].forEach(async v => {
+                        queueView.push(
+                            (async () => {
+                                if (v['v'] == -1) {
+                                    let view = (await fetch(`${resourceRouter.views}${v.n}`).then(resp => resp.text()))
+                                    this.logReuse(`${v.n}${flagString.logFormat}${view}`)
+                                    // vm.$set(v, 'v', parseInt(view))
+                                    v['v'][0] = parseInt(view)
+                                    return { n: v.n, view }
+                                }
+                            })()
+                        )
+                    })
+                }
+                Promise.allSettled(queueView).then((ps) => {
+                    // console.log(ps);
+                    this.logReuse(flagString.done)
+                    this.unlockSyncReuse()
+                })
+                return null
+            },
+            async openSwiper(idx, { target }) {
                 this.preview.picsIndex = idx
                 this.preview.picsEl = target
                 this.preview.picsEl.classList.add(classString.swipe)
-                await this.sleep(timer.openSwipeTimeout)
+                await sleep(timer.openSwipeTimeout)
                 this.preview.picsSwipe = !this.preview.picsSwipe
 
             },
-            async closeSwipe() {
+            async closeSwiper() {
                 this.preview.picsIndex = -1
                 this.preview.picsSwipe = !this.preview.picsSwipe
-                await this.sleep(timer.closeSwipeTimeout)
+                await sleep(timer.closeSwipeTimeout)
                 this.preview.picsEl.classList.remove(classString.swipe)
                 return null
             },
             nextSwipePics() {
-                let el = this.preview.viewerEl
+                let el = this.preview.swiperEl
                 el.style.transitionDuration = `${timer.swipeTransitionTimeout}ms`
                 if (!el.lock) {
                     el.lock = true
@@ -475,7 +515,7 @@
 
             },
             prevSwipePics() {
-                let el = this.preview.viewerEl
+                let el = this.preview.swiperEl
                 el.style.transitionDuration = `${timer.swipeTransitionTimeout}ms`
                 if (!el.lock) {
                     el.lock = true
@@ -508,7 +548,7 @@
             },
             async updateBookmark(_data) {
                 let df = _data.df
-                this.main.log = `${this.markAction}${flagString.logFormat}${_data.n}`
+                this.logReuse(`${this.markAction}${flagString.logFormat}${_data.n}`)
                 switch (this.markAction) {
                     case 'insert':
                         this.main.socket.send(JSON.stringify({ type: 'INSERT', data: _data, df }))
@@ -518,101 +558,21 @@
                         break;
                 }
                 this.reveal.prevRevealEl.__recoverReveal()
-                await this.sleep(timer.updateBookmarkTimeout)
+                await sleep(timer.updateBookmarkTimeout)
                 this.flushBookMark()
                 return null
             },
-
             async flushBookMark(lock) {
-                lock && (this.status.isdone = !lock)
+                lock && this.lockSyncReuse()
                 this.resource.dbbookmark = await fetch(resourceRouter.dbBookmark).then(resp => resp.json())
                 this.resource.busbookmark = await fetch(resourceRouter.busBookmark).then(resp => resp.json())
-                return null
-            },
-            visibNav() {
-                this.overlay.sidenav = true
-                clearTimeout(this.debounce.nav)
-                this.debounce.nav = setTimeout(() => {
-                    this.overlay.sidenav = false
-                }, timer.visibilityNavBar);
-                return null
-            },
-            connect() {
-                console.log('connect');
-                return new Promise(r => {
-                    this.main.socket = new WebSocket(`${protocol.includes('https:') ? 'wss' : 'ws'}://${host}${websocket.main}`)
-                    this.main.socket.onopen = () => {
-                        r(null)
-                        console.log('WebSocket OPEN');
-                        this.main.socket.addEventListener('message', async ({ data }) => {
-                            let message = JSON.parse(data)
-                            switch (message.type) {
-                                case 'PING':
-                                    let data = Date.now() - parseInt(message.data)
-                                    this.main.socket.send(JSON.stringify({ type: 'PONG', data }))
-                                    this.main.heartbeat = data
-                                    clearInterval(this.debounce.heartbeat)
-                                    this.debounce.heartbeat = setInterval(() => {
-                                        this.main.socket.close();
-                                    }, timer.heartbeatDetectCycle)
-                                    break;
-                                case 'LOG':
-                                    this.main.log = `${message.data.n}<==>${message.data.c}`
-                                    break;
-                                case 'DONE':
-                                    this.main.log = message.data.m;
-                                    message.data.reflow.length ? this.reflow = uniqueObjectsByKey([...this.reflow, ...message.data.reflow], 'n') : null
-                                    this.status.isdone = true
-                                    if (this.sconf?.keyWord) {
-                                        // save history 
-                                        localStorage.setItem(`${this.sconf?.keyWord}${flagString._data}`, JSON.stringify({ ...vm._data, resource: { busTaglist: null, dbTaglist: null, busbookmark: null, dbbookmark: null, instruction: null, bookmark: null } }))
-                                    }
-                                    break;
-                                case 'ERROR':
-                                    this.main.log = message.data.err
-                                    break;
-                                case 'START':
-                                    this.main.log = message.data.m
-                                    break;
-                                case 'CENSORED':
-                                    let inject = { ...message.data, i: message.data.i.map(pi => ({ pt: pi, loaded: false })), gs: false, vs: false, as: false }
-                                    this.dynamiclist.push(inject)
-                                    this.reflow.length && this.reflow.find(({ value: { n } }, idx) => (message.data.n == n) ? this.reflow.splice(idx, 1) : null)
-                                    break;
-                            }
-                        })
-                    };
-                    this.main.socket.onclose = () => {
-                        console.log('WebSocket CLOSE');
-                        clearInterval(this.main.heartbeat)
-                        if (this.main.reconn) {
-                            setTimeout(this.connect, this.main.reconintval);
-                        }
-
-                    };
-                    this.main.socket.onerror = (evt) => {
-                        console.log('WebSocket ERROR');
-                        //   this.main.reconn = false;
-                        this.main.socket.close();
-                    };
-
-                })
+                return !null
             },
             scrollToTop(offset, behavior) {
                 this.$refs.box.scrollTo({
-                    top: offset || this.offset || 0,
+                    top: offset || this.main.offset,
                     behavior: behavior || flagString.scrollBehavior
                 });
-                return null
-            },
-            loadNext() {
-                if (this.status.isdone && this.sconf) {
-                    this.main.page++
-                    this.main.socket.send(JSON.stringify({ ...this.sconf, range: [this.main.page] }))
-                    this.status.isdone = false;
-                } else {
-                    alert(alertString.loadNext)
-                }
                 return null
             },
             filterCallback() {
@@ -625,42 +585,13 @@
                 !(this.main.review == 'revelation') || conditions.push('i?.r');
                 return conditions.join(` && `)
             },
-            connectDetect() {
-                setInterval(() => {
-                    let { connectState } = websocket
-                    switch (this.main.socket.readyState) {
-                        case this.main.socket.CONNECTING:
-                            this.main.state = connectState.connecting
-                            break;
-                        case this.main.socket.OPEN:
-                            this.main.state = connectState.open
-                            break;
-                        case this.main.socket.CLOSING:
-                            this.main.state = connectState.closing
-                            break;
-                        case this.main.socket.CLOSED:
-                            this.main.state = connectState.closed
-                            break;
-                    }
-                }, timer.connectDetect);
+            visibNavigation() {
+                this.overlay.sidenav = true
+                clearTimeout(this.debounce.nav)
+                this.debounce.nav = setTimeout(() => {
+                    this.overlay.sidenav = false
+                }, timer.visibilityNavBar);
                 return null
-            },
-            initTheme() {
-                let hours = new Date().getHours()
-                if (themes.day.range[0] <= hours && hours <= themes.day.range[1]) {
-                    this.theme = themes.day.name
-                } else {
-                    this.theme = themes.night.name
-                }
-            },
-            cssTemplate(cssObject) {
-                return Object.keys(cssObject).map(key => {
-                    let cssStatements = [];
-                    for (const [k, v] of Object.entries(cssObject[key])) {
-                        cssStatements.push(`${k}:${v};`)
-                    }
-                    return `${key}{${cssStatements.join('')}}`
-                }).join('')
             },
             thumbSucess({ target }) {
                 target.classList.add(classString.loaded)
@@ -680,7 +611,24 @@
             },
             listenResize() {
                 // resize被推迟至宏任务阶段,devTool无法监听数据变化
-                window.addEventListener('resize', this.debouncefn(this.initDevice, timer.initSwipeDebounce))
+                window.addEventListener('resize', debouncefn(this.initDevice.bind(this), timer.initSwipeDebounce))
+            },
+            flexible() {
+                const { viewWidth } = this.device;
+                const { small, big } = flexibleSize;
+                const { smallScreenWidth, largeScreenWidth } = numberSnippet;
+                if (viewWidth >= smallScreenWidth && viewWidth <= largeScreenWidth) {
+                    return small + ((viewWidth - smallScreenWidth) / (largeScreenWidth - smallScreenWidth)) * (big - small);
+                }
+                return ((viewWidth >= largeScreenWidth) && big) || ((viewWidth <= smallScreenWidth) && small)
+            },
+            initTheme() {
+                let hours = new Date().getHours()
+                if (themes.day.range[0] <= hours && hours <= themes.day.range[1]) {
+                    this.theme = themes.day.name
+                } else {
+                    this.theme = themes.night.name
+                }
             },
             // offsetH/W w+p+b+s ,clientH/W, w+p  windowH/W w+p+b+s  rectH/W w+p+b
             initDevice() {
@@ -688,7 +636,7 @@
                 const userAgent = navigator.userAgent.toLowerCase();
                 //  const { width } = document.documentElement.getBoundingClientRect()
                 this.device.os = platform.includes('win') && 'Windows' || platform.includes('mac') && 'MacOS' || platform.includes('linux') && 'Linux' || 'Unknown'
-                this.device.isMobile = /mobile|android|iphone|ipad|ipod|blackberry|windows phone/i.test(userAgent) || !navigator.maxTouchPoints
+                this.device.isMobile = /mobile|android|iphone|ipad|ipod|blackberry|windows phone/i.test(userAgent) || navigator.maxTouchPoints
                 this.device.isTablet = /ipad|android/i.test(userAgent) && this.device.isMobile;
                 this.device.isDesktop = !this.device.isMobile && !this.device.isTablet;
                 // this.$refs.box.style.height = `${visualViewport.height}px`
@@ -700,25 +648,6 @@
                 this.device.rootEl.style.fontSize = `${this.device.fontSize}px`;
                 vm.$forceUpdate();
                 return null
-                // this.main.error = this.device.viewWidth
-            },
-            initReveal() {
-                return
-                // directive在渲染中绑定，需要等待渲染完成获取
-                vm.$nextTick(() => {
-                    let { width, height } = el.getBoundingClientRect()
-                    el.__revealY = height
-                    el.__halfY = el.__revealY / 2
-                })
-            },
-            flexible() {
-                const { viewWidth } = this.device;
-                const { small, big } = flexibleSize;
-                const { smallScreenWidth, largeScreenWidth } = numberSnippet;
-                if (viewWidth >= smallScreenWidth && viewWidth <= largeScreenWidth) {
-                    return small + ((viewWidth - smallScreenWidth) / (largeScreenWidth - smallScreenWidth)) * (big - small);
-                }
-                return ((viewWidth >= largeScreenWidth) && big) || ((viewWidth <= smallScreenWidth) && small)
             },
             initVueOption($data, data, overWrite = {}) {
                 let _data = {
@@ -743,7 +672,7 @@
                             !(target.src == target.dataset.src) && target.setAttribute('src', target.dataset.src)
                             let v = this.status.autoview && this.filterRule[target.dataset.i]
                             if (v && (v['v'][0] == -1)) {
-                                this.main.log = target.dataset.n
+                                this.logReuse(target.dataset.n)
                                 let view = await fetch(`${resourceRouter.views}${target.dataset.n}`).then(resp => resp.text());
                                 v['v'][0] = parseInt(view)
                                 // vm.$set(this.filterRule[target.dataset.i], 'v',[parseInt(view)] )
@@ -757,32 +686,62 @@
                     threshold: 0
                 })
             },
-            async chatDeviceRequest() {
-                console.log('init');
-                // await this.chatConnect()
-                let stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-                let devices = await navigator.mediaDevices.enumerateDevices()
-                let constraints = await navigator.mediaDevices.getSupportedConstraints();
-                let deviceName = navigator.userAgent;
-                let tracks = stream.getAudioTracks()
-                tracks.forEach(track => {
-                    console.log(track);
-                    let trackInfo = { id: track.id, kind: track.kind, label: track.label, muted: track.muted, enabled: track.enabled, readyState: track.readyState }
-                    // console.log(track.getCapabilities());
-                    // console.log(track.getSettings());
-                    // console.log(track.getConstraints());
+            connect() {
+                console.log('connect');
+                return new Promise(r => {
+                    this.main.socket = new WebSocket(`${protocol.includes('https:') ? 'wss' : 'ws'}://${host}${websocket.main}`)
+                    this.main.socket.onopen = () => {
+                        r(null)
+                        console.log('WebSocket OPEN');
+                        this.main.socket.addEventListener('message', async ({ data }) => {
+                            let message = JSON.parse(data)
+                            switch (message.type) {
+                                case 'PING':
+                                    let data = Date.now() - parseInt(message.data)
+                                    this.main.socket.send(JSON.stringify({ type: 'PONG', data }))
+                                    this.main.heartbeat = data
+                                    clearInterval(this.debounce.heartbeat)
+                                    this.debounce.heartbeat = setInterval(() => {
+                                        this.disconnect()
+                                    }, timer.heartbeatDetectCycle)
+                                    break;
+                                case 'LOG':
+                                    this.logReuse(`${message.data.n}<==>${message.data.c}`)
+                                    break;
+                                case 'DONE':
+                                    this.logReuse(message.data.m)
+                                    this.unlockSyncReuse()
+                                    message.data.reflow.length ? this.reflow = uniqueObjectsByKey([...this.reflow, ...message.data.reflow], 'n') : null
+                                    if (this.sconf?.keyWord) {
+                                        // save history 
+                                        localStorage.setItem(`${this.sconf?.keyWord}${flagString._data}`, JSON.stringify({ ...vm._data, resource: { busTaglist: null, dbTaglist: null, busbookmark: null, dbbookmark: null, instruction: null, bookmark: null } }))
+                                    }
+                                    break;
+                                case 'ERROR':
+                                    this.logReuse(message.data.err)
+                                    break;
+                                case 'START':
+                                    this.logReuse(message.data.m)
+                                    break;
+                                case 'CENSORED':
+                                    let inject = { ...message.data, i: message.data.i.map(pi => ({ pt: pi, loaded: false })), gs: false, vs: false, as: false }
+                                    this.dynamiclist.push(inject)
+                                    this.reflow.length && this.reflow.find(({ value: { n } }, idx) => (message.data.n == n) ? this.reflow.splice(idx, 1) : null)
+                                    break;
+                            }
+                        })
+                    };
+                    this.main.socket.onclose = () => {
+                        console.log('WebSocket CLOSE');
+                        clearInterval(this.main.heartbeat)
+                        this.main.reconn && setTimeout(this.connect, this.main.reconintval);
+                    };
+                    this.main.socket.onerror = (evt) => {
+                        console.log('WebSocket ERROR');
+                        this.disconnect()
+                    };
+
                 })
-                this.chat.mediaRecorder = new MediaRecorder(stream);
-                this.chat.mediaRecorder.ondataavailable = (e) => {
-                    (e.data.size > 0) ? this.chat.voiceChunks.push(e.data) : null
-                }
-                this.chat.mediaRecorder.onstop = async () => {
-                    console.log(this.chat.voiceChunks);
-                    const audioBlob = new Blob(this.chat.voiceChunks, { type: 'audio/wav' });
-                    this.chat.socket.send(await audioBlob.arrayBuffer())
-                };
-                return null
-                // this.chat.socket.send(JSON.stringify({ type: 'CODES', deviceName, constraints, devices, tracks, ratio: this.chat.mediaRecorder.audioBitsPerSecond }))
             },
             chatConnect() {
                 return new Promise(r => {
@@ -817,16 +776,68 @@
                     };
                     this.chat.socket.onclose = () => {
                         console.log('WebSocket CLOSE');
-                        // if (this.main.reconn) {
-                        // setTimeout(this.chatConnect, reconintval);
-                        // }
+                        this.main.reconn && setTimeout(this.chatConnect, reconintval);
                     };
                     this.chat.socket.onerror = (evt) => {
                         console.log('WebSocket ERROR');
-                        //   this.main.reconn = false;
-                        this.chat.socket.close();
+                        this.chatDisconnect()
                     };
                 })
+            },
+            connectDetect() {
+                setInterval(() => {
+                    let { connectState } = websocket
+                    switch (this.main.socket.readyState) {
+                        case WebSocket.CONNECTING:
+                            this.main.state = connectState.connecting
+                            break;
+                        case WebSocket.OPEN:
+                            this.main.state = connectState.open
+                            break;
+                        case WebSocket.CLOSING:
+                            this.main.state = connectState.closing
+                            break;
+                        case WebSocket.CLOSED:
+                            this.main.state = connectState.closed
+                            break;
+                    }
+                }, timer.connectDetect);
+                return null
+            },
+            disconnect() {
+                this.main.socket && this.main.socket.close();
+                return null
+            },
+            chatDisconnect() {
+                this.chat.socket && this.chat.socket.close();
+                return null
+            },
+            async chatDeviceRequest() {
+                console.log('init');
+                // await this.chatConnect()
+                let stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+                let devices = await navigator.mediaDevices.enumerateDevices()
+                let constraints = await navigator.mediaDevices.getSupportedConstraints();
+                let deviceName = navigator.userAgent;
+                let tracks = stream.getAudioTracks()
+                tracks.forEach(track => {
+                    console.log(track);
+                    let trackInfo = { id: track.id, kind: track.kind, label: track.label, muted: track.muted, enabled: track.enabled, readyState: track.readyState }
+                    // console.log(track.getCapabilities());
+                    // console.log(track.getSettings());
+                    // console.log(track.getConstraints());
+                })
+                this.chat.mediaRecorder = new MediaRecorder(stream);
+                this.chat.mediaRecorder.ondataavailable = (e) => {
+                    (e.data.size > 0) ? this.chat.voiceChunks.push(e.data) : null
+                }
+                this.chat.mediaRecorder.onstop = async () => {
+                    console.log(this.chat.voiceChunks);
+                    const audioBlob = new Blob(this.chat.voiceChunks, { type: 'audio/wav' });
+                    this.chat.socket.send(await audioBlob.arrayBuffer())
+                };
+                return null
+                // this.chat.socket.send(JSON.stringify({ type: 'CODES', deviceName, constraints, devices, tracks, ratio: this.chat.mediaRecorder.audioBitsPerSecond }))
             },
         },
         filters: {
@@ -844,14 +855,14 @@
                 return v?.replace(flagString._data, '')
             },
             viemTemplate(v) {
-                return (v == -1 && flagString.viewEmpty) || v
+                return (v && (v == -1 && flagString.viewEmpty)) || v
             },
             uniqueKey(v) {
                 return `${Date.now()}`
             },
             lastSuffix(v, len) {
                 return (v >= len - numberSnippet.endFlag) && `${v}${flagString.endFlag}` || v
-            },
+            }
         },
         directives: {
             // v-for > v-bind 
@@ -874,11 +885,11 @@
                     }
                     el.__autoScroll = ({ touches: [point] }) => {
                         vm.debounce.prefixScroll = setTimeout(() => {
-                            vm.offset = Math.floor(vm.$refs.box.scrollTop)
+                            vm.main.offset = Math.floor(vm.$refs.box.scrollTop)
                             let up = point['clientX'] >= window.innerHeight >> 2
                             cancelAnimationFrame(vm.debounce.slide)
                             let animateScroll = () => {
-                                vm.offset += (up ? vm.main.sliderate : -vm.main.sliderate)
+                                vm.main.offset += (up ? vm.main.sliderate : -vm.main.sliderate)
                                 vm.scrollToTop(null, flagString.autoScrollBehavior)
                                 vm.debounce.slide = requestAnimationFrame(animateScroll)
                             }
@@ -950,9 +961,9 @@
                         el.slowSwipe = Math.abs(vm.preview.picsSwipeSize / 2)
                     }
                     // moblie
-                    vm.preview.viewerEl = el
+                    vm.preview.swiperEl = el
                     vm.$nextTick(el.initPicsSwipeSize)
-                    window.addEventListener('resize', vm.debouncefn(el.initPicsSwipeSize, timer.initSwipeDebounce))
+                    window.addEventListener('resize', debouncefn(el.initPicsSwipeSize, timer.initSwipeDebounce))
                     el.threshold = numberSnippet.swipeThreshold
                     el.__handleTouchStart = ({ touches: [point] }) => {
                         if (!el.lock) {
@@ -1173,7 +1184,7 @@
             },
             "fragment.idx": {
                 handler(v) {
-                    this.fragment.idx = v > this.pageTotal ? 1 : (v < 1 ? this.pageTotal : v);
+                    this.fragment.idx = v > this.totalReflow ? 1 : (v < 1 ? this.totalReflow : v);
                 },
                 deep: false
             },
@@ -1186,7 +1197,7 @@
             "manual.bookmark": {
                 // first init dont emit watch ,sequence:computed > watch 
                 async handler(v) {
-                    v ? this.flushBookMark(true) : this.status.isdone = true
+                    (v && this.flushBookMark(true)) || this.unlockSyncReuse()
                 }
             },
             "manual.javdb": {
@@ -1205,6 +1216,7 @@
                         this.overlay.error = true
                         setTimeout(() => {
                             this.main.error = ''
+                            this.overlay.error = false
                         }, timer.errorMessageTimeout);
                     }
                 }
@@ -1232,19 +1244,11 @@
                         return sorted.call(this.dynamiclist.filter(cb), '.v[0]', x => x, reverse)
                 }
             },
-            sliceReflow() {
-                return this.reflow.slice(this.fragment.size * (this.fragment.idx - 1), this.fragment.idx * this.fragment.size)
-            },
-            pageTotal() {
-                let len = (this.reflow.length % this.fragment.size)
-                let total = (Math.floor(this.reflow.length / this.fragment.size))
-                return len ? total + 1 : total
-            },
             switchTheme() {
                 let style = document.createElement('style')
                 let color = themes[this.theme]['color'];
                 let bgcColor = themes[this.theme]['backgroundColor'];
-                style.textContent = this.cssTemplate({
+                style.textContent = cssTemplate({
                     "*": {
                         "color": color,
                         "--br-color": color,
@@ -1257,6 +1261,12 @@
                     },
                 })
                 document.body.append(style)
+            },
+            sliceReflow() {
+                return this.reflow.slice(this.fragment.size * (this.fragment.idx - 1), this.fragment.idx * this.fragment.size)
+            },
+            totalReflow() {
+                return Math.ceil(this.reflow.length / this.fragment.size)
             },
             modelAttr() {
                 return this.manual.javdb ? ['actors', 'tags'] : ['star', 'genre']
@@ -1272,8 +1282,10 @@
             },
             bookmarkCurrent() {
                 return this.manual.javdb ? this.resource.dbbookmark : this.resource.busbookmark
+            },
+            isOddIndex(v) {
+                return v => !(v % 2)
             }
-
         },
         // hook fn dont block init 阻塞钩子函数执行，并不会阻塞vue 实例渲染
         async created() {
@@ -1286,7 +1298,7 @@
                 vm.main.error = err
             };
             // init Vue Option
-            let data = JSON.parse(localStorage.getItem(`${v || ''}${flagString._data}`) ?? '{}')
+            let data = JSON.parse(localStorage.getItem(`${v || ''}${flagString._data}`) || '{}')
             this.initVueOption(this.$data, data, defaultStroageMeger)
             // init websocket
             await this.connect();
@@ -1316,7 +1328,7 @@
             // load scroll position
             this.scrollToTop()
             // init resource
-            this.proxies = this.snippetArray((await fetch(resourceRouter.proxies).then(resp => resp.json())).slice(numberSnippet.passProxy), numberSnippet.proxy)
+            this.flushNewProxy()
             this.resource.busTaglist = await fetch(resourceRouter.busTag).then(resp => resp.json())
             this.resource.dbTaglist = await fetch(resourceRouter.dbTag).then(resp => resp.json())
             this.resource.instruction = await fetch(resourceRouter.instruction).then(resp => resp.json())

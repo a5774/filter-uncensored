@@ -11,7 +11,7 @@
     --scale: 1.5;
     font-size: 1rem;
     touch-action: manipulation;
-    cursor: url('/cursor'),auto;
+    cursor: url('/cursor'), auto;
 }
 
 * {
@@ -154,6 +154,7 @@
 }
 
 .info-search input[type="checkbox"],
+.reflow-action input[type="checkbox"],
 .status-control input[type="checkbox"],
 .status-control input[type="radio"] {
     box-sizing: border-box;

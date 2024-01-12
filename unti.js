@@ -99,6 +99,6 @@ function sorted(attr, convert, reverse = false) {
     let { sort, slice, toSorted } = Array.prototype
     return toSorted?.call(this, callback) || sort.call(slice.call(this), callback)
 }
-let sortd = sorted.call([{ v: [41, 87] }, { v: [74, 57] }], '.v[0]', x => x, false)
+// let sortd = sorted.call([{ v: [41, 87] }, { v: [74, 57] }], '.v[0]', x => x, false)
 
-console.log(sortd);
+// console.log(sortd);

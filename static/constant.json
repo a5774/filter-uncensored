@@ -80,7 +80,7 @@
             "viemEmpty": "load"
         },
         "alertString": {
-            "selectProxy": "更新订阅中你点你妈呢！",
+            "switchProxy": "更新订阅中你点你妈呢！",
             "import_": "请输入合法番号序列!",
             "export_": "已复制至剪贴板!",
             "search": "还tm没搜索完成，点你妈呢，傻狗!",
@@ -123,6 +123,7 @@
         "tiltFactor": 0.5,
         "swipeThreshold": 25,
         "smallScreenWidth": 360,
+        "loadPageTolerance":2,
         "largeScreenWidth": 430,
         "revealOpacityFactor": 0.5
     },
