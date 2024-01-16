@@ -102,3 +102,28 @@ function sorted(attr, convert, reverse = false) {
 // let sortd = sorted.call([{ v: [41, 87] }, { v: [74, 57] }], '.v[0]', x => x, false)
 
 // console.log(sortd);
+
+
+let x = {} ;
+let y = {} ;
+/* x.fn = ()=>{
+console.log('x');
+}
+y.fn = ()=>{
+console.log('x');
+} */
+
+
+
+let fn = ()=>{
+    
+}
+x = {fn}
+y = {fn}
+
+console.log(x.fn == y.fn);
+
+
+
+
+

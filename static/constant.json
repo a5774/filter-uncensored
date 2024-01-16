@@ -77,14 +77,14 @@
             "socketDisconnect": "disconnected",
             "scrollBehavior": "smooth",
             "autoScrollBehavior": "auto",
-            "viemEmpty": "load"
+            "viewEmpty": "load"
         },
         "alertString": {
-            "switchProxy": "更新订阅中你点你妈呢！",
-            "import_": "请输入合法番号序列!",
-            "export_": "已复制至剪贴板!",
+            "proxy": "更新订阅中你点你妈呢！",
+            "import": "请输入合法番号序列!",
+            "export": "导出完成!",
             "search": "还tm没搜索完成，点你妈呢，傻狗!",
-            "loadNext": "点你妈逼!"
+            "loadNext": ""
         },
         "styleString": {
             "focusColor": "#2FD4BD"
@@ -119,22 +119,23 @@
         "views": 2,
         "proxy": 4,
         "endFlag": 5,
-        "passProxy":3,
+        "passProxy": 3,
         "tiltFactor": 0.5,
         "swipeThreshold": 25,
         "smallScreenWidth": 360,
-        "loadPageTolerance":2,
+        "scrollTolerance": 2,
         "largeScreenWidth": 430,
         "revealOpacityFactor": 0.5
     },
     "timer": {
         "viewsLoadDealy": 3000,
-        "scrollDebounce": 100,
-        "morePageInterval": 2000,
+        "onScrollInterval": 2000,
         "connectDetect": 300,
         "visibilityNavBar": 3000,
-        "updateHookDebounce": 500,
+        "scrollDebounce": 100,
         "observerDebounce": 300,
+        "updateHookDebounce": 500,
+        "resizeDeviceDebounce": 100,
         "heartbeatDetectCycle": 20000,
         "errorMessageTimeout": 5000,
         "jumpTagTimeout": 300,
@@ -142,9 +143,8 @@
         "swipeSlowTimeout": 500,
         "swipeTransitionTimeout": 300,
         "revealTransitionTimeout": 200,
-        "openSwipeTimeout": 300,
-        "closeSwipeTimeout": 100,
-        "initSwipeDebounce": 100,
+        "openSwiperTimeout": 300,
+        "closeSwiperTimeout": 100,
         "scaleThumbTimeout": 200,
         "updateBookmarkTimeout": 1500
     },
@@ -152,14 +152,15 @@
         "overlay": {
             "pics": false,
             "error": false,
-            "serial": false,
+            "format": false,
             "magnet": false,
             "comment": false,
             "reflow": false,
             "sidenav": false,
             "proxies": false,
             "history": false,
-            "dashboard": true
+            "dashboard": true,
+            "animation": false
         },
         "status": {
             "isdone": true,
@@ -183,11 +184,11 @@
         "preview": {
             "pics": [],
             "picsEl": null,
-            "viewerEl": null,
+            "swiperEl": null,
             "picsSwipe": false,
             "picsIndex": -1,
-            "picsSwipeSize": 0,
-            "desktopSwipeScale": 2,
+            "picsSwiperSize": 0,
+            "desktopSwiperScale": 2,
             "picsFailed": "/debug.jpg"
         },
         "reveal": {

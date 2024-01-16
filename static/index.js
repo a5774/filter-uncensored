@@ -1,6 +1,8 @@
 // import constant from '/constant.json' assert { type: 'json' };defaultStroageMeger
 (async () => {
     let { protocol, host, search, origin } = location
+    let gstyle = document.createElement('style')
+    document.body.append(gstyle)
     let { v, f, m } = Object.fromEntries(new URLSearchParams(search))
     let { dataOptionsNomarl, websocket, resourceRouter, demoDebug, flexibleSize, constantString: { flagString, alertString, classString, styleString }, themes, timer, numberSnippet, defaultStroageMeger } = await fetch("/constant").then(resp => resp.json())
     function sorted(attr, convert, reverse = false) {
@@ -80,15 +82,15 @@
             overlay: {
                 pics: false,
                 error: false,
-                serial: false,
+                format: false,
                 history: false,
                 magnet: false,
                 reflow: false,
-                // isfloat: false,
                 proxies: false,
                 sidenav: false,
                 dashboard: false,
-                comment: false
+                comment: false,
+                animation: false,
             },
             fragment: {
                 size: dataOptionsNomarl.fragment.size,
@@ -116,7 +118,7 @@
                 review: dataOptionsNomarl.main.review,
                 state: dataOptionsNomarl.main.state,
                 error: '',
-                serial: '',
+                format: '',
                 keyWord: '',
                 filterFactor: '',
                 dbsort: dataOptionsNomarl.main.dbsort,
@@ -155,12 +157,12 @@
             },
             preview: {
                 pics: [],
-                picsIndex: -1,
                 picsEl: null,
                 swiperEl: null,
                 picsSwipe: false,
-                picsSwipeSize: 0,
-                desktopSwipeScale: 2,
+                picsIndex: -1,
+                picsSwiperSize: 0,
+                desktopSwiperScale: 2,
                 picsFailed: '/debug.jpg',
             },
             reveal: {
@@ -180,10 +182,11 @@
             reflow: [],
             history: [],
             proxies: [],
-            sconf: null,
+            sconf: {},
             observer: null,
             debounce: {
                 nav: null,
+                error: null,
                 slide: null,
                 scroll: null,
                 update: null,
@@ -226,28 +229,36 @@
             description: 'standard',
         },
         methods: {
-            import_() {
-                if (/^[a-zA-Z]+-\d+(\s*,\s*[a-zA-Z]+-\d+)*$/.test(this.main.serial)) {
+            importFormat() {
+                let matcher = this.main.format.match(/[a-zA-Z]+-\d+/ig)
+                console.log(matcher);
+                if (matcher) {
                     this.dynamiclist = []
+                    this.overlay.format = false
                     this.overlay.reflow = false
-                    this.overlay.serial = false
-                    let serial = this.main.serial.split(',')
-                    serial.forEach(k => {
-                        this.main.socket.send(JSON.stringify({ type: 'SEARCH', keyWord: k, javdb: this.manual.javdb, range: [1] }))
-                    })
-                    this.logReuse(`${flagString.import}:${serial.length}`)
+                    matcher.forEach(this.appendSearch)
+                    this.logReuse(`${flagString.import}:${matcher.length}`)
                     return null
                 }
-                alert(alertString.import_)
+                alert(alertString.import)
             },
-            export_() {
-                let text = this.filterRule.map(({ m }) => m.find(({ href, text: [desc] }) => /uncen/ig.test(desc) ? href : null)).map(um => um.href).join(';')
-                navigator.clipboard.writeText(text)
-                this.logReuse(alertString.export_)
+            exportJson() {
+                let json = JSON.stringify(this.filterRule.map(({ m }) => m))
+                let raw = new Blob([json], { type: 'application/json' })
+                let body = document.body
+                let el = document.createElement('a')
+                let url = URL.createObjectURL(raw)
+                el.href = url
+                el.download = new Date().toJSON().slice(0, 10)
+                body.append(el)
+                el.click();
+                URL.revokeObjectURL(url)
+                body.removeChild(el)
+                // navigator.clipboard.writeText(text)
+                this.logReuse(alertString.export)
                 return null
-
             },
-            toggleItem(index) {
+            togglePlate(index) {
                 this.resource.instruction[index].expand = !this.resource.instruction[index].expand;
                 this.resource.instruction.forEach((it, ix) => {
                     if (!(ix == index)) {
@@ -305,20 +316,21 @@
                 this.main.socket.send(JSON.stringify(this.sconf))
                 return null
             },
-            searchGenre(v) {
+            fastSearch(v) {
                 this.main.keyWord = v
                 this.search()
                 return null
             },
-            reflowBack(n) {
+            appendSearch(n) {
                 this.lockSyncReuse()
                 this.main.socket.send(JSON.stringify({ type: 'SEARCH', keyWord: n, javdb: this.manual.javdb, range: [1] }))
                 return null
             },
             reflowList() {
                 this.reflow.forEach(({ value: { n } }) => {
-                    this.main.socket.send(JSON.stringify({ type: 'SEARCH', keyWord: n, javdb: this.manual.javdb, range: [1] }))
+                    this.appendSearch(n)
                 })
+                this.overlay.reflow = false
                 return null
             },
             reflowClear() {
@@ -399,7 +411,7 @@
                     this.unlockSyncReuse();
                     return null
                 }
-                alert(alertString.switchProxy)
+                alert(alertString.proxy)
             },
             flushHistory() {
                 this.overlay.history = this.history.length
@@ -411,30 +423,30 @@
                 this.jumpLocation(data_['sconf']['keyWord'], data_['description'], data_["archive"])
                 return null
             },
+            saveHistory(k) {
+                // save history
+                localStorage.setItem(`${k || ''}${flagString._data}`, JSON.stringify({ ...vm._data, resource: { busTaglist: {}, dbTaglist: {}, busbookmark: [], dbbookmark: [], instruction: [] } }))
+            },
             loadNext() {
-                if (this.status.isdone && this.sconf) {
+                if (this.status.isdone && this.sconf && !this.manual.bookmark) {
                     this.main.page++
-                    this.main.socket.send(JSON.stringify({ ...this.sconf, range: [this.main.page] }))
                     this.lockSyncReuse()
-                } else {
-                    alert(alertString.loadNext)
+                    this.main.socket.send(JSON.stringify({ ...this.sconf, range: [this.main.page] }))
                 }
                 return null
             },
-            loadMorePage({ target }) {
+            loadOnScroll({ target }) {
                 clearTimeout(this.debounce.scroll)
                 this.debounce.scroll = setTimeout(() => {
                     let { clientHeight, scrollHeight, scrollTop } = target
                     let diff = scrollHeight - Math.ceil(scrollTop)
                     this.main.offset = Math.floor(scrollTop)
-                    if (Math.abs(diff - clientHeight) <= numberSnippet.loadPageTolerance && !this.throttled.load && this.status.isdone && this.dynamiclist.length && !this.manual.bookmark) {
-                        this.main.page++
-                        this.syncReuse()
-                        this.main.socket.send(JSON.stringify({ ...this.sconf, range: [this.main.page] }))
+                    if (Math.abs(diff - clientHeight) <= numberSnippet.scrollTolerance && !this.throttled.load) {
+                        this.loadNext()
                         // 防止在加载开始之前再次触发
                         this.throttled.load = setTimeout(() => {
                             this.throttled.load = null
-                        }, timer.morePageInterval)
+                        }, timer.onScrollInterval)
                     }
                 }, timer.scrollDebounce);
                 return null
@@ -474,7 +486,6 @@
                     })
                 }
                 Promise.allSettled(queueView).then((ps) => {
-                    // console.log(ps);
                     this.logReuse(flagString.done)
                     this.unlockSyncReuse()
                 })
@@ -484,19 +495,20 @@
                 this.preview.picsIndex = idx
                 this.preview.picsEl = target
                 this.preview.picsEl.classList.add(classString.swipe)
-                await sleep(timer.openSwipeTimeout)
+                await sleep(timer.openSwiperTimeout)
                 this.preview.picsSwipe = !this.preview.picsSwipe
 
             },
             async closeSwiper() {
                 this.preview.picsIndex = -1
                 this.preview.picsSwipe = !this.preview.picsSwipe
-                await sleep(timer.closeSwipeTimeout)
+                await sleep(timer.closeSwiperTimeout)
                 this.preview.picsEl.classList.remove(classString.swipe)
                 return null
             },
-            nextSwipePics() {
+            nextSwipe() {
                 let el = this.preview.swiperEl
+                console.log(el);
                 el.style.transitionDuration = `${timer.swipeTransitionTimeout}ms`
                 if (!el.lock) {
                     el.lock = true
@@ -512,9 +524,8 @@
                     })
                 }
                 return null
-
             },
-            prevSwipePics() {
+            prevSwipe() {
                 let el = this.preview.swiperEl
                 el.style.transitionDuration = `${timer.swipeTransitionTimeout}ms`
                 if (!el.lock) {
@@ -547,14 +558,13 @@
                 return null
             },
             async updateBookmark(_data) {
-                let df = _data.df
                 this.logReuse(`${this.markAction}${flagString.logFormat}${_data.n}`)
                 switch (this.markAction) {
                     case 'insert':
-                        this.main.socket.send(JSON.stringify({ type: 'INSERT', data: _data, df }))
+                        this.main.socket.send(JSON.stringify({ type: 'INSERT', data: _data }))
                         break;
                     case 'remove':
-                        this.main.socket.send(JSON.stringify({ type: 'REMOVE', data: _data, df }))
+                        this.main.socket.send(JSON.stringify({ type: 'REMOVE', data: _data }))
                         break;
                 }
                 this.reveal.prevRevealEl.__recoverReveal()
@@ -593,6 +603,14 @@
                 }, timer.visibilityNavBar);
                 return null
             },
+            clearErrorViewr() {
+                this.overlay.error = true
+                clearTimeout(this.debounce.error)
+                this.debounce.error = setTimeout(() => {
+                    this.main.error = ''
+                    this.overlay.error = false
+                }, timer.errorMessageTimeout);
+            },
             thumbSucess({ target }) {
                 target.classList.add(classString.loaded)
                 return null
@@ -611,7 +629,15 @@
             },
             listenResize() {
                 // resize被推迟至宏任务阶段,devTool无法监听数据变化
-                window.addEventListener('resize', debouncefn(this.initDevice.bind(this), timer.initSwipeDebounce))
+                window.addEventListener('resize', debouncefn(this.initDevice.bind(this), timer.resizeDeviceDebounce))
+                // window.addEventListener('resize', debouncefn(this.fn.bind(this),timer.resizeDeviceDebounce))
+            },
+            initSwiper() {
+                let el = this.preview.swiperEl || document.body
+                this.$nextTick(() => {
+                    this.preview.picsSwiperSize = -el.getBoundingClientRect().width
+                    el.slowSwipe = Math.abs(vm.preview.picsSwiperSize / 2)
+                })
             },
             flexible() {
                 const { viewWidth } = this.device;
@@ -646,10 +672,13 @@
                 this.device.fontSize = this.flexible()
                 this.$refs.box.style.height = `${this.device.viewHeight}px`;
                 this.device.rootEl.style.fontSize = `${this.device.fontSize}px`;
+                this.initSwiper()
                 vm.$forceUpdate();
                 return null
             },
-            initVueOption($data, data, overWrite = {}) {
+            initVueOption($data, data, overWrite) {
+                data = data || {}
+                overWrite = overWrite || {}
                 let _data = {
                     ...data,
                     ...overWrite
@@ -693,40 +722,37 @@
                     this.main.socket.onopen = () => {
                         r(null)
                         console.log('WebSocket OPEN');
-                        this.main.socket.addEventListener('message', async ({ data }) => {
-                            let message = JSON.parse(data)
-                            switch (message.type) {
+                        this.main.socket.addEventListener('message', async (e) => {
+                            let { data, type } = JSON.parse(e.data)
+                            switch (type) {
                                 case 'PING':
-                                    let data = Date.now() - parseInt(message.data)
-                                    this.main.socket.send(JSON.stringify({ type: 'PONG', data }))
-                                    this.main.heartbeat = data
+                                    this.main.heartbeat = Date.now() - parseInt(data)
+                                    this.main.socket.send(JSON.stringify({ type: 'PONG', data: 4010 }))
                                     clearInterval(this.debounce.heartbeat)
                                     this.debounce.heartbeat = setInterval(() => {
                                         this.disconnect()
                                     }, timer.heartbeatDetectCycle)
                                     break;
                                 case 'LOG':
-                                    this.logReuse(`${message.data.n}<==>${message.data.c}`)
+                                    this.logReuse(`${data.n}<==>${data.l}`)
                                     break;
                                 case 'DONE':
-                                    this.logReuse(message.data.m)
+                                    this.logReuse(data.m)
                                     this.unlockSyncReuse()
-                                    message.data.reflow.length ? this.reflow = uniqueObjectsByKey([...this.reflow, ...message.data.reflow], 'n') : null
-                                    if (this.sconf?.keyWord) {
-                                        // save history 
-                                        localStorage.setItem(`${this.sconf?.keyWord}${flagString._data}`, JSON.stringify({ ...vm._data, resource: { busTaglist: null, dbTaglist: null, busbookmark: null, dbbookmark: null, instruction: null, bookmark: null } }))
-                                    }
+                                    this.saveHistory(this.sconf.keyWord)
+                                    this.overlay.animation && this.loadNext();
+                                    data.reflow.length && (this.reflow = uniqueObjectsByKey([...this.reflow, ...data.reflow], 'n'))
                                     break;
                                 case 'ERROR':
-                                    this.logReuse(message.data.err)
+                                    this.logReuse(data.err)
                                     break;
                                 case 'START':
-                                    this.logReuse(message.data.m)
+                                    this.logReuse(data.m)
                                     break;
                                 case 'CENSORED':
-                                    let inject = { ...message.data, i: message.data.i.map(pi => ({ pt: pi, loaded: false })), gs: false, vs: false, as: false }
+                                    let inject = { ...data, i: data.i.map(pi => ({ pt: pi, loaded: false })), gs: false, vs: false, as: false }
                                     this.dynamiclist.push(inject)
-                                    this.reflow.length && this.reflow.find(({ value: { n } }, idx) => (message.data.n == n) ? this.reflow.splice(idx, 1) : null)
+                                    this.reflow.length && this.reflow.find(({ value: { n } }, idx) => (data.n == n) ? this.reflow.splice(idx, 1) : null)
                                     break;
                             }
                         })
@@ -751,7 +777,6 @@
                         r(null)
                         console.log('WebSocket OPEN');
                         this.chat.socket.addEventListener('message', async ({ data }) => {
-                            console.log(data);
                             if (data instanceof Blob) {
                                 const remoteAudioBlob = new Blob([data], { type: 'audio/wav' });
                                 const audioBin = URL.createObjectURL(remoteAudioBlob);
@@ -839,6 +864,10 @@
                 return null
                 // this.chat.socket.send(JSON.stringify({ type: 'CODES', deviceName, constraints, devices, tracks, ratio: this.chat.mediaRecorder.audioBitsPerSecond }))
             },
+
+            initreee() {
+                once()
+            }
         },
         filters: {
             actorTotal(v) {
@@ -849,13 +878,13 @@
                 return o ? (o?.[v] ?? v) : v
             },
             getProgress(v) {
-                return v?.filter(({ loaded }) => (loaded == true))?.length ?? 0
+                return v?.filter(({ loaded }) => (loaded == true)).length ?? 0
             },
             purgeSuffix(v) {
                 return v?.replace(flagString._data, '')
             },
             viemTemplate(v) {
-                return (v && (v == -1 && flagString.viewEmpty)) || v
+                return (v == -1 && flagString.viewEmpty) || v
             },
             uniqueKey(v) {
                 return `${Date.now()}`
@@ -934,7 +963,7 @@
                 bind(el, binding) {
                     let vm = binding.value
                     el.lock = false;
-                    el.enterSwipePics = (deltaX, currentX) => {
+                    el.enterSwipe = (deltaX, currentX) => {
                         clearTimeout(vm.throttled.slowSwipe)
                         // clearTimeout(vm.debounce.swipeInterval)
                         el.style.transitionDuration = `${timer.swipeTransitionTimeout}ms`
@@ -956,21 +985,16 @@
                         })
                         el.style.transform = `translate3d(${currentX}px,0,0)`
                     }
-                    el.initPicsSwipeSize = () => {
-                        vm.preview.picsSwipeSize = -el.getBoundingClientRect().width
-                        el.slowSwipe = Math.abs(vm.preview.picsSwipeSize / 2)
-                    }
                     // moblie
                     vm.preview.swiperEl = el
-                    vm.$nextTick(el.initPicsSwipeSize)
-                    window.addEventListener('resize', debouncefn(el.initPicsSwipeSize, timer.initSwipeDebounce))
+                    vm.$nextTick(vm.initSwiper)
                     el.threshold = numberSnippet.swipeThreshold
                     el.__handleTouchStart = ({ touches: [point] }) => {
                         if (!el.lock) {
                             el.touchDeltaX = 0
                             el.touchStartX = 0
                             el.style.transitionDuration = '0s'
-                            el.touchCurrentX = vm.preview.picsSwipeSize * vm.preview.picsIndex;
+                            el.touchCurrentX = vm.preview.picsSwiperSize * vm.preview.picsIndex;
                             el.touchStartX = point['clientX']
                             el.swipeMode = 'fast'
                             clearTimeout(vm.throttled.slowSwipe)
@@ -978,7 +1002,6 @@
                                 el.swipeMode = 'slow'
                             }, timer.swipeSlowTimeout);
                         }
-
                     }
                     el.__handleTouchMove = ({ touches: [point] }) => {
                         if (!el.lock) {
@@ -991,7 +1014,7 @@
                     el.__handleTouchEnd = () => {
                         if (!el.lock) {
                             el.lock = true
-                            el.enterSwipePics(el.touchDeltaX, el.touchCurrentX)
+                            el.enterSwipe(el.touchDeltaX, el.touchCurrentX)
                         }
                     }
                     el.addEventListener('touchstart', el.__handleTouchStart, { passive: true });
@@ -1002,7 +1025,7 @@
                         el.MouseDeltaX = 0
                         el.MouseStartX = 0
                         el.style.transitionDuration = '0s'
-                        el.MouseCurrentX = vm.preview.picsSwipeSize * vm.preview.picsIndex;
+                        el.MouseCurrentX = vm.preview.picsSwiperSize * vm.preview.picsIndex;
                         el.MouseStartX = e['clientX']
                         el.addEventListener('mousemove', el.__handleMouseMove);
                         el.addEventListener('mouseleave', el.__handleMouseUpAndLeave);
@@ -1022,14 +1045,13 @@
                         el.removeEventListener('mouseleave', el.__handleMouseUpAndLeave)
                         if (!el.lock) {
                             el.lock = true
-                            el.enterSwipePics(el.MouseDeltaX, el.MouseCurrentX)
+                            el.enterSwipe(el.MouseDeltaX, el.MouseCurrentX)
                         }
                     }
                     el.addEventListener('mousedown', el.__handleMouseDown);
                     el.addEventListener('mouseup', el.__handleMouseUpAndLeave);
                 },
                 unbind(el) {
-                    window.removeEventListener('resize', el.initPicsSwipeSize)
                     el.removeEventListener('mousedown', el.__handleMouseDown);
                     el.removeEventListener('mouseup', el.__handleMouseUpAndLeave);
                     el.removeEventListener('touchstart', el.__handleTouchStart);
@@ -1043,6 +1065,7 @@
                     let data = binding.arg
                     // directive在渲染中绑定，需要等待渲染完成获取
                     vm.$nextTick(() => {
+                        // console.log('swipeToReveal');
                         let { height } = el.getBoundingClientRect()
                         el.__revealY = height
                         el.__halfY = el.__revealY / 2
@@ -1152,9 +1175,8 @@
             },
             "main.filterFactor": {
                 handler(v) {
-                    return this.main.filterFactor = v.length >= 4 ? this.main.filterFactor.slice(0, 4) : v
+                    this.main.filterFactor = v.length >= 4 ? this.main.filterFactor.slice(0, 4) : v
                 },
-                deep: false
             },
             "status.star": {
                 handler(v) {
@@ -1180,23 +1202,15 @@
                 handler(idx) {
                     // this.preview.picsIndex = idx >= this.preview.pics?.length ? 0 : (idx < 0 ? this.preview.pics?.length - 1 : idx);
                 },
-                deep: false
             },
             "fragment.idx": {
                 handler(v) {
                     this.fragment.idx = v > this.totalReflow ? 1 : (v < 1 ? this.totalReflow : v);
                 },
-                deep: false
-            },
-            "overlay.pics": {
-                handler(v) {
-                    v && (this.overlay.reflow = !v)
-                },
-                deep: false
             },
             "manual.bookmark": {
                 // first init dont emit watch ,sequence:computed > watch 
-                async handler(v) {
+                handler(v) {
                     (v && this.flushBookMark(true)) || this.unlockSyncReuse()
                 }
             },
@@ -1212,13 +1226,12 @@
             },
             "main.error": {
                 handler(v) {
-                    if (v) {
-                        this.overlay.error = true
-                        setTimeout(() => {
-                            this.main.error = ''
-                            this.overlay.error = false
-                        }, timer.errorMessageTimeout);
-                    }
+                    v && this.clearErrorViewr();
+                }
+            },
+            "overlay.animation": {
+                handler(v) {
+                    v && this.loadNext();
                 }
             }
         },
@@ -1232,9 +1245,9 @@
                 let cb = Function(`return i=>${this.filterCallback()}`).call(this)
                 if (this.manual.bookmark) {
                     this.$nextTick(this.scrollToTop)
-                    return this.bookmarkCurrent?.filter(cb) ?? []
+                    return this.bookmark.filter(cb)
                 }
-                let reverse = this.main.filterFactor.includes(flagString.atniSortFlag) || false
+                let reverse = this.main.filterFactor.includes(flagString.atniSortFlag)
                 switch (this.main.select) {
                     case "NONE":
                         return this.dynamiclist.filter(cb)
@@ -1245,10 +1258,9 @@
                 }
             },
             switchTheme() {
-                let style = document.createElement('style')
                 let color = themes[this.theme]['color'];
                 let bgcColor = themes[this.theme]['backgroundColor'];
-                style.textContent = cssTemplate({
+                gstyle.textContent = cssTemplate({
                     "*": {
                         "color": color,
                         "--br-color": color,
@@ -1260,7 +1272,6 @@
                         "fill": color,
                     },
                 })
-                document.body.append(style)
             },
             sliceReflow() {
                 return this.reflow.slice(this.fragment.size * (this.fragment.idx - 1), this.fragment.idx * this.fragment.size)
@@ -1277,13 +1288,13 @@
             searchAction() {
                 return this.status.isdone ? 'search' : 'abort'
             },
-            taglistCurrent() {
+            taglist() {
                 return this.manual.javdb ? this.resource.dbTaglist : this.resource.busTaglist
             },
-            bookmarkCurrent() {
+            bookmark() {
                 return this.manual.javdb ? this.resource.dbbookmark : this.resource.busbookmark
             },
-            isOddIndex(v) {
+            isOddIndex() {
                 return v => !(v % 2)
             }
         },
@@ -1298,7 +1309,7 @@
                 vm.main.error = err
             };
             // init Vue Option
-            let data = JSON.parse(localStorage.getItem(`${v || ''}${flagString._data}`) || '{}')
+            let data = JSON.parse(localStorage.getItem(`${v || ''}${flagString._data}`))
             this.initVueOption(this.$data, data, defaultStroageMeger)
             // init websocket
             await this.connect();
@@ -1310,7 +1321,7 @@
                 this.status[f] = true;
                 this.manual[m] = true;
                 // relation websockert 
-                !(this.dynamiclist.length) ? this.search() : null
+                !(this.dynamiclist.length) && this.search()
             }
         },
         async mounted() {
@@ -1329,22 +1340,10 @@
             this.scrollToTop()
             // init resource
             this.flushNewProxy()
+            this.flushHistory()
             this.resource.busTaglist = await fetch(resourceRouter.busTag).then(resp => resp.json())
             this.resource.dbTaglist = await fetch(resourceRouter.dbTag).then(resp => resp.json())
             this.resource.instruction = await fetch(resourceRouter.instruction).then(resp => resp.json())
-            this.history = Object.keys(localStorage).filter(h => h != flagString._data);
-            /* 
-             new IntersectionObserver((entries, observer) => {
-                   entries.forEach(async entry => {
-                       entry.isIntersecting ?
-                           this.overlay.isfloat = false :
-                           this.overlay.isfloat = true
-                   })
-               }, {
-                   rootMargin: '10px 0px 0px 0px',
-                   threshold: 1
-               }).observe(this.$refs.log) 
-            */
         },
         updated() {
             clearTimeout(this.debounce.update)
@@ -1352,7 +1351,7 @@
                 if (this.main.socket) {
                     console.log('updated');
                     // save current 解决 v 存档被覆盖
-                    localStorage.setItem(`${(v && (v == this.sconf.keyWord) && v) || ''}${flagString._data}`, JSON.stringify({ ...vm._data, resource: { busTaglist: null, dbTaglist: null, busbookmark: null, dbbookmark: null, instruction: null, bookmark: null } }))
+                    this.saveHistory(((v == this.sconf.keyWord) && v))
                 }
             }, timer.updateHookDebounce);
         },
