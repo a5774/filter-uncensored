@@ -114,8 +114,6 @@
                     </button>
                 </div>
 
-
-
                 <!-- <div v-if="!chat.textMessage" class="more-options-box"> -->
                 <div class="more-options-box" :style="chat.textMessage && {'width':'2rem'}">
                     <button v-if="!chat.textMessage" class="more-options-btn">
@@ -140,8 +138,7 @@
             <div v-if="overlay.magnet" @click.slef="overlay.magnet=!overlay.magnet" class="over-lay-magnet">
                 <div class="magnet-box">
                     <a class="magnet-wake" v-for="(m,idx) in magnet" :key="idx" :href="m.href">
-                        <span class="magnet-text" v-for="(t,idx) in m.text">{{(demoDebug.enable && demoDebug.magnet) ||
-                            t}}</span>
+                        <span class="magnet-text" v-for="(t,idx) in m.text">{{t}}</span>
                     </a>
                 </div>
             </div>
@@ -183,9 +180,10 @@
             <p class="caption-control">STATUS</p>
             <span class="status-control">
                 <label for="isdone">isdone</label><input id="isdone" type="checkbox" v-model="status.isdone">
-                <label for="vthumb">vthumb</label><input id="vthumb" type="checkbox" v-model="status.vthumb">
+                <!-- <label for="vthumb">vthumb</label><input id="vthumb" type="checkbox" v-model="status.vthumb"> -->
                 <label for="single">single</label><input id="single" type="checkbox" v-model="status.single">
                 <label for="javdb">javdb</label><input id="javdb" type="checkbox" v-model="manual.javdb">
+                <label for="deny">deny</label><input id="deny" type="checkbox" v-model="status.deny">
             </span>
             <span class="status-control">
                 <label for="codes">codes</label><input id="codes" type="checkbox" v-model="status.codes">
@@ -228,7 +226,6 @@
             </span>
             <span class="status-control">
                 <label for="heartbeat">heartbeat</label><span id="heartbeat">{{main.heartbeat}}</span>
-                <label for="deny">deny</label><input id="deny" type="checkbox" v-model="status.deny">
                 <label for="chat">chat</label><input id="chat" type="checkbox" v-model="chat.enable">
             </span>
             <span class="status-control">
@@ -258,11 +255,12 @@
                 </tr>
             </table>
         </div>
+
         <transition name="fade" mode="out-in">
             <ul v-if="overlay.reflow" class="over-lay-reflow" @click.self="overlay.reflow=!overlay.reflow">
                 <div class="reflow-action">
-                    <button @click="reflowList">reflow</button>
-                    <button @click="reflowClear">remove</button>
+                    <button @click="batchReflow">reflow</button>
+                    <button @click="clearReflow">remove</button>
                     <label for="dashboard">dashboard</label><input id="dashboard" type="checkbox"
                         v-model="overlay.dashboard">
                     <label for="demoDebug">demoDebug</label><input id="demoDebug" type="checkbox"
@@ -281,7 +279,7 @@
                     <span>{{s}}</span>
                     <span>{{t}}</span>
                     <span><button @click="appendSearch(n)">reflow</button></span>
-                    <span><button @click="reflowPush(n,extra,idx)">push</button></span>
+                    <span><button @click="pushReflow(n,extra,idx)">push</button></span>
                 </li>
 
                 <div class="fragment-control">
@@ -295,9 +293,7 @@
 
         <div :class="{'over-lay-genre-transform': (status.genre || status.tags) && !main.keyWord}"
             class="over-lay-genre">
-            <li class="genre-key" v-for="(v,k,i) in taglist" @click="fastSearch(k)" :key="i">{{
-                (demoDebug.enable &&
-                demoDebug.genre) || v}}</li>
+            <li class="genre-key" v-for="(v,k,i) in taglist" @click="fastSearch(k)" :key="i">{{v}}</li>
         </div>
 
         <div :class="{'over-lay-pics-transform':overlay.pics}" @click.self="overlay.pics=!overlay.pics"
@@ -313,35 +309,20 @@
                         <div class="pics-contains-swipe"
                             :style="{transform : `translate3d(${preview.picsIndex * preview.picsSwiperSize}px,0,0)`}"
                             v-swipe-carousel-pics="this">
-                            <!-- <img class="img-preview-swipe":src="((!status.vthumb || demoDebug.enable) && preview.picsFailed) || preview.pics[preview.picsIndex]?.['pt']" alt=""> -->
                             <div class="pics-swipe-slide" @mousedown.self="closeSwiper">
                                 <img class="img-preview-swipe" draggable="false"
-                                    :src="((!status.vthumb || demoDebug.enable) && preview.picsFailed) ||  preview.pics[overlay.pics - 1]?.['pt']"
-                                    alt="">
+                                    :src="preview.pics[overlay.pics - 1].pt" alt="">
                             </div>
                             <div class="pics-swipe-slide" v-for="(item,index) in preview.pics"
                                 @mousedown.self="closeSwiper">
-                                <img class="img-preview-swipe" draggable="false"
-                                    :src="((!status.vthumb || demoDebug.enable) && preview.picsFailed) || item['pt']"
-                                    alt="">
+                                <img class="img-preview-swipe" draggable="false" :src="item.pt" alt="">
                             </div>
                             <div class="pics-swipe-slide" @mousedown.self="closeSwiper">
-                                <img class="img-preview-swipe" draggable="false"
-                                    :src="((!status.vthumb || demoDebug.enable) && preview.picsFailed) ||  preview.pics[0]?.['pt']"
-                                    alt="">
+                                <img class="img-preview-swipe" draggable="false" :src="preview.pics[0].pt" alt="">
                             </div>
                         </div>
                         <span class="pics-counter-swipe">{{preview.picsIndex}}of{{preview.pics.length}}</span>
                     </div>
-                    <!-- <img style="display: none;" v-for="(item,index) in preview.pics" @load="item['loaded'] = true" -->
-                    <!-- :src="item['pt']" :key="index" alt=""> -->
-
-                    <!--  <div class="pics-swipe-contains">
-                        <img class="img-preview-swipe"
-                            :src="((!status.vthumb || demoDebug.enable) && preview.picsFailed) || preview.pics[preview.picsIndex]?.['pt']"
-                            alt="">
-                        <span class="pics-indicator">{{preview.picsIndex +1 }}of{{preview.pics.length}}</span>
-                    </div> -->
                 </div>
             </transition>
             <transition name="fade" mode="out-in">
@@ -351,9 +332,7 @@
                         :class="[ isOddIndex(index) ? 'pics-preview-expand-left':'pics-preview-expand-right']">
                         <img :class="[isOddIndex(index) ? 'swipe-zoomed-origin-left':'swipe-zoomed-origin-right']"
                             @click="openSwiper(index + 1  ,$event)" class="img-preview-expand"
-                            @load="item['loaded'] = true"
-                            :src="((!status.vthumb || demoDebug.enable) && preview.picsFailed) || item?.['pt']"
-                            :key="index" alt="">
+                            @load="item.loaded = true" :src="item.pt" :key="index" alt="">
                     </a>
                 </div>
             </transition>
@@ -412,39 +391,31 @@
                         <div class="thumb-item">
                             <!-- v-lazy-load-oberver -->
                             <img @click="expandPicture(item.i)" @load="thumbSucess($event)" @contextmenu.prevent
-                                class="thumb lazy-loaded" v-press-auto-scale="$root" ref="monitor"
-                                :data-src="((!status.vthumb || demoDebug.enable) && preview.picsFailed) || item.p"
+                                class="thumb lazy-loaded" v-press-auto-scale="$root" ref="monitor" :data-src="item.p"
                                 :data-i="index" :data-n="item.n">
                         </div>
                         <div class="info-item">
-
                             <transition name="fade" mode="out-in">
                                 <p v-if="item.gs" @click.self="item.gs=!item.gs" class="info-genre">
                                     <a class="info info-gs" v-for="(g,idx) in item.g"
-                                        @touchstart.slef="jumpTag(g,item.df)" @touchend.self="cancelJump"
-                                        :key="idx">{{((demoDebug.enable && demoDebug.genre) || g
-                                        ) |
-                                        extractParma(taglist)}}</a>
+                                        @touchstart.slef="jumpTag(g,item.df)" @touchend.self="cancelJump" :key="idx">{{g
+                                        | extractTag(taglist)}}</a>
                                 </p>
                                 <p v-if="item.vs" @click.self="item.vs=!item.vs" class="info-vendor">
                                     <a class="info info-vs" v-for="(b,idx) in item.b"
                                         @touchstart.slef="jumpTag(b.href,item.df)" @touchend.self="cancelJump"
-                                        :key="idx">{{(demoDebug.enable && demoDebug.vendor) ||
-                                        b.text}}</a>
+                                        :key="idx">{{b.text}}</a>
                                 </p>
                                 <p v-if="item.as" @click.self="item.as=!item.as" class="info-actor">
                                     <a class="info info-as" v-for="(s,idx) in item.s"
                                         @touchstart.slef="jumpTag(s.href,item.df)" @touchend.self="cancelJump"
-                                        :key="idx">{{(demoDebug.enable && demoDebug.actor) ||
-                                        s.text}}</a>
+                                        :key="idx">{{s.text}}</a>
                                 </p>
                             </transition>
                             <p class="info-base">
-                                <a class="info" target="_blank" @click.self="item.gs=!item.gs">{{(demoDebug.enable &&
-                                    demoDebug.name)
-                                    || item.n}}</a>
+                                <a class="info" target="_blank" @click.self="item.gs=!item.gs">{{item.n}}</a>
                                 <a class="info" target="_blank" @click.self="expandComment(item.c)">{{item.d}}</a>
-                                <button class="info load-view" @click="loadView(item)" target="_blank">{{
+                                <button class="info load-view" @click="loadViewsByItem(item)" target="_blank">{{
                                     item.v[0] | viemTemplate }}</button>
                             </p>
 
@@ -454,23 +425,18 @@
                                 <a class="info" target="_blank" @click.self="item.as=!item.as">ACTORS</a>
                             </p>
                             <p class="info-detail">
-                                <a class="info" @contextmenu.prevent
-                                    :href="(demoDebug.enable && demoDebug.actorOrigin) || item.f"
-                                    target="_blank">PREVIEW</a>
-                                <a class="info" target="_blank">ACTORC:{{item.s | actorTotal}}</a>
-
-                                <a class="info actor" v-if="item.s.length == 1"
-                                    :href="(demoDebug.enable && demoDebug.previewOrigin) || item.s[0].href"
-                                    target="_blank" @touchstart.self="jumpTag(item.s[0].href,item.df)"
-                                    @touchend.self="cancelJump">{{(demoDebug.enable &&
-                                    demoDebug.single) || item.s[0].text}}</a>
+                                <a class="info" @contextmenu.prevent :href="item.f" target="_blank">PREVIEW</a>
+                                <a class="info" target="_blank">ACTORC:{{item.s | dataCapacity}}</a>
+                                <a class="info" v-if="isOnlyOne(item.s)" :href="item.s[0].href" target="_blank"
+                                    @touchstart.self="jumpTag(item.s[0].href,item.df)"
+                                    @touchend.self="cancelJump">{{item.s[0].text}}</a>
                                 <a v-else class="info">null</a>
 
                                 <a class="info info-progress" style="font-weight: bold;">{{ item.i | getProgress}}/{{
-                                    item.i.length || -1}}</a>
+                                    item.i | dataCapacity}}</a>
 
                                 <a class="info info-index" style="font-weight: bold;">{{index |
-                                    lastSuffix(filterRule.length)}}</a>
+                                    flagLast(filterRule.length)}}</a>
                             </p>
                         </div>
                     </div>
@@ -502,8 +468,8 @@
         <div class="info-sidenav" :class="{'info-sidenav-transform':overlay.sidenav && !overlay.reflow}">
             <button @click="scrollToTop">top</button>
             <button @click="overlay.reflow=!overlay.reflow">menu</button>
-            <button @click="loadViews">view</button>
-            <button :class="{'loop-load':overlay.animation}" @click="overlay.animation=!overlay.animation">next</button>
+            <button @click="loadViewsByBatch">view</button>
+            <button :class="{'loop-load':overlay.increment}" @click="overlay.increment=!overlay.increment">next</button>
         </div>
     </div>
     <!-- <script src="/index.min.js" type="module"></script> -->

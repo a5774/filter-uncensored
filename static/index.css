@@ -350,12 +350,6 @@
 }
 
 
-.info-item .info.actor {
-    flex-shrink: auto;
-    flex-basis: 25%;
-}
-
-
 .info-main .info-total {
     font-size: .9375rem;
     text-align: right;

@@ -1,0 +1,57 @@
+{
+    "taglist": {
+        "demo": 1
+    },
+    "list": [
+        {
+            "df": "javdb",
+            "n": "xxxx-xxx",
+            "d": "2023-07-04",
+            "f": "https://www.bilibili.com/video/BV1GJ411x7h7/",
+            "p": "/debug.jpg",
+            "s": [
+                {
+                    "text": "蔡徐坤",
+                    "href": "https://www.bilibili.com/video/BV1GJ411x7h7/"
+                }
+            ],
+            "i": [
+                {
+                    "pt": "/debug.jpg",
+                    "loaded": false
+                }
+            ],
+            "g": [
+                "https://developer.mozilla.org/tags?demo"
+            ],
+            "m": [
+                {
+                    "text": [
+                        "xxxx-xxx",
+                        "xGB",
+                        "2023-07-03"
+                    ],
+                    "href": "https://www.bilibili.com/video/BV1GJ411x7h7/"
+                }
+            ],
+            "b": [
+                {
+                    "text": "坤坤",
+                    "href": "https://developer.mozilla.org/makers/demo"
+                }
+            ],
+            "u": true,
+            "r": false,
+            "v": [
+                "-1",
+                "-1"
+            ],
+            "c": [
+                "好小子"
+            ],
+            "gs": false,
+            "vs": false,
+            "as": false
+        }
+    ]
+}

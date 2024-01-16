@@ -4,7 +4,8 @@
     let gstyle = document.createElement('style')
     document.body.append(gstyle)
     let { v, f, m } = Object.fromEntries(new URLSearchParams(search))
-    let { dataOptionsNomarl, websocket, resourceRouter, demoDebug, flexibleSize, constantString: { flagString, alertString, classString, styleString }, themes, timer, numberSnippet, defaultStroageMeger } = await fetch("/constant").then(resp => resp.json())
+    let { dataOptionsNomarl, websocket, resourceRouter, flexibleSize, constantString: { flagString, alertString, classString, styleString }, themes, timer, numberSnippet, defaultStroageMeger } = await fetchResource("/constant", 'json', {})
+    let { list, taglist } = await fetchResource(resourceRouter.demoDebug, 'json', {})
     function sorted(attr, convert, reverse = false) {
         let fn = Function("v", `return v${attr}`)
         let callback = (x, y) => {
@@ -53,7 +54,7 @@
     function snippetArray(arr, size) {
         let i, j; i = j = 0;
         const sliced = [];
-        while (j <= arr.length) {
+        while (j < arr.length) {
             [j, i] = [i + size, j]
             if (!(i == j)) {
                 sliced.push(arr.slice(i, j))
@@ -67,6 +68,30 @@
                 r(null);
             }, t);
         })
+    }
+    async function fetchResource(u, t, e) {
+        let response = await fetch(u)
+        if (response.status == 200 || response.status == 304) {
+            switch (t) {
+                case 'text':
+                    e = response.text()
+                    break;
+                case 'json':
+                    e = response.json()
+                    break;
+                case 'blob':
+                    e = response.blob()
+                    break;
+                case 'body':
+                    e = response.body()
+                    break;
+                case 'arrayBuffer':
+                    e = response.arrayBuffer()
+                    break;
+            }
+            return await e
+        }
+        return e
     }
     function once(fn) {
         var called = false;
@@ -90,7 +115,7 @@
                 sidenav: false,
                 dashboard: false,
                 comment: false,
-                animation: false,
+                increment: false,
             },
             fragment: {
                 size: dataOptionsNomarl.fragment.size,
@@ -202,15 +227,9 @@
                 slowSwipe: null,
             },
             demoDebug: {
-                name: demoDebug.name,
-                enable: demoDebug.enable,
-                magnet: demoDebug.magnet,
-                genre: demoDebug.genre,
-                single: demoDebug.single,
-                vendor: demoDebug.vendor,
-                actor: demoDebug.actor,
-                actorOrigin: demoDebug.actorOrigin,
-                previewOrigin: demoDebug.previewOrigin
+                enable: false,
+                list,
+                taglist,
             },
             device: {
                 viewWidth: 0,
@@ -326,22 +345,34 @@
                 this.main.socket.send(JSON.stringify({ type: 'SEARCH', keyWord: n, javdb: this.manual.javdb, range: [1] }))
                 return null
             },
-            reflowList() {
+            batchReflow() {
                 this.reflow.forEach(({ value: { n } }) => {
                     this.appendSearch(n)
                 })
                 this.overlay.reflow = false
                 return null
             },
-            reflowClear() {
+            clearReflow() {
                 this.reflow = []
                 this.overlay.reflow = false
                 return null
             },
-            reflowPush(n, extra, idx) {
+            pushReflow(n, extra, idx) {
                 this.dynamiclist.push({ n, ...extra })
                 this.reflow.splice(idx, 1)
                 return null
+            },
+            detectReflow(reflow) {
+                if (reflow.length) {
+                    this.reflow = uniqueObjectsByKey([...this.reflow, ...data.reflow], 'n')
+                }
+            },
+            flushReflow(v) {
+                if (this.reflow.length) {
+                    this.reflow.find(({ value: { n } }, idx) => {
+                        v.n == n && this.reflow.splice(idx, 1)
+                    })
+                }
             },
             home() {
                 location.href = origin
@@ -366,6 +397,10 @@
                 dl.click()
                 document.body.removeChild(dl)
                 return null
+            },
+            injectProperty(v) {
+                let inject = { ...v, i: v.i.map(pt => ({ pt, loaded: false })), gs: false, vs: false, as: false }
+                this.dynamiclist.push(inject)
             },
             jumpLocation(v, f, m) {
                 return location.href = `${origin}?v=${v}&f=${f}&m=${m}`
@@ -395,10 +430,10 @@
             },
             async updateProxy() {
                 this.overlay.reflow = false;
-                this.logReuse(await fetch(resourceRouter.updateProxy).then(r => r.text()))
+                this.logReuse(await fetchResource(resourceRouter.updateProxy, 'text', 'error'))
             },
             async flushNewProxy() {
-                this.proxies = snippetArray((await fetch(resourceRouter.proxies).then(resp => resp.json())).slice(numberSnippet.passProxy), numberSnippet.proxy)
+                this.proxies = snippetArray((await fetchResource(resourceRouter.proxies, 'json', [])).slice(numberSnippet.passProxy), numberSnippet.proxy)
                 return null
             },
             async switchProxy(idx) {
@@ -406,7 +441,7 @@
                     this.lockSyncReuse()
                     this.overlay.reflow = false;
                     this.overlay.proxies = false;
-                    this.logReuse(await fetch(`${resourceRouter.toggleProxy}${idx + numberSnippet.passProxy}`).then(r => r.text()))
+                    this.logReuse(await fetchResource(`${resourceRouter.toggleProxy}${idx + numberSnippet.passProxy}`, 'text', 'error'))
                     this.flushNewProxy()
                     this.unlockSyncReuse();
                     return null
@@ -435,6 +470,12 @@
                 }
                 return null
             },
+            loadOnIncrement() {
+                this.overlay.increment = !this.overlay.increment
+                if (this.overlay.increment) {
+                    this.loadNext();
+                }
+            },
             loadOnScroll({ target }) {
                 clearTimeout(this.debounce.scroll)
                 this.debounce.scroll = setTimeout(() => {
@@ -451,41 +492,44 @@
                 }, timer.scrollDebounce);
                 return null
             },
-            async loadView(v) {
+            async loadViews(n) {
+                return parseInt(await fetchResource(`${resourceRouter.views}${n}`, 'text', -1))
+            },
+            async loadViewsByItem(v) {
                 this.logReuse(v.n)
                 this.lockSyncReuse();
-                let view = (await fetch(`${resourceRouter.views}${v.n}`).then(resp => resp.text()));
-                this.logReuse(`${v.n}${flagString.logFormat}${view}`)
-                // vm.$set(v, 'v', parseInt(view))
-                v['v'][0] = parseInt(view)
+                let views = await this.loadViews(v.n)
+                this.logReuse(`${v.n}${flagString.logFormat}${views}`)
+                // vm.$set(v, 'v', parseInt(views))
+                v['v'][0] = views
                 this.logReuse(flagString.done)
                 this.unlockSyncReuse();
                 return null
             },
-            async loadViews() {
+            async loadViewsByBatch() {
                 if (!this.dynamiclist.length) return null;
                 this.lockSyncReuse()
-                let queueView = []
+                let queueViews = []
                 let pending = this.filterRule.filter(({ v }) => v[0] == -1)
                 this.logReuse(pending.length)
                 let fragment = snippetArray(pending, numberSnippet.views)
                 for (let i = 0; i <= fragment.length - 1; i++) {
                     await sleep(timer.viewsLoadDealy);
                     fragment[i].forEach(async v => {
-                        queueView.push(
+                        queueViews.push(
                             (async () => {
                                 if (v['v'] == -1) {
-                                    let view = (await fetch(`${resourceRouter.views}${v.n}`).then(resp => resp.text()))
-                                    this.logReuse(`${v.n}${flagString.logFormat}${view}`)
-                                    // vm.$set(v, 'v', parseInt(view))
-                                    v['v'][0] = parseInt(view)
-                                    return { n: v.n, view }
+                                    let views = await this.loadViews(v.n)
+                                    this.logReuse(`${v.n}${flagString.logFormat}${views}`)
+                                    // vm.$set(v, 'v', views)
+                                    v['v'][0] = views
+                                    return { n: v.n, views }
                                 }
                             })()
                         )
                     })
                 }
-                Promise.allSettled(queueView).then((ps) => {
+                Promise.allSettled(queueViews).then((ps) => {
                     this.logReuse(flagString.done)
                     this.unlockSyncReuse()
                 })
@@ -496,7 +540,7 @@
                 this.preview.picsEl = target
                 this.preview.picsEl.classList.add(classString.swipe)
                 await sleep(timer.openSwiperTimeout)
-                this.preview.picsSwipe = !this.preview.picsSwipe
+                this.preview.picsSwipe = this.preview.pics
 
             },
             async closeSwiper() {
@@ -702,9 +746,9 @@
                             let v = this.status.autoview && this.filterRule[target.dataset.i]
                             if (v && (v['v'][0] == -1)) {
                                 this.logReuse(target.dataset.n)
-                                let view = await fetch(`${resourceRouter.views}${target.dataset.n}`).then(resp => resp.text());
-                                v['v'][0] = parseInt(view)
-                                // vm.$set(this.filterRule[target.dataset.i], 'v',[parseInt(view)] )
+                                let views = await this.loadViews(target.dataset.n)
+                                v['v'][0] = views
+                                // vm.$set(this.filterRule[target.dataset.i], 'v',[views] )
                             }
                             observer.unobserve(target)
                         }
@@ -740,8 +784,8 @@
                                     this.logReuse(data.m)
                                     this.unlockSyncReuse()
                                     this.saveHistory(this.sconf.keyWord)
-                                    this.overlay.animation && this.loadNext();
-                                    data.reflow.length && (this.reflow = uniqueObjectsByKey([...this.reflow, ...data.reflow], 'n'))
+                                    this.detectReflow(data.reflow)
+                                    this.overlay.increment && this.loadNext()
                                     break;
                                 case 'ERROR':
                                     this.logReuse(data.err)
@@ -750,9 +794,8 @@
                                     this.logReuse(data.m)
                                     break;
                                 case 'CENSORED':
-                                    let inject = { ...data, i: data.i.map(pi => ({ pt: pi, loaded: false })), gs: false, vs: false, as: false }
-                                    this.dynamiclist.push(inject)
-                                    this.reflow.length && this.reflow.find(({ value: { n } }, idx) => (data.n == n) ? this.reflow.splice(idx, 1) : null)
+                                    this.flushReflow(data)
+                                    this.injectProperty(data)
                                     break;
                             }
                         })
@@ -809,7 +852,7 @@
                     };
                 })
             },
-            connectDetect() {
+            detectConnect() {
                 setInterval(() => {
                     let { connectState } = websocket
                     switch (this.main.socket.readyState) {
@@ -826,7 +869,7 @@
                             this.main.state = connectState.closed
                             break;
                     }
-                }, timer.connectDetect);
+                }, timer.detectConnect);
                 return null
             },
             disconnect() {
@@ -864,33 +907,30 @@
                 return null
                 // this.chat.socket.send(JSON.stringify({ type: 'CODES', deviceName, constraints, devices, tracks, ratio: this.chat.mediaRecorder.audioBitsPerSecond }))
             },
-
-            initreee() {
-                once()
-            }
         },
         filters: {
-            actorTotal(v) {
+            dataCapacity(v) {
                 return v?.length || -1
             },
-            extractParma(v, o) {
-                v = (v && /\?/.test(v)) ? v.match(/([^?]+)$/)[0] : v.match(/([^/]+)$/)[0]
-                return o ? (o?.[v] ?? v) : v
+            extractTag(v, o) {
+                v = v && v?.match(/([^\/]+)$/)?.[0]?.split('?')
+                v = v?.[1] || v?.[0]
+                return o?.[v] ?? v
             },
             getProgress(v) {
                 return v?.filter(({ loaded }) => (loaded == true)).length ?? 0
             },
             purgeSuffix(v) {
-                return v?.replace(flagString._data, '')
+                return v?.replace(flagString._data, '') ?? v
             },
             viemTemplate(v) {
-                return (v == -1 && flagString.viewEmpty) || v
+                return (v == -1 && flagString.viewsEmpty) || v
             },
             uniqueKey(v) {
                 return `${Date.now()}`
             },
-            lastSuffix(v, len) {
-                return (v >= len - numberSnippet.endFlag) && `${v}${flagString.endFlag}` || v
+            flagLast(v, len) {
+                return len - numberSnippet.flagLastNth <= v && `${flagString.flagLastSuffix}${v}` || v
             }
         },
         directives: {
@@ -1228,11 +1268,6 @@
                 handler(v) {
                     v && this.clearErrorViewr();
                 }
-            },
-            "overlay.animation": {
-                handler(v) {
-                    v && this.loadNext();
-                }
             }
         },
         computed: {
@@ -1243,6 +1278,9 @@
                 // let cb = Function(`return function(i){ console.log(this); return ${this.filterCallback()}}`)().bind(this)
                 // generator funcation template
                 let cb = Function(`return i=>${this.filterCallback()}`).call(this)
+                if (this.demoDebug.enable) {
+                    return list
+                }
                 if (this.manual.bookmark) {
                     this.$nextTick(this.scrollToTop)
                     return this.bookmark.filter(cb)
@@ -1289,6 +1327,9 @@
                 return this.status.isdone ? 'search' : 'abort'
             },
             taglist() {
+                if (this.demoDebug.enable) {
+                    return taglist
+                }
                 return this.manual.javdb ? this.resource.dbTaglist : this.resource.busTaglist
             },
             bookmark() {
@@ -1296,7 +1337,10 @@
             },
             isOddIndex() {
                 return v => !(v % 2)
-            }
+            },
+            isOnlyOne() {
+                return v => v?.length == 1 || 0
+            },
         },
         // hook fn dont block init 阻塞钩子函数执行，并不会阻塞vue 实例渲染
         async created() {
@@ -1314,7 +1358,7 @@
             // init websocket
             await this.connect();
             // await this.chatConnect();
-            this.connectDetect()
+            this.detectConnect()
             // init query data
             if (v) {
                 this.main.keyWord = v
@@ -1341,9 +1385,9 @@
             // init resource
             this.flushNewProxy()
             this.flushHistory()
-            this.resource.busTaglist = await fetch(resourceRouter.busTag).then(resp => resp.json())
-            this.resource.dbTaglist = await fetch(resourceRouter.dbTag).then(resp => resp.json())
-            this.resource.instruction = await fetch(resourceRouter.instruction).then(resp => resp.json())
+            this.resource.busTaglist = await fetchResource(resourceRouter.busTag, 'json', {})
+            this.resource.dbTaglist = await fetchResource(resourceRouter.dbTag, 'json', {})
+            this.resource.instruction = await fetchResource(resourceRouter.instruction, 'json', [])
         },
         updated() {
             clearTimeout(this.debounce.update)
