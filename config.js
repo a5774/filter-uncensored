@@ -18,12 +18,12 @@ const RECYLEPATH = path.resolve(__dirname, './static/.recyle')
 const ROUTERDIR = path.resolve(__dirname, './router/')
 const STATICDIR = path.resolve(__dirname, './static/')
 const regx = {
-    emtpy:/[\s\n]+/g,
-    query:/\?.*$/g,
-    number:/\d+/g,
-    magnet:/gid\s*=\s*(\d+)/i,
-    unc:/uncen|\u65E0\u7801\u7834\u89E3/ig,
-    rev:/\u65E0\u7801\u6D41\u51FA/ig,
+    emtpy: /[\s\n]+/g,
+    query: /\?.*$/g,
+    number: /\d+/g,
+    magnet: /gid\s*=\s*(\d+)/i,
+    unc: /uncen|\u65E0\u7801\u7834\u89E3/ig,
+    rev: /\u65E0\u7801\u6D41\u51FA/ig,
 }
 const ws = fs.createWriteStream('./index_full.html');
 const sslOption = {

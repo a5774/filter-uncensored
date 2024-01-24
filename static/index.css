@@ -5,7 +5,24 @@
     font-style: normal;
 }
 
+@property --rotate {
+    syntax: "<angle>";
+    inherits: false;
+    initial-value: 0deg;
+}
+
+@keyframes rotating {
+    0% {
+        --rotate: 0deg;
+    }
+
+    100% {
+        --rotate: 360deg;
+    }
+}
+
 :root {
+    /* box-sizing: border-box; */
     font-family: JetBrainsMono;
     --timing: .3s;
     --scale: 1.5;
@@ -34,13 +51,15 @@
 
 #box {
     box-sizing: border-box;
-    padding: .3125rem 0px;
-    /* height: 100vh; */
-    position: relative;
-    overflow: hidden;
+    padding: .3125rem 0;
     overflow-y: scroll;
-    /* overflow-y: scroll; */
-    /* border: 1px red solid; */
+    /* overflow-x: hidden; */
+    position: relative;
+}
+
+.info-main {
+    box-sizing: border-box;
+    position: relative;
 }
 
 .info-main .info-search {
@@ -54,7 +73,8 @@
     align-items: center;
 }
 
-.info-search .search-history {
+.info-search .history-container {
+    height: 150%;
     box-sizing: border-box;
     align-self: auto;
     justify-self: auto;
@@ -68,10 +88,11 @@
     z-index: 4;
     overflow: hidden;
     align-content: flex-start;
+    /* background-color: transparent !important; */
 
 }
 
-.search-history .history-key {
+.history-container .history-key {
     box-sizing: border-box;
     border: 1px solid #e3e4e6;
     color: #666;
@@ -92,8 +113,8 @@
 .info-filter .select-filter,
 .info-filter input[type="text"],
 .info-search input[type="text"],
-.serial-action .serial-import,
-.serial-action .serial-clear,
+.format-action .format-clear,
+.format-action .format-import,
 .status-control button,
 .reflow-action button,
 .proxy-switch button,
@@ -108,8 +129,8 @@
 }
 
 .info-filter .select-filter,
-.serial-action .serial-import,
-.serial-action .serial-clear,
+.format-action .format-import,
+.format-action .format-clear,
 .status-control button,
 .reflow-action button,
 .proxy-switch button,
@@ -223,7 +244,7 @@
     position: relative;
     display: flex;
     height: 9.375rem;
-    padding: .125rem;
+    padding: .125rem 0;
     align-items: flex-end;
     justify-content: center;
     border-bottom: 1px #a0a4a8 solid;
@@ -332,12 +353,6 @@
 }
 
 
-.info-item .info.actor {
-    flex-shrink: auto;
-    flex-basis: 25%;
-}
-
-
 .info-main .info-total {
     font-size: .9375rem;
     text-align: right;
@@ -418,7 +433,53 @@
     width: 2.5rem;
     height: 2.5rem;
     margin-bottom: 2rem;
+    text-transform: uppercase;
     border: 1px #a0a4a8 solid;
+}
+
+.info-sidenav .loop-load {
+    box-sizing: border-box;
+    position: relative;
+}
+
+.info-sidenav .loop-load::after {
+    background: repeating-conic-gradient(from var(--rotate),
+            #ff2770 0%,
+            #ff2770 5%,
+            transparent 5%,
+            transparent 40%,
+            #ff2770 50%);
+    animation: rotating 2s linear infinite;
+    animation-play-state: paused;
+
+}
+
+.info-sidenav .loop-load::before {
+    background: repeating-conic-gradient(from var(--rotate),
+            #45f3ff 0%,
+            #45f3ff 5%,
+            transparent 5%,
+            transparent 40%,
+            #45f3ff 50%);
+    animation: rotating 2s linear infinite;
+    animation-delay: -0.5s;
+    animation-play-state: paused;
+}
+
+.info-sidenav .loop-load::before,
+.info-sidenav .loop-load::after {
+    animation-play-state: running;
+    /* border-radius: 20px; */
+    content: "";
+    box-sizing: border-box;
+    position: absolute;
+    /* 仅当absolute，负值margin将会拉伸元素 */
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: -2px;
+    z-index: -1;
 }
 
 .over-lay-pics {
@@ -464,8 +525,8 @@
     z-index: 2;
 }
 
-.over-lay-pics .previous,
-.over-lay-pics .next {
+.over-lay-pics .pics-previous,
+.over-lay-pics .pics-next {
     width: 5.625rem;
     height: 6.875rem;
     margin: 0;
@@ -480,18 +541,18 @@
     z-index: 3;
 }
 
-.over-lay-pics .previous {
+.over-lay-pics .pics-previous {
     left: 0;
 }
 
-.over-lay-pics .next {
+.over-lay-pics .pics-next {
     right: 0;
 }
 
-.over-lay-pics .previous::before,
-.over-lay-pics .next::before,
-.over-lay-pics .previous::after,
-.over-lay-pics .next::after {
+.over-lay-pics .pics-previous::before,
+.over-lay-pics .pics-next::before,
+.over-lay-pics .pics-previous::after,
+.over-lay-pics .pics-next::after {
     content: '';
     width: 0;
     height: 0;
@@ -501,35 +562,35 @@
     left: 50%;
 }
 
-.over-lay-pics .previous::before,
-.over-lay-pics .next::before {
+.over-lay-pics .pics-previous::before,
+.over-lay-pics .pics-next::before {
     border: .75rem solid transparent;
     z-index: 5;
 }
 
-.over-lay-pics .previous::after,
-.over-lay-pics .next::after {
+.over-lay-pics .pics-previous::after,
+.over-lay-pics .pics-next::after {
     border: 1rem solid transparent;
     z-index: 4;
 }
 
-.over-lay-pics .previous::before {
+.over-lay-pics .pics-previous::before {
     border-right-color: #FFF;
     transform: translateY(-50%) translate(-75%);
 }
 
-.over-lay-pics .next::before {
+.over-lay-pics .pics-next::before {
     border-left-color: #fff;
     transform: translateY(-50%) translateX(-25%);
 }
 
 
-.over-lay-pics .previous::after {
+.over-lay-pics .pics-previous::after {
     border-right-color: #3f3f3f;
     transform: translateY(-50%) translateX(-75%);
 }
 
-.over-lay-pics .next::after {
+.over-lay-pics .pics-next::after {
     border-left-color: #3f3f3f;
     transform: translateY(-50%) translateX(-25%);
 }
@@ -560,10 +621,10 @@
 }
 
 .pics-contains-swipe .pics-swipe-slide {
-    /* disable flex scale */
-    flex-shrink: 0;
     /* 固定轮播大小 */
     width: 100%;
+    /* disable flex scale */
+    flex-shrink: 0;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -586,7 +647,6 @@
 }
 
 .pics-preview-expand .img-preview-expand {
-    /* .pics-contains-swipe .img-preview-swipe { */
     width: 100%;
     box-sizing: border-box;
     vertical-align: middle;
@@ -901,7 +961,7 @@
     color: var(--hv-color);
 }
 
-.over-lay-serial {
+.over-lay-format {
     box-sizing: border-box;
     display: flex;
     flex-flow: row wrap;
@@ -918,7 +978,7 @@
     z-index: 5;
 }
 
-.over-lay-serial .serial-box {
+.over-lay-format .format-box {
     box-sizing: border-box;
     position: relative;
     width: 100%;
@@ -926,7 +986,7 @@
     border-radius: .1875rem;
 }
 
-.serial-box .serial-textarea {
+.format-box .format-textarea {
     box-sizing: border-box;
     vertical-align: middle;
     width: 100%;
@@ -939,15 +999,15 @@
 }
 
 
-.serial-action {
+.format-action {
     box-sizing: border-box;
     position: absolute;
     bottom: 1rem;
     right: 1rem;
 }
 
-.serial-action .serial-import,
-.serial-action .serial-clear {
+.format-action .format-import,
+.format-action .format-clear {
     box-sizing: border-box;
     outline: none;
     border: none;
@@ -1065,7 +1125,7 @@
 
 #box::-webkit-scrollbar,
 .over-lay-genre::-webkit-scrollbar,
-.serial-textarea::-webkit-scrollbar,
+.format-textarea::-webkit-scrollbar,
 .pics-contains-expand::-webkit-scrollbar,
 .over-lay-magnet .magnet-box::-webkit-scrollbar,
 .over-lay-comment .comment-box::-webkit-scrollbar,

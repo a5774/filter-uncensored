@@ -11,31 +11,42 @@ const bookmarkers = {
 bookmarkers.javbus.init()
 bookmarkers.javdb.init()
 let auth = '_jdb_session=U3L1ySgPQqfo%2FyH%2B9A0T0pwbebuPTnBRgDQHt9RgOpu2mJOaj0urTGAS8OIhIPro69ItdvlIWARGG41lv9rW3EY0tiNWLLXQRChQHDB1llGLyeyUuTcA2EYUcIUSbjQZ%2FYWDgp6fHYfA5XrBDofQplBRDiFphmiTgqseshfOUyouopHuxmQyyIex3UCc83TLsTuC2S8S2TTs1be5jf%2F40IzQj0tVaFyqs9NcO9yk49X%2FZzahREN8MQ%2Be9mu3T7w6nNj%2BG03AxwjOVUrJXbyYui4rylxfLMFccIEDnugIdZsPPIZ0NEPouAGNzcxYCqWQXBmouZ4850r1RhP7mZJWMLwPwcV4rtDzxBaCWIiEC7iOCfRFMsN5JKEnyFf9FJLTuD0%3D--Mf8fk5VicLq10KQS--h7dPN3PsJFuYNc6E5iCcGQ%3D%3D'
+
+function _ping() {
+    this.send(
+        JSON.stringify(
+            {
+                type: 'PING',
+                data: Date.now()
+            }
+        )
+    )
+}
+function _send(type, data) {
+    this.send(
+        JSON.stringify(
+            {
+                type,
+                data
+            }
+        )
+    )
+}
+function _progress(data) {
+    this.send(
+        JSON.stringify(
+            {
+                type: "PROGRESS",
+                data
+            }
+        )
+    )
+}
 // 函数作用域在定义时被确定在不改变this指向下,全局函数无法访问局部变量
-async function javbus_(domain, 关键词, 区间, 演员, 类别, 导演, 制作商, 发行商, deny, socket, df) {
+async function javbus_(domain, 关键词, 区间, 演员, 类别, 导演, 制作商, 发行商, deny, socket, tasks, df) {
     let 搜索 = '';
-    let 任务队列 = [];
     let 页面计数 = 1;
     let 是否循环 = true;
-    if (区间.some(p => Number.isNaN(parseInt(p)))) {
-        socket.send(JSON.stringify(
-            {
-                type: 'ERROR',
-                data: {
-                    err: `KEYWORD_OR_RANGE_ERR`,
-                }
-            }
-        ))
-        return null
-    }
-    socket.send(JSON.stringify(
-        {
-            type: 'START',
-            data: {
-                m: `STARTING:[${区间[0]}${区间[1] ? `,${区间[1]}` : ''}]!`
-            }
-        }
-    ))
     页面计数 = 区间[0]
     for (页面计数; 是否循环; 页面计数++) {
         (!区间[1] || 区间[1] == 页面计数) ? 是否循环 = false : null;
@@ -65,18 +76,12 @@ async function javbus_(domain, 关键词, 区间, 演员, 类别, 导演, 制作
             if (socket.abort) break;
             // 控制push堆栈间隔
             await sleep(150)
-            任务队列.push(
+            tasks.push(
                 (async (牛马, 计数) => {
-                    let c = (页面计数 - 1) * 牛马们.length + 计数
-                    socket.send(JSON.stringify(
-                        {
-                            type: 'LOG',
-                            data: {
-                                n: 牛马,
-                                c: c
-                            }
-                        }
-                    ))
+                    let l = (页面计数 - 1) * 牛马们.length + 计数
+                    _progress.call(socket, {
+                        m: `${牛马}<==>${l}`
+                    })
                     let 牛马的日期 = 牛马们的日期[计数]
                     let 单个搜索 = `${domain}/${牛马}`
                     let 牛马的略缩图 = 略缩图集[计数]
@@ -104,93 +109,48 @@ async function javbus_(domain, 关键词, 区间, 演员, 类别, 导演, 制作
                             headers: {
                                 'Referer': `${domain}/${牛马}`
                             }
-                        }))?.data;
+                        })).data;
                         let $$ = cheerio.load(`<table>${磁力}</table>`)
                         let 磁力列表 = $$('tr').map((idx, el) => {
-                            return { text: $$('a[rel]', el).map((ix, e) => $$(e).text().trim()).get(), href: $$('a[rel]:nth-child(1)', el).attr('href') }
-                        }).get()
-                        socket.send(JSON.stringify(
-                            {
-                                type: 'CENSORED',
-                                data: {
-                                    df,
-                                    n: 牛马,
-                                    d: 牛马的日期,
-                                    f: 单个搜索,
-                                    p: 牛马的略缩图,
-                                    g: 类别标签,
-                                    s: 演员列表,
-                                    i: 预览图集,
-                                    b: 归属信息,
-                                    m: 磁力列表,
-                                    u: regx.unc.test(磁力),
-                                    r: regx.rev.test(磁力),
-                                    v: [-1],
-                                    c: [],
-                                }
-                            }
-                        ))
+                            return { text: $$('a[rel]', el).map((idx, e) => $$(e).text().trim()).get(), href: $$('a[rel]:nth-child(1)', el).attr('href') }
+                        }).get();
+                        _send.call(socket, 'CENSORED', {
+                            df,
+                            n: 牛马,
+                            d: 牛马的日期,
+                            f: 单个搜索,
+                            p: 牛马的略缩图,
+                            g: 类别标签,
+                            s: 演员列表,
+                            i: 预览图集,
+                            b: 归属信息,
+                            m: 磁力列表,
+                            u: regx.unc.test(磁力),
+                            r: regx.rev.test(磁力),
+                            v: [-1],
+                            c: [],
+                        });
                         return { n: 牛马, s: 0x01, t: 'regular' };
                     } catch (err) {
-                        console.log(err);
-                        console.log(牛马);
-                        socket.send(JSON.stringify(
-                            {
-                                type: 'ERROR',
-                                data: {
-                                    err: err.message,
-                                    n: 牛马
-                                }
-                            }
-                        ))
+                        _send.call(socket, 'ERROR', {
+                            err: err.message,
+                            n: 牛马
+                        })
                         return { n: 牛马, s: 0x03, t: 'error', extra: pre }
                     }
                 })(牛马们[计数], 计数)
             )
         }
     }
-    Promise.allSettled(任务队列).then((ps) => {
-        // console.log(ps.length);
-        // let errs = ps.reduce((acc, curr) => acc + ( curr.value.v != 1) ? 1 : 0, 0);
-        let errs = ps.filter(({ value }) => value.s != 1 ? value.n : null)
-        socket.send(JSON.stringify(
-            {
-                type: 'DONE',
-                data: {
-                    m: `r:[t:${ps.length}][e:${errs.length}]`,
-                    reflow: errs
-                }
-            }
-        ))
-    })
+    return null
 }
 
 
 
-async function javdb_(domain, 关键词, 区间, 演员, 类别, 导演, 制作商, 发行商, 系列, 番号集, dbsorts, socket, df) {
+async function javdb_(domain, 关键词, 区间, 演员, 类别, 导演, 制作商, 发行商, 系列, 番号集, dbsorts, socket, tasks, df) {
     let 搜索 = '';
-    let 任务队列 = [];
     let 页面计数 = 1;
     let 是否循环 = true;
-    if (区间.some(p => Number.isNaN(parseInt(p)))) {
-        socket.send(JSON.stringify(
-            {
-                type: 'ERROR',
-                data: {
-                    err: `KEYWORD_OR_RANGE_ERR`,
-                }
-            }
-        ))
-        return null
-    }
-    socket.send(JSON.stringify(
-        {
-            type: 'START',
-            data: {
-                m: `STARTING:[${区间[0]}${区间[1] ? `,${区间[1]}` : ''}]!`
-            }
-        }
-    ))
     页面计数 = 区间[0]
     for (页面计数; 是否循环; 页面计数++) {
         (!区间[1] || 区间[1] == 页面计数) && (是否循环 = false)
@@ -204,7 +164,7 @@ async function javdb_(domain, 关键词, 区间, 演员, 类别, 导演, 制作�
             系列 && `${domain}/series/${关键词}?lm=v&page=${页面计数}` ||
             番号集 && `${domain}/video_codes/${关键词}?lm=v&page=${页面计数}&sort_type=${dbsorts.dbsort}` ||
             关键词 && `${domain}/search?q=${关键词}&lm=v&page=${页面计数}&sb=${dbsorts.dbsortsb}`;
-        console.log(搜索);
+        // console.log(搜索);
         let full = await ax.get(搜索, {
             headers: {
                 cookie: auth
@@ -234,19 +194,13 @@ async function javdb_(domain, 关键词, 区间, 演员, 类别, 导演, 制作�
             if (socket.abort) break;
             // if (计数 == 1) break
             // 控制push堆栈间隔
-            await sleep(200)
-            任务队列.push(
+            await sleep(300)
+            tasks.push(
                 (async (牛马, 计数) => {
-                    let c = (页面计数 - 1) * 牛马们.length + 计数
-                    socket.send(JSON.stringify(
-                        {
-                            type: 'LOG',
-                            data: {
-                                n: 牛马,
-                                c: c
-                            }
-                        }
-                    ))
+                    let l = (页面计数 - 1) * 牛马们.length + 计数
+                    _progress.call(socket, {
+                        m: `${牛马}<==>${l}`
+                    })
                     let 牛马的日期 = 牛马们的日期[计数]
                     let 单个搜索 = 牛马们详细[计数]
                     let 牛马的略缩图 = 略缩图集[计数]
@@ -288,61 +242,35 @@ async function javdb_(domain, 关键词, 区间, 演员, 类别, 导演, 制作�
                         let 磁力列表 = _$_('.video-panel .message-body .magnet-links .item').map((idx, el) => {
                             return { text: [_$_('.magnet-name a .name', el).text().trim(), _$_('.magnet-name a .meta', el).text().trim(), _$_('.date .time', el).text().trim()], href: _$_('.magnet-name a', el).attr('href') }
                         }).get()
-                        socket.send(JSON.stringify(
-                            {
-                                type: 'CENSORED',
-                                data: {
-                                    df,
-                                    n: 牛马,
-                                    d: 牛马的日期,
-                                    f: 单个搜索,
-                                    p: 牛马的略缩图,
-                                    s: 演员列表,
-                                    i: 预览图集,
-                                    g: 类别标签,
-                                    m: 磁力列表,
-                                    b: 归属信息,
-                                    u: regx.unc.test(磁力),
-                                    r: regx.rev.test(磁力),
-                                    v: 老司机的看法,
-                                    c: 评论预览
-                                }
-                            }
-                        ))
+                        _send.call(socket, 'CENSORED', {
+                            df,
+                            n: 牛马,
+                            d: 牛马的日期,
+                            f: 单个搜索,
+                            p: 牛马的略缩图,
+                            s: 演员列表,
+                            i: 预览图集,
+                            g: 类别标签,
+                            m: 磁力列表,
+                            b: 归属信息,
+                            u: regx.unc.test(磁力),
+                            r: regx.rev.test(磁力),
+                            v: 老司机的看法,
+                            c: 评论预览
+                        })
                         return { n: 牛马, s: 0x01, t: 'regular' };
                     } catch (err) {
-                        console.log(err);
-                        console.log(牛马);
-                        socket.send(JSON.stringify(
-                            {
-                                type: 'ERROR',
-                                data: {
-                                    err: err.message,
-                                    n: 牛马
-                                }
-                            }
-                        ))
+                        _send.call(socket, 'ERROR', {
+                            err: err.message,
+                            n: 牛马
+                        })
                         return { n: 牛马, s: 0x03, t: 'error', extra: { d: 牛马的日期, f: 单个搜索, p: 牛马的略缩图 } }
                     }
                 })(牛马们[计数], 计数)
             )
         }
     }
-    Promise.allSettled(任务队列).then((ps) => {
-        // console.log(ps.length);
-        // let errs = ps.reduce((acc, curr) => acc + ( curr.value.v != 1) ? 1 : 0, 0);
-        let errs = ps.filter(({ value }) => value.s != 1 ? value.n : null)
-        socket.send(JSON.stringify(
-            {
-                type: 'DONE',
-                data: {
-                    m: `r:[t:${ps.length}][e:${errs.length}]`,
-                    reflow: errs
-                }
-            }
-        ))
-    })
-    return true
+    return null
 }
 
 
@@ -351,29 +279,44 @@ ws_main.addListener('connection', (socket, req) => {
     console.log(`connections:${ws_main.clients.size}`);
     socket.addListener('close', () => {
         socket.close()
-        console.log('client closed...');
         console.log(`connections:${ws_main.clients.size}`);
     })
     // html5 api 
-    socket.send(JSON.stringify(
-        {
-            type: 'PING',
-            data: Date.now()
-        }
-    ))
-    socket.addEventListener('message', ({ data }) => {
+    // socket.pong
+    _ping.call(socket)
+    socket.addEventListener('message', async ({ data }) => {
         let message = JSON.parse(data)
         switch (message.type) {
             case 'PONG':
-                socket.isAlive = true
+                socket.isAlive = !(message.data ^ 4010)
                 break;
             case 'SEARCH':
                 socket.abort = false;
+                let tasks = [];
                 let { keyWord, range, star, genre, director, studio, label, deny, javdb, actors, tags, directors, makers, publishers, series, codes, dbsorts = { dbsort: 1, dbsortsb: 0, dbsortvst: 1 } } = message
-                console.log(message);
-                javdb &&
-                    javdb_(domain_db, keyWord, range, actors, tags, directors, makers, publishers, series, codes, dbsorts, socket, 'javdb') ||
-                    javbus_(domain_bus, keyWord, range, star, genre, director, studio, label, deny, socket, 'javbus')
+                if (range.some(p => Number.isNaN(parseInt(p)))) {
+                    _progress.call(socket, {
+                        m: `e:[k:KEYWORD_OR_RANGE_ERR]`,
+                    })
+                    break;
+                }
+                _progress.call(socket, {
+                    m: `s:[t:${range[0]}${range[1] ? `,${range[1]}` : ''}]!`
+                })
+                if (javdb) {
+                    await javdb_(domain_db, keyWord, range, actors, tags, directors, makers, publishers, series, codes, dbsorts, socket, tasks, 'javdb')
+                }else{
+                    await javbus_(domain_bus, keyWord, range, star, genre, director, studio, label, deny, socket, tasks, 'javbus')
+                }
+                Promise.allSettled(tasks).then((ps) => {
+                    // let errs = ps.reduce((acc, curr) => acc + ( curr.value.v != 1) ? 1 : 0, 0);
+                    let errs = ps.filter(({ value }) => value.s != 1 ? value.n : null)
+                    _send.call(socket, 'DONE', {
+                        m: `r:[t:${ps.length}][e:${errs.length}]`,
+                        len: ps.length,
+                        reflow: errs
+                    })
+                })
                 break;
             case 'ABORT':
                 socket.abort = true
@@ -392,14 +335,10 @@ ws_main.interval = setInterval(() => {
     ws_main.clients.forEach(ws => {
         if (!ws.isAlive) ws.close()
         ws.isAlive = false
-        ws.send(JSON.stringify(
-            {
-                type: 'PING',
-                data: Date.now()
-            }
-        ))
+        _ping.call(ws)
     })
 }, 1000 * 15);
+
 
 ws_main.addListener('close', () => {
     clearInterval(ws_main.interval)
