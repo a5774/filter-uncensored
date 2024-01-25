@@ -51,13 +51,15 @@
 
 #box {
     box-sizing: border-box;
-    padding: .3125rem 0px;
-    /* height: 100vh; */
-    position: relative;
-    overflow: hidden;
+    padding: .3125rem 0;
     overflow-y: scroll;
-    /* overflow-y: scroll; */
-    /* border: 1px red solid; */
+    /* overflow-x: hidden; */
+    position: relative;
+}
+
+.info-main {
+    box-sizing: border-box;
+    position: relative;
 }
 
 .info-main .info-search {
@@ -72,6 +74,7 @@
 }
 
 .info-search .history-container {
+    height: 150%;
     box-sizing: border-box;
     align-self: auto;
     justify-self: auto;
@@ -121,7 +124,6 @@
     padding: .1875rem;
     outline: none;
     border-radius: .25rem;
-    user-select: none;
     vertical-align: middle;
 }
 
@@ -139,9 +141,9 @@
     background-color: #e6e6e6;
 }
 
+.info-filter .select-filter:focus,
 .status-control button:active,
 .info-search button:active,
-.info-filter .select-filter:focus,
 .info-filter input[type="text"]:focus,
 .info-search input[type="text"]:focus {
     background-color: #e0e0e0;
@@ -171,6 +173,7 @@
     vertical-align: middle;
 }
 
+.info-filter input[type="checkbox"],
 .info-search input[type="checkbox"],
 .reflow-action input[type="checkbox"],
 .status-control input[type="checkbox"],
@@ -178,6 +181,25 @@
     box-sizing: border-box;
     width: 1rem;
     vertical-align: middle;
+}
+
+.status-control .select-origin {
+    box-sizing: border-box;
+    border: none;
+    font-size: 1rem;
+    vertical-align: middle;
+}
+
+.info-filter .select-filter:focus,
+.status-control .select-origin:focus {
+    box-sizing: border-box;
+    outline: none;
+}
+
+.select-filter option,
+.select-origin option {
+    box-sizing: border-box;
+    font-size: .75rem;
 }
 
 .info-content {
@@ -241,7 +263,7 @@
     position: relative;
     display: flex;
     height: 9.375rem;
-    padding: .125rem;
+    padding: .125rem 0;
     align-items: flex-end;
     justify-content: center;
     border-bottom: 1px #a0a4a8 solid;
@@ -306,6 +328,7 @@
     bottom: 0;
     right: 0;
     left: 0;
+    inset: 0;
     overflow: hidden;
     z-index: 1;
     /* background-color: #9c5454; */
@@ -426,12 +449,14 @@
 }
 
 .info-sidenav button {
+    box-sizing: border-box;
     font-size: .875rem;
     width: 2.5rem;
     height: 2.5rem;
     margin-bottom: 2rem;
     text-transform: uppercase;
     border: 1px #a0a4a8 solid;
+
 }
 
 .info-sidenav .loop-load {
@@ -466,7 +491,6 @@
 .info-sidenav .loop-load::before,
 .info-sidenav .loop-load::after {
     animation-play-state: running;
-    /* border-radius: 20px; */
     content: "";
     box-sizing: border-box;
     position: absolute;
@@ -475,6 +499,7 @@
     bottom: 0;
     left: 0;
     right: 0;
+    inset: 0;
     margin: -2px;
     z-index: -1;
 }
@@ -492,6 +517,7 @@
     top: 0;
     right: 0;
     bottom: 0;
+    inset: 0;
     opacity: 0;
     transform: translateX(100%);
     transition: transform var(--timing) ease-in-out, opacity var(--timing) ease-in-out;
@@ -518,6 +544,7 @@
     top: 0;
     right: 0;
     bottom: 0;
+    inset: 0;
     /* must gt swipe-zoomed-enter  */
     z-index: 2;
 }
@@ -859,6 +886,7 @@
     bottom: 0;
     left: 0;
     right: 0;
+    inset: 0;
     opacity: 0;
     overflow-y: scroll;
     transform: translateY(-100%);
@@ -972,6 +1000,7 @@
     top: 0;
     right: 0;
     bottom: 0;
+    inset: 0;
     z-index: 5;
 }
 
@@ -1027,6 +1056,7 @@
     top: 0;
     right: 0;
     bottom: 0;
+    inset: 0;
     z-index: 5;
 }
 
@@ -1128,4 +1158,11 @@
 .over-lay-comment .comment-box::-webkit-scrollbar,
 .proxies-container::-webkit-scrollbar {
     width: 0;
+}
+
+.debug-stdout {
+    position: fixed;
+    inset: 0;
+    z-index: 9;
+    background-color: #333;
 }

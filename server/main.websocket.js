@@ -1,4 +1,4 @@
-const { wsOption, domain_bus, domain_db, ax, sleep, denyGenre, BookMarker, DBBOOKMARKPATH, BUSBOOKMARKPATH, ws, regx } = require('../config')
+const { wsOption, domain_bus, domain_db, ax, sleep, denyGenre, BookMarker, DBBOOKMARKPATH, BUSBOOKMARKPATH, ws, regx, recvtemp } = require('../config')
 const fs = require('fs')
 const cheerio = require('cheerio')
 const { WebSocketServer } = require('ws');
@@ -32,10 +32,19 @@ function _send(type, data) {
         )
     )
 }
+function _progress(data) {
+    this.send(
+        JSON.stringify(
+            {
+                type: "PROGRESS",
+                data
+            }
+        )
+    )
+}
 // 函数作用域在定义时被确定在不改变this指向下,全局函数无法访问局部变量
-async function javbus_(domain, 关键词, 区间, 演员, 类别, 导演, 制作商, 发行商, deny, socket, df) {
+async function javbus_(domain, 关键词, 区间, 演员, 类别, 导演, 制作商, 发行商, deny, socket, tasks, df) {
     let 搜索 = '';
-    let 任务队列 = [];
     let 页面计数 = 1;
     let 是否循环 = true;
     页面计数 = 区间[0]
@@ -67,12 +76,11 @@ async function javbus_(domain, 关键词, 区间, 演员, 类别, 导演, 制作
             if (socket.abort) break;
             // 控制push堆栈间隔
             await sleep(150)
-            任务队列.push(
+            tasks.push(
                 (async (牛马, 计数) => {
                     let l = (页面计数 - 1) * 牛马们.length + 计数
-                    _send.call(socket, 'LOG', {
-                        n: 牛马,
-                        l
+                    _progress.call(socket, {
+                        m: `${牛马}<==>${l}`
                     })
                     let 牛马的日期 = 牛马们的日期[计数]
                     let 单个搜索 = `${domain}/${牛马}`
@@ -80,7 +88,7 @@ async function javbus_(domain, 关键词, 区间, 演员, 类别, 导演, 制作
                     // if (!(牛马的日期.slice(0, 4) >= 时间)) return { n: 牛马, s: 0x04, t: 'expire', extra: { d: 牛马的日期, p: 牛马的略缩图 } }
                     try {
                         // throw  new Error('cust')
-                        let pre = { df, d: 牛马的日期, f: 单个搜索, p: 牛马的略缩图, g: [], s: [], i: [], b: [], m: [], c: [], v: [-1] }
+                        let pre = { ...recvtemp, df, d: 牛马的日期, f: 单个搜索, p: 牛马的略缩图 }
                         let _$_ = cheerio.load((await ax.get(单个搜索)).data)
                         let 类别标签 = _$_('.genre label a').map((idx, el) => {
                             return _$_(el).attr('href')
@@ -124,8 +132,6 @@ async function javbus_(domain, 关键词, 区间, 演员, 类别, 导演, 制作
                         });
                         return { n: 牛马, s: 0x01, t: 'regular' };
                     } catch (err) {
-                        console.log(err);
-                        console.log(牛马);
                         _send.call(socket, 'ERROR', {
                             err: err.message,
                             n: 牛马
@@ -136,22 +142,13 @@ async function javbus_(domain, 关键词, 区间, 演员, 类别, 导演, 制作
             )
         }
     }
-    Promise.allSettled(任务队列).then((ps) => {
-        // console.log(ps.length);
-        // let errs = ps.reduce((acc, curr) => acc + ( curr.value.v != 1) ? 1 : 0, 0);
-        let errs = ps.filter(({ value }) => value.s != 1 ? value.n : null)
-        _send.call(socket, 'DONE', {
-            m: `r:[t:${ps.length}][e:${errs.length}]`,
-            reflow: errs
-        })
-    })
+    return null
 }
 
 
 
-async function javdb_(domain, 关键词, 区间, 演员, 类别, 导演, 制作商, 发行商, 系列, 番号集, dbsorts, socket, df) {
+async function javdb_(domain, 关键词, 区间, 演员, 类别, 导演, 制作商, 发行商, 系列, 番号集, dbsorts, socket, tasks, df) {
     let 搜索 = '';
-    let 任务队列 = [];
     let 页面计数 = 1;
     let 是否循环 = true;
     页面计数 = 区间[0]
@@ -167,7 +164,7 @@ async function javdb_(domain, 关键词, 区间, 演员, 类别, 导演, 制作�
             系列 && `${domain}/series/${关键词}?lm=v&page=${页面计数}` ||
             番号集 && `${domain}/video_codes/${关键词}?lm=v&page=${页面计数}&sort_type=${dbsorts.dbsort}` ||
             关键词 && `${domain}/search?q=${关键词}&lm=v&page=${页面计数}&sb=${dbsorts.dbsortsb}`;
-        console.log(搜索);
+        // console.log(搜索);
         let full = await ax.get(搜索, {
             headers: {
                 cookie: auth
@@ -197,13 +194,12 @@ async function javdb_(domain, 关键词, 区间, 演员, 类别, 导演, 制作�
             if (socket.abort) break;
             // if (计数 == 1) break
             // 控制push堆栈间隔
-            await sleep(200)
-            任务队列.push(
+            await sleep(300)
+            tasks.push(
                 (async (牛马, 计数) => {
                     let l = (页面计数 - 1) * 牛马们.length + 计数
-                    _send.call(socket, 'LOG', {
-                        n: 牛马,
-                        l
+                    _progress.call(socket, {
+                        m: `${牛马}<==>${l}`
                     })
                     let 牛马的日期 = 牛马们的日期[计数]
                     let 单个搜索 = 牛马们详细[计数]
@@ -264,12 +260,9 @@ async function javdb_(domain, 关键词, 区间, 演员, 类别, 导演, 制作�
                         })
                         return { n: 牛马, s: 0x01, t: 'regular' };
                     } catch (err) {
-                        console.log(err);
-                        console.log(牛马);
                         _send.call(socket, 'ERROR', {
                             err: err.message,
                             n: 牛马
-
                         })
                         return { n: 牛马, s: 0x03, t: 'error', extra: { d: 牛马的日期, f: 单个搜索, p: 牛马的略缩图 } }
                     }
@@ -277,15 +270,6 @@ async function javdb_(domain, 关键词, 区间, 演员, 类别, 导演, 制作�
             )
         }
     }
-    Promise.allSettled(任务队列).then((ps) => {
-        // console.log(ps.length);
-        // let errs = ps.reduce((acc, curr) => acc + ( curr.value.v != 1) ? 1 : 0, 0);
-        let errs = ps.filter(({ value }) => value.s != 1 ? value.n : null)
-        _send.call(socket, 'DONE', {
-            m: `r:[t:${ps.length}][e:${errs.length}]`,
-            reflow: errs
-        })
-    })
     return null
 }
 
@@ -298,9 +282,9 @@ ws_main.addListener('connection', (socket, req) => {
         console.log(`connections:${ws_main.clients.size}`);
     })
     // html5 api 
-    socket.pong
+    // socket.pong
     _ping.call(socket)
-    socket.addEventListener('message', ({ data }) => {
+    socket.addEventListener('message', async ({ data }) => {
         let message = JSON.parse(data)
         switch (message.type) {
             case 'PONG':
@@ -308,22 +292,31 @@ ws_main.addListener('connection', (socket, req) => {
                 break;
             case 'SEARCH':
                 socket.abort = false;
+                let tasks = [];
                 let { keyWord, range, star, genre, director, studio, label, deny, javdb, actors, tags, directors, makers, publishers, series, codes, dbsorts = { dbsort: 1, dbsortsb: 0, dbsortvst: 1 } } = message
                 if (range.some(p => Number.isNaN(parseInt(p)))) {
-                    _send.call(socket, 'ERROR', {
-                        err: `KEYWORD_OR_RANGE_ERR`,
+                    _progress.call(socket, {
+                        m: `e:[k:KEYWORD_OR_RANGE_ERR]`,
                     })
                     break;
                 }
-                _send.call(socket, 'START', {
-                    m: `STARTING:[${range[0]}${range[1] ? `,${range[1]}` : ''}]!`
+                _progress.call(socket, {
+                    m: `s:[t:${range[0]}${range[1] ? `,${range[1]}` : ''}]!`
                 })
-                console.log(message);
                 if (javdb) {
-                    javdb_(domain_db, keyWord, range, actors, tags, directors, makers, publishers, series, codes, dbsorts, socket, 'javdb')
-                    break;
+                    await javdb_(domain_db, keyWord, range, actors, tags, directors, makers, publishers, series, codes, dbsorts, socket, tasks, 'javdb')
+                } else {
+                    await javbus_(domain_bus, keyWord, range, star, genre, director, studio, label, deny, socket, tasks, 'javbus')
                 }
-                javbus_(domain_bus, keyWord, range, star, genre, director, studio, label, deny, socket, 'javbus')
+                Promise.allSettled(tasks).then((ps) => {
+                    // let errs = ps.reduce((acc, curr) => acc + ( curr.value.v != 1) ? 1 : 0, 0);
+                    let errs = ps.filter(({ value }) => value.s != 1 ? value.n : null)
+                    _send.call(socket, 'DONE', {
+                        m: `r:[t:${ps.length}][e:${errs.length}]`,
+                        len: ps.length,
+                        reflow: errs
+                    })
+                })
                 break;
             case 'ABORT':
                 socket.abort = true

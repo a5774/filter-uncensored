@@ -5,7 +5,7 @@
     document.body.append(gstyle)
     let { v, f, m } = Object.fromEntries(new URLSearchParams(search))
     let { dataOptionsNomarl, websocket, resourceRouter, flexibleSize, constantString: { flagString, alertString, classString, styleString }, themes, timer, numberSnippet, defaultStroageMeger } = await fetchResource("/constant", 'json', {})
-    let { list, taglist } = await fetchResource(resourceRouter.demoDebug, 'json', {})
+    let { render, tags } = await fetchResource(resourceRouter.demoDebug, 'json', {})
     function sorted(attr, convert, reverse = false) {
         let fn = Function("v", `return v${attr}`)
         let callback = (x, y) => {
@@ -93,17 +93,21 @@
         }
         return e
     }
+    function isObject(v) {
+        return Object.prototype.toString.call(v).slice(8, -1) == "Object"
+    }
     function once(fn) {
         var called = false;
-        return function () {
+        return function (...args) {
             if (!called) {
                 called = true;
-                fn.apply(this, arguments);
+                fn.apply(this, args);
             }
         }
     }
     let vm = new Vue({
         data: {
+            stdout: [],
             overlay: {
                 pics: false,
                 error: false,
@@ -116,6 +120,7 @@
                 dashboard: false,
                 comment: false,
                 increment: false,
+                stdout: false
             },
             fragment: {
                 size: dataOptionsNomarl.fragment.size,
@@ -157,8 +162,7 @@
                 reconintval: dataOptionsNomarl.main.reconintval
             },
             manual: {
-                javdb: false,
-                javbus: true,
+                mode: dataOptionsNomarl.manual.mode,
                 bookmark: false
             },
             status: {
@@ -187,19 +191,17 @@
                 picsSwipe: false,
                 picsIndex: -1,
                 picsSwiperSize: 0,
-                desktopSwiperScale: 2,
-                picsFailed: '/debug.jpg',
+                desktopSwiperScale: 0,
+                picsFailed: '',
             },
             reveal: {
                 touches: 1,
                 prevRevealEl: null,
             },
             resource: {
-                instruction: [],
-                dbbookmark: [],
-                busbookmark: [],
-                busTaglist: {},
-                dbTaglist: {},
+                instruction: dataOptionsNomarl.resource.instruction,
+                tags: dataOptionsNomarl.resource.tags,
+                bookmark: dataOptionsNomarl.resource.bookmark
             },
             dynamiclist: [],
             magnet: [],
@@ -207,7 +209,7 @@
             reflow: [],
             history: [],
             proxies: [],
-            sconf: {},
+            sconf: null,
             observer: null,
             debounce: {
                 nav: null,
@@ -227,9 +229,9 @@
                 slowSwipe: null,
             },
             demoDebug: {
+                tags,
+                render,
                 enable: false,
-                list,
-                taglist,
             },
             device: {
                 viewWidth: 0,
@@ -237,13 +239,13 @@
                 isMobile: false,
                 isTablet: false,
                 isDesktop: false,
-                destopExpandWScale: 2,
-                destopExpandHScale: 1.5,
-                fontSize: null,
+                destopExpandWScale: 0,
+                destopExpandHScale: 0,
+                fontSize: 0,
                 rootEl: null,
-                os: null
+                os: ''
             },
-            archive: '',
+            model: dataOptionsNomarl.model,
             theme: 'normal',
             description: 'standard',
         },
@@ -310,9 +312,8 @@
                 this.reflow = [];
                 this.dynamiclist = [];
                 this.overlay.history = false;
-                this.archive = (this.manual.javdb && 'javdb') || (this.manual.javbus && 'javbus')
                 this.description = (this.status.star && 'star') || (this.status.genre && 'genre') || (this.status.studio && 'studio') || (this.status.label && 'label') || (this.status.actors && 'actors') || (this.status.tags && 'tags') || (this.status.directors && 'directors') || (this.status.directors && 'directors') || (this.status.makers && 'makers') || (this.status.publishers && 'publishers') || (this.status.series && 'series') || 'standard'
-                let template = { type: 'SEARCH', star: this.status.star, genre: this.status.genre, director: this.status.director, studio: this.status.studio, label: this.status.label, actors: this.status.actors, tags: this.status.tags, directors: this.status.directors, makers: this.status.makers, publishers: this.status.publishers, series: this.status.series, codes: this.status.codes, deny: this.status.deny, javdb: this.manual.javdb, dbsorts: { dbsort: this.main.dbsort, dbsortsb: this.main.dbsortsb, dbsortvst: this.main.dbsortvst } };
+                let template = { type: 'SEARCH', star: this.status.star, genre: this.status.genre, director: this.status.director, studio: this.status.studio, label: this.status.label, actors: this.status.actors, tags: this.status.tags, directors: this.status.directors, makers: this.status.makers, publishers: this.status.publishers, series: this.status.series, codes: this.status.codes, deny: this.status.deny, mode: this.manual.mode, dbsorts: { dbsort: this.main.dbsort, dbsortsb: this.main.dbsortsb, dbsortvst: this.main.dbsortvst } };
                 if (this.main.keyWord.includes(flagString.searchSplit)) {
                     let [keyWord, range] = this.main.keyWord.split(flagString.searchSplit);
                     range = range.split(flagString.searchPageSplit);
@@ -320,14 +321,6 @@
                     this.sconf = { ...template, keyWord, range }
                     this.main.socket.send(JSON.stringify(this.sconf))
                     return null;
-                }
-                if (this.main.keyWord.includes(flagString.searchPageAll)) {
-                    let [keyWord] = this.main.keyWord.split(flagString.searchPageAll);
-                    let range = [1, Number.MAX_SAFE_INTEGER];
-                    this.main.page = range[1];
-                    this.sconf = { ...template, keyWord, range };
-                    this.main.socket.send(JSON.stringify(this.sconf));
-                    return null
                 }
                 // duplicate
                 this.main.page = 1
@@ -342,7 +335,7 @@
             },
             appendSearch(n) {
                 this.lockSyncReuse()
-                this.main.socket.send(JSON.stringify({ type: 'SEARCH', keyWord: n, javdb: this.manual.javdb, range: [1] }))
+                this.main.socket.send(JSON.stringify({ type: 'SEARCH', keyWord: n, mode: this.manual.mode, range: [1] }))
                 return null
             },
             batchReflow() {
@@ -439,7 +432,7 @@
             async switchProxy(idx) {
                 if (this.status.isdone) {
                     this.lockSyncReuse()
-                    this.overlay.reflow = false;
+                    this.overlay.reflow = false; archive
                     this.overlay.proxies = false;
                     this.logReuse(await fetchResource(`${resourceRouter.toggleProxy}${idx + numberSnippet.passProxy}`, 'text', 'error'))
                     this.flushNewProxy()
@@ -448,19 +441,19 @@
                 }
                 alert(alertString.proxy)
             },
-            flushHistory() {
+            openHistory() {
                 this.overlay.history = this.history.length
                 this.history = Object.keys(localStorage).filter(h => h != flagString._data);
                 return null
             },
             loadHistory(key) {
                 let data_ = JSON.parse(localStorage.getItem(key))
-                this.jumpLocation(data_['sconf']['keyWord'], data_['description'], data_["archive"])
+                this.jumpLocation(data_['sconf']['keyWord'], data_['description'], data_["manual"]['mode'])
                 return null
             },
             saveHistory(k) {
                 // save history
-                localStorage.setItem(`${k || ''}${flagString._data}`, JSON.stringify({ ...vm._data, resource: { busTaglist: {}, dbTaglist: {}, busbookmark: [], dbbookmark: [], instruction: [] } }))
+                localStorage.setItem(`${k || ''}${flagString._data}`, JSON.stringify({ ...vm._data, resource: { instruction: [], tags: { javbus: {}, javdb: {} }, bookmark: { javbus: [], javdb: [] } } }))
             },
             loadNext() {
                 if (this.status.isdone && this.sconf && !this.manual.bookmark) {
@@ -618,8 +611,7 @@
             },
             async flushBookMark(lock) {
                 lock && this.lockSyncReuse()
-                this.resource.dbbookmark = await fetch(resourceRouter.dbBookmark).then(resp => resp.json())
-                this.resource.busbookmark = await fetch(resourceRouter.busBookmark).then(resp => resp.json())
+                this.resource.bookmark[this.manual.mode] = await fetchResource(resourceRouter.bookmark[this.manual.mode], 'json', [])
                 return !null
             },
             scrollToTop(offset, behavior) {
@@ -759,6 +751,19 @@
                     threshold: 0
                 })
             },
+            async initResource() {
+                let resource = this.resource
+                for (const k in resource) {
+                    let v = resource[k]
+                    if (isObject(v)) {
+                        for (const _k in v) {
+                            this.resource[k][_k] = await fetchResource(resourceRouter[k][_k], 'json', [])
+                        }
+                        continue;
+                    }
+                    this.resource[k] = await fetchResource(resourceRouter[k], 'json', [])
+                }
+            },
             connect() {
                 console.log('connect');
                 return new Promise(r => {
@@ -777,25 +782,23 @@
                                         this.disconnect()
                                     }, timer.heartbeatDetectCycle)
                                     break;
-                                case 'LOG':
-                                    this.logReuse(`${data.n}<==>${data.l}`)
+                                case 'PROGRESS':
+                                    this.logReuse(data.m)
+                                    break;
+                                case 'CENSORED':
+                                    this.flushReflow(data)
+                                    this.injectProperty(data)
                                     break;
                                 case 'DONE':
                                     this.logReuse(data.m)
                                     this.unlockSyncReuse()
                                     this.saveHistory(this.sconf.keyWord)
                                     this.detectReflow(data.reflow)
-                                    this.overlay.increment && this.loadNext()
+                                    this.overlay.increment && data.len && this.loadNext()
                                     break;
                                 case 'ERROR':
                                     this.logReuse(data.err)
-                                    break;
-                                case 'START':
-                                    this.logReuse(data.m)
-                                    break;
-                                case 'CENSORED':
-                                    this.flushReflow(data)
-                                    this.injectProperty(data)
+
                                     break;
                             }
                         })
@@ -1152,34 +1155,36 @@
                             el.touchDeltaY = el.touchStartY - e.touches[0]['clientY'];
                             !el.revealing && (el.slope = el.touchDeltaY / el.touchDeltaX)
                             if ((Math.abs(el.slope) <= numberSnippet.tiltFactor) || el.revealing) {
+                                // vm.stdout.push(el.innerText)
                                 e.preventDefault()
+                                el.revealing = true
                                 el.opacity = ((Math.abs(el.touchDeltaX) * numberSnippet.revealOpacityFactor) / el.__revealY)
                                 if (!el.isOpen && (Math.abs(el.touchDeltaX) <= el.__revealY) && (el.touchDeltaX > 0)) {
                                     el.opacityCurrent = 1 - el.opacity
                                     el.style.opacity = el.opacityCurrent
                                     el.style.transform = `translate3d(${-el.touchDeltaX}px,0,0)`
-                                    el.revealing = true
                                 }
                                 // limit offset direction 
                                 if (el.isOpen && (el.__revealY >= Math.abs(el.touchDeltaX)) && (el.touchDeltaX < 0)) {
                                     // limit offset distance 
                                     el.style.opacity = el.opacityCurrent + el.opacity
                                     el.style.transform = `translate3d(${-el.__revealY - el.touchDeltaX}px,0,0)`
-                                    el.revealing = true
+                                    // el.revealing = true
                                 }
                             }
                         }
                     }
                     el.__handleTouchEnd = () => {
                         el.style.transitionDuration = `${timer.revealTransitionTimeout}ms`;
-                        if ((el.touchDeltaX <= 0) && (Math.abs(el.touchDeltaX) >= el.__halfY)) {
-                            vm.manual.javdb = true;
-                            vm.main.keyWord = data.n
-                        }
-                        if (!el.isOpen && (el.touchDeltaX >= 0) && (Math.abs(el.touchDeltaX) >= el.__halfY) && (Math.abs(el.slope) <= numberSnippet.tiltFactor)) {
-                            el.style.opacity = numberSnippet.revealOpacityFactor
-                            el.style.transform = `translate3d(${-el.__revealY}px,0,0)`
-                            el.isOpen = true
+                        if (!el.isOpen && (Math.abs(el.touchDeltaX) >= el.__halfY)) {
+                            if ((el.touchDeltaX <= 0)) {
+                                vm.main.keyWord = data.n
+                            }
+                            if ((el.touchDeltaX >= 0) && (Math.abs(el.slope) <= numberSnippet.tiltFactor)) {
+                                el.style.opacity = numberSnippet.revealOpacityFactor
+                                el.style.transform = `translate3d(${-el.__revealY}px,0,0)`
+                                el.isOpen = true
+                            }
                         } else {
                             el.__recoverReveal()
                         }
@@ -1254,16 +1259,6 @@
                     (v && this.flushBookMark(true)) || this.unlockSyncReuse()
                 }
             },
-            "manual.javdb": {
-                handler(v) {
-                    v && (this.manual.javbus = !v)
-                }
-            },
-            "manual.javbus": {
-                handler(v) {
-                    v && (this.manual.javdb = !v)
-                }
-            },
             "main.error": {
                 handler(v) {
                     v && this.clearErrorViewr();
@@ -1279,7 +1274,7 @@
                 // generator funcation template
                 let cb = Function(`return i=>${this.filterCallback()}`).call(this)
                 if (this.demoDebug.enable) {
-                    return list
+                    return render
                 }
                 if (this.manual.bookmark) {
                     this.$nextTick(this.scrollToTop)
@@ -1310,6 +1305,7 @@
                         "fill": color,
                     },
                 })
+                return null
             },
             sliceReflow() {
                 return this.reflow.slice(this.fragment.size * (this.fragment.idx - 1), this.fragment.idx * this.fragment.size)
@@ -1318,7 +1314,7 @@
                 return Math.ceil(this.reflow.length / this.fragment.size)
             },
             modelAttr() {
-                return this.manual.javdb ? ['actors', 'tags'] : ['star', 'genre']
+                return this.model[this.manual.mode]
             },
             markAction() {
                 return this.manual.bookmark ? 'remove' : 'insert'
@@ -1327,13 +1323,10 @@
                 return this.status.isdone ? 'search' : 'abort'
             },
             taglist() {
-                if (this.demoDebug.enable) {
-                    return taglist
-                }
-                return this.manual.javdb ? this.resource.dbTaglist : this.resource.busTaglist
+                return this.demoDebug.enable && tags || this.resource.tags[this.manual.mode]
             },
             bookmark() {
-                return this.manual.javdb ? this.resource.dbbookmark : this.resource.busbookmark
+                return this.resource.bookmark[this.manual.mode]
             },
             isOddIndex() {
                 return v => !(v % 2)
@@ -1382,12 +1375,10 @@
             this.initTheme()
             // load scroll position
             this.scrollToTop()
-            // init resource
+            // init proxies
             this.flushNewProxy()
-            this.flushHistory()
-            this.resource.busTaglist = await fetchResource(resourceRouter.busTag, 'json', {})
-            this.resource.dbTaglist = await fetchResource(resourceRouter.dbTag, 'json', {})
-            this.resource.instruction = await fetchResource(resourceRouter.instruction, 'json', [])
+            // init resource
+            this.initResource()
         },
         updated() {
             clearTimeout(this.debounce.update)
@@ -1395,7 +1386,7 @@
                 if (this.main.socket) {
                     console.log('updated');
                     // save current 解决 v 存档被覆盖
-                    this.saveHistory(((v == this.sconf.keyWord) && v))
+                    this.saveHistory(this.sconf && (this.sconf.keyWord == v) && v)
                 }
             }, timer.updateHookDebounce);
         },

@@ -1,8 +1,8 @@
 {
-    "taglist": {
+    "tags": {
         "demo": 1
     },
-    "list": [
+    "render": [
         {
             "df": "javdb",
             "n": "xxxx-xxx",

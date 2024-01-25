@@ -16,6 +16,30 @@
             "dbsortsb": 0,
             "dbsortvst": 1
         },
+        "manual": {
+            "mode": "javbus"
+        },
+        "model": {
+            "javbus": [
+                "star",
+                "genre"
+            ],
+            "javdb": [
+                "actors",
+                "tags"
+            ]
+        },
+        "resource": {
+            "instruction": [],
+            "tags": {
+                "javbus": {},
+                "javdb": {}
+            },
+            "bookmark": {
+                "javbus": [],
+                "javdb": []
+            }
+        },
         "chat": {
             "state": "CLOSE"
         }
@@ -31,12 +55,20 @@
         }
     },
     "resourceRouter": {
-        "instruction": "/instruction",
-        "toggleProxy": "/toggleProxy/",
-        "proxies": "/proxies",
-        "updateProxy": "/updateProxy",
         "views": "/views/",
+        "proxies": "/proxies",
         "demoDebug": "/demo-config",
+        "toggleProxy": "/toggleProxy/",
+        "updateProxy": "/updateProxy",
+        "instruction": "/instruction",
+        "tags": {
+            "javbus": "/bus-tag-table",
+            "javdb": "/db-tag-table"
+        },
+        "bookmark": {
+            "javbus": "/bus-bookmark",
+            "javdb": "/db-bookmark"
+        },
         "busBookmark": "/bus-bookmark",
         "dbBookmark": "/db-bookmark",
         "busTag": "/bus-tag-table",
@@ -60,7 +92,6 @@
             "import": "import",
             "searchSplit": "$",
             "searchPageSplit": "-",
-            "searchPageAll": "*",
             "logFormat": "<==>",
             "atniSortFlag": "@",
             "flagLastSuffix": "end-",
@@ -149,7 +180,8 @@
             "proxies": false,
             "history": false,
             "dashboard": true,
-            "increment": false
+            "increment": false,
+            "stdout":false
         },
         "status": {
             "isdone": true,

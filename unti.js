@@ -104,8 +104,8 @@ function sorted(attr, convert, reverse = false) {
 // console.log(sortd);
 
 
-let x = {} ;
-let y = {} ;
+let x = {};
+let y = {};
 /* x.fn = ()=>{
 console.log('x');
 }
@@ -115,15 +115,21 @@ console.log('x');
 
 
 
-let fn = ()=>{
-    
+let fn = () => {
+
 }
-x = {fn}
-y = {fn}
+x = { fn }
+y = { fn }
 
 console.log(x.fn == y.fn);
 
 
 
+/* 
 
-
+git config --global http.proxy http://127.0.0.1:7890
+git config --global https.proxy https://127.0.0.1:7890 */
+a ? b : c ? d : e ? f : g ? h : i ? j : k ? l : m ? n : o ? p : q ? r : s ? t : v ? v : w ? x : y ? z : null
+// https://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@github.com/a5774/realtimeCategory.git
+// give up local change  
+// git checkout --theirs .
