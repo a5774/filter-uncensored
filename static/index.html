@@ -278,14 +278,14 @@
                         v-model="demoDebug.enable">
                 </div>
                 <button class="cancel-menu" @click="overlay.reflow=!overlay.reflow">x</button>
-                <div class="reflow-genre">
+                <div class="reflow-header">
                     <span style="flex-shrink: 0;">plate</span>
                     <span>signal</span>
                     <span>error</span>
                     <span>reflow</span>
                     <span>option</span>
                 </div>
-                <li class="reflow-item" v-for="({value:{n,s,t,extra}}, idx) in sliceReflow" :key="idx">
+                <li class="reflow-body" v-for="({value:{n,s,t,extra}}, idx) in sliceReflow" :key="idx">
                     <span style="flex-shrink: 0;">{{n}}</span>
                     <span>{{s}}</span>
                     <span>{{t}}</span>

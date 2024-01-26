@@ -22,7 +22,7 @@ httpServer.addListener('upgrade', (request, socket, head) => {
     }
 })
 
-httpServer.listen(serverPort, '0.0.0.0', ()     => { console.log(httpServer.address().port) })
+httpServer.listen(serverPort, '0.0.0.0', ()=> { console.log(httpServer.address().port) })
 
 process.addListener('uncaughtException', (err) => {
     console.log(err);

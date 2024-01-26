@@ -38,12 +38,6 @@
     padding: 0;
     list-style: none;
     text-decoration: none;
-    /* background-color: #fff; */
-    /* color: #000; */
-    /* background-color: #000; */
-    /* color: #fff; */
-    /* background-color: #9c5454; */
-    /* color: #fff; */
     /* 在Vue mount 挂载之后切换 */
     visibility: hidden;
     font-family: JetBrainsMono;
@@ -183,6 +177,8 @@
     vertical-align: middle;
 }
 
+.select-filter option,
+.select-origin option,
 .status-control .select-origin {
     box-sizing: border-box;
     border: none;
@@ -194,12 +190,6 @@
 .status-control .select-origin:focus {
     box-sizing: border-box;
     outline: none;
-}
-
-.select-filter option,
-.select-origin option {
-    box-sizing: border-box;
-    font-size: .75rem;
 }
 
 .info-content {
@@ -313,7 +303,6 @@
 }
 
 
-
 .info-item .info-genre,
 .info-item .info-vendor,
 .info-item .info-actor {
@@ -331,7 +320,6 @@
     inset: 0;
     overflow: hidden;
     z-index: 1;
-    /* background-color: #9c5454; */
 }
 
 .info-genre .info-gs,
@@ -341,13 +329,11 @@
     flex-shrink: 0;
 }
 
-.info-base .load-view {
+.info-base .load-view,
+.info-base .load-view:active {
     border: none;
     outline: none;
-    background-color: transparent;
 }
-
-
 
 .info-detail .info-progress {
     position: absolute;
@@ -680,7 +666,7 @@
 .pics-contains-expand {
     display: flex;
     flex-flow: row wrap;
-    background-color: transparent !important;
+    /* background-color: transparent !important; */
     height: 50%;
     box-sizing: border-box;
     padding: .125rem 0px;
@@ -774,14 +760,13 @@
     margin-top: .25rem;
     margin-right: .3125rem;
     vertical-align: top;
-    background-color: transparent;
     outline: none;
     border: none;
     font-size: 1rem;
 }
 
-.over-lay-reflow .reflow-genre,
-.over-lay-reflow .reflow-item {
+.over-lay-reflow .reflow-header,
+.over-lay-reflow .reflow-body {
     width: 100%;
     display: flex;
     box-sizing: border-box;
@@ -791,8 +776,8 @@
     border-bottom: 1px #fff solid;
 }
 
-.reflow-genre span,
-.reflow-item span {
+.reflow-header span,
+.reflow-body span {
     width: 25%;
     box-sizing: border-box;
     padding: .25rem 0px;
@@ -813,8 +798,8 @@
     padding: 0px .625rem;
 }
 
-.reflow-genre button,
-.reflow-item button {
+.reflow-header button,
+.reflow-body button {
     box-sizing: border-box;
     font-size: .875rem;
     color: #333;
@@ -1091,10 +1076,9 @@
 }
 
 
-
 .comment-box .comment-text {
     box-sizing: border-box;
-    padding: .875rem 0;
+    padding: .875rem .125rem;
     border-bottom: 1px solid rgb(221, 221, 221);
 }
 
