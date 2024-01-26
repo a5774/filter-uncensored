@@ -10,7 +10,7 @@ const bookmarkers = {
 }
 bookmarkers.javbus.init()
 bookmarkers.javdb.init()
-let auth = '_jdb_session=U3L1ySgPQqfo%2FyH%2B9A0T0pwbebuPTnBRgDQHt9RgOpu2mJOaj0urTGAS8OIhIPro69ItdvlIWARGG41lv9rW3EY0tiNWLLXQRChQHDB1llGLyeyUuTcA2EYUcIUSbjQZ%2FYWDgp6fHYfA5XrBDofQplBRDiFphmiTgqseshfOUyouopHuxmQyyIex3UCc83TLsTuC2S8S2TTs1be5jf%2F40IzQj0tVaFyqs9NcO9yk49X%2FZzahREN8MQ%2Be9mu3T7w6nNj%2BG03AxwjOVUrJXbyYui4rylxfLMFccIEDnugIdZsPPIZ0NEPouAGNzcxYCqWQXBmouZ4850r1RhP7mZJWMLwPwcV4rtDzxBaCWIiEC7iOCfRFMsN5JKEnyFf9FJLTuD0%3D--Mf8fk5VicLq10KQS--h7dPN3PsJFuYNc6E5iCcGQ%3D%3D'
+let auth = '_jdb_session=fQwtDq66uFCilV3FGexs99fLwumr5QcMkDyqh5JwpvjJ8j0wSrv88vGfcODhFgDH9Bn8zS1yq5tw086y6w50ZgbvI7hCjctcmXCRsHOD9YNZbPkI8dS4%2By330CfVTi1THVHESUhODxk62mzMcS7DasDL9JF0gZVC8oEpdn2xhQyI2UEsSovTVo3bsmHdgex3TEikfZMAZTfm6DhjL%2FLiNBzelDxA7potFvVRRtX1NVJgj8rQrZvaLbaQiZ0r0khD17oDS7OJaIZU1jL%2FTK8c67tlkQDHKR6EELIoNUEcF04YThUEB70xsF%2BUOpOCWmUq6UGU6%2FDmPTG3rQkSXVxGSy5zQy0DGkZzZ7dhKcCN6XPQM6XNcxK0trUcSN3gkP2Corg%3D--U4H2CaVibv%2FxOm3s--Yz4YOR1znAHCQgjuc0qg3A%3D%3D'
 
 function _ping() {
     this.send(
@@ -164,14 +164,13 @@ async function javdb_(domain, 关键词, 区间, 演员, 类别, 导演, 制作�
             系列 && `${domain}/series/${关键词}?lm=v&page=${页面计数}` ||
             番号集 && `${domain}/video_codes/${关键词}?lm=v&page=${页面计数}&sort_type=${dbsorts.dbsort}` ||
             关键词 && `${domain}/search?q=${关键词}&lm=v&page=${页面计数}&sb=${dbsorts.dbsortsb}`;
-        // console.log(搜索);
         let full = await ax.get(搜索, {
             headers: {
                 cookie: auth
             }
-        })
+        })  
         auth = full.headers['set-cookie']?.map(auth => auth.split(';')[0]).join(';') || auth
-        ws.write(full.data)
+        // ws.write(full.data)
         let $ = cheerio.load(full.data);
         let 牛马们 = $('.movie-list .item .video-title strong').map((idx, el) => {
             return $(el).text().trim()
@@ -293,7 +292,7 @@ ws_main.addListener('connection', (socket, req) => {
             case 'SEARCH':
                 socket.abort = false;
                 let tasks = [];
-                let { keyWord, range, star, genre, director, studio, label, deny, javdb, actors, tags, directors, makers, publishers, series, codes, dbsorts = { dbsort: 1, dbsortsb: 0, dbsortvst: 1 } } = message
+                let { keyWord, range, star, genre, director, studio, label, deny, mode, actors, tags, directors, makers, publishers, series, codes, dbsorts = { dbsort: 1, dbsortsb: 0, dbsortvst: 1 } } = message
                 if (range.some(p => Number.isNaN(parseInt(p)))) {
                     _progress.call(socket, {
                         m: `e:[k:KEYWORD_OR_RANGE_ERR]`,
@@ -303,10 +302,13 @@ ws_main.addListener('connection', (socket, req) => {
                 _progress.call(socket, {
                     m: `s:[t:${range[0]}${range[1] ? `,${range[1]}` : ''}]!`
                 })
-                if (javdb) {
-                    await javdb_(domain_db, keyWord, range, actors, tags, directors, makers, publishers, series, codes, dbsorts, socket, tasks, 'javdb')
-                } else {
-                    await javbus_(domain_bus, keyWord, range, star, genre, director, studio, label, deny, socket, tasks, 'javbus')
+                switch (mode) {
+                    case 'javbus':
+                        await javbus_(domain_bus, keyWord, range, star, genre, director, studio, label, deny, socket, tasks, mode)
+                        break;
+                    case 'javdb':
+                        await javdb_(domain_db, keyWord, range, actors, tags, directors, makers, publishers, series, codes, dbsorts, socket, tasks, mode)
+                        break;
                 }
                 Promise.allSettled(tasks).then((ps) => {
                     // let errs = ps.reduce((acc, curr) => acc + ( curr.value.v != 1) ? 1 : 0, 0);

@@ -183,6 +183,8 @@
     vertical-align: middle;
 }
 
+.select-filter option,
+.select-origin option,
 .status-control .select-origin {
     box-sizing: border-box;
     border: none;
@@ -194,12 +196,6 @@
 .status-control .select-origin:focus {
     box-sizing: border-box;
     outline: none;
-}
-
-.select-filter option,
-.select-origin option {
-    box-sizing: border-box;
-    font-size: .75rem;
 }
 
 .info-content {

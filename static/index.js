@@ -1354,9 +1354,9 @@
             this.detectConnect()
             // init query data
             if (v) {
+                this.manual.mode = m
                 this.main.keyWord = v
                 this.status[f] = true;
-                this.manual[m] = true;
                 // relation websockert 
                 !(this.dynamiclist.length) && this.search()
             }
