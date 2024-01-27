@@ -25,9 +25,9 @@
         @scroll.passive="loadOnScroll">
         {{switchTheme}}
         <div v-if="overlay.stdout" @click="overlay.stdout=!overlay.stdout" class="debug-stdout">
-            <p v-for="v in stdout">{{v}}</p>
+            <p v-for="v in reusable.stdout">{{v}}</p>
         </div>
-        <div v-if="!filterRule.length" class="instruction-box">
+        <div v-if="!filterRender.length" class="instruction-box">
             <li v-for="({title,details,expand},idx) in resource.instruction" @click="togglePlate(idx)"
                 class="instruction-title-box" :key="idx">
                 <span :style="expand && {'border-bottom':'1px solid #07faca'}">{{title}}</span>
@@ -140,7 +140,7 @@
         <transition name="fade" mode="out-in">
             <div v-if="overlay.magnet" @click.slef="overlay.magnet=!overlay.magnet" class="over-lay-magnet">
                 <div class="magnet-box">
-                    <a class="magnet-wake" v-for="(m,idx) in magnet" :key="idx" :href="m.href">
+                    <a class="magnet-wake" v-for="(m,idx) in reusable.magnet" :key="idx" :href="m.href">
                         <span class="magnet-text" v-for="(t,idx) in m.text">{{t}}</span>
                     </a>
                 </div>
@@ -150,9 +150,11 @@
         <transition name="fade" mode="out-in">
             <div v-if="overlay.comment" @click.slef="overlay.comment=!overlay.comment" class="over-lay-comment">
                 <div class="comment-box">
-                    <p class="comment-text" v-for="(c,idx) in comment" :key="idx">
-                        {{c}}
-                    </p>
+                    <div>comments:{{reusable.comments}}</div>
+                    <div class="comment-info" v-for="(c,idx) in reusable.comment" :key="idx">
+                        <span class="comment-date">{{c.date}}</span>
+                        <p class="comment-text">{{c.text}}</p>
+                    </div>
                 </div>
             </div>
         </transition>
@@ -161,10 +163,10 @@
         <transition name="fade" mode="out-in">
             <div v-if="overlay.format" @click.self="overlay.format=!overlay.format" class="over-lay-format">
                 <div class="format-box">
-                    <textarea class="format-textarea" placeholder="format" v-model.trim="main.format"></textarea>
+                    <textarea class="format-textarea" placeholder="format" v-model.trim="reusable.format"></textarea>
                     <p class="format-action">
                         <button @click="importFormat" class="format-import">import</button>
-                        <button @click="main.format = ''" class="format-clear">clear</button>
+                        <button @click="reusable.format = '' " class="format-clear">clear</button>
                     </p>
                 </div>
             </div>
@@ -256,7 +258,7 @@
         <div :class="{'proxies-container-transform': overlay.proxies}" @click.self="overlay.proxies=!overlay.proxies"
             class="proxies-container">
             <table class="proxy-table">
-                <tr v-for="(e,idx) in proxies" :key="idx">
+                <tr v-for="(e,idx) in reusable.proxies" :key="idx">
                     <td class="proxy-switch-td" v-for="(p,idx_) in e" :key="idx_">
                         <span v-if="p.selected" class="proxy-selected-td"></span>
                         <button class="proxy-btn-td" @click="!p.selected && switchProxy(idx * e.length + idx_)">
@@ -285,7 +287,7 @@
                     <span>reflow</span>
                     <span>option</span>
                 </div>
-                <li class="reflow-body" v-for="({value:{n,s,t,extra}}, idx) in sliceReflow" :key="idx">
+                <li class="reflow-body" v-for="({value:{n,s,t,extra}}, idx) in pagerRender" :key="idx">
                     <span style="flex-shrink: 0;">{{n}}</span>
                     <span>{{s}}</span>
                     <span>{{t}}</span>
@@ -293,11 +295,11 @@
                     <span><button @click="pushReflow(n,extra,idx)">push</button></span>
                 </li>
 
-                <div class="fragment-control">
+                <div class="pager-control">
                     <span style="float:left;">offset:{{main.offset}}</span>
-                    <button class="fragment-prev" @click="fragment.idx--">prev</button>
-                    <span>{{fragment.idx}}of{{totalReflow || 1}}</span>
-                    <button class="fragment-next" @click="fragment.idx++">next</button>
+                    <button class="pager-prev" @click="pager.fragidx--">prev</button>
+                    <span>{{pagerIndex}}of{{pagerSize}}</span>
+                    <button class="pager-next" @click="pager.fragidx++">next</button>
                 </div>
             </ul>
         </transition>
@@ -352,7 +354,7 @@
             <!-- <div class="info-action"> -->
             <div class="info-search">
                 <!-- mousedown 触发焦点 -->
-                <input type="text" @keydown.enter="search" @dblclick.stop="main.keyWord= ''" @focus="openHistory"
+                <input type="text" @keydown.enter="search" @dblclick.stop="main.keyWord= '' " @focus="openHistory"
                     @blur.self="overlay.history=false" placeholder="keyWord" v-model=main.keyWord>
                 <button @click="search">{{searchAction}}</button>
                 <label for="star">star</label><input id="star" type="checkbox" v-model="status[modelAttr[0]]">
@@ -360,7 +362,7 @@
                 <button @click="home">home</button>
                 <transition name="fade" mode="out-in">
                     <p v-if="overlay.history" class="history-container" @mousedown.prevent>
-                        <button v-for="(key,idx) in history" :key="idx" @click.self="loadHistory(key)"
+                        <button v-for="(key,idx) in reusable.history" :key="idx" @click.self="loadHistory(key)"
                             class="history-key">
                             {{key | purgeSuffix}}
                         </button>
@@ -377,27 +379,28 @@
             </div>
             <h2 class="sticky-log">
                 <span> current:{{this.main.log}}</span>
-                <span v-if="status.isdone"> reflow:{{reflow.length}}
+                <span v-if="status.isdone"> reflow:{{pager.reflow.length}}
                 </span>
                 <p v-if="overlay.error" class="error-full-log">
                     {{main.error}}
                 </p>
             </h2>
-            <p class="info-total">total:{{filterRule.length}}</p>
+            <p class="info-total">total:{{filterRender.length}}</p>
             <div class="info-filter">
                 <select class="select-filter" v-model="main.select">
                     <option value="NONE">NONE</option>
                     <option value="TIME">TIME</option>
                     <option value="VIEW">VIEW</option>
                 </select>
-                <input type="text" v-model="main.factor">
+                <label for="reverse">reverse</label>
+                <input type="checkbox" id="reverse" v-model="main.reverse">
                 <span>{{main.state}}</span>
                 <label for="autoView">autoView</label>
                 <input id="autoView" type="checkbox" v-model=status.autoview>
             </div>
             <!-- </div> -->
             <ul class="info-content" v-press-auto-scroll="this">
-                <li v-for="(item,index) in filterRule" class="info-contains" :key="index">
+                <li v-for="(item,index) in filterRender" class="info-contains" :key="index">
                     <div class="info-swipe-reveal" v-swipe-to-reveal:[item]="$root">
                         <div class="thumb-item">
                             <!-- v-lazy-load-oberver -->
@@ -425,7 +428,8 @@
                             </transition>
                             <p class="info-base">
                                 <a class="info" target="_blank" @click.self="item.gs=!item.gs">{{item.n}}</a>
-                                <a class="info" target="_blank" @click.self="expandComment(item.c)">{{item.d}}</a>
+                                <a class="info" target="_blank"
+                                    @click.self="expandComment(item.c,item.l)">{{item.d}}</a>
                                 <button class="info load-view" @click="loadViewsByItem(item)" target="_blank">{{
                                     item.v[0] | viemTemplate }}</button>
                             </p>
@@ -447,7 +451,7 @@
                                     item.i | dataCapacity}}</a>
 
                                 <a class="info info-index" style="font-weight: bold;">{{index |
-                                    flagLast(filterRule.length)}}</a>
+                                    flagLast(filterRender.length)}}</a>
                             </p>
                         </div>
                     </div>

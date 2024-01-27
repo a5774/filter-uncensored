@@ -138,14 +138,14 @@
 .info-filter .select-filter:focus,
 .status-control button:active,
 .info-search button:active,
-.info-filter input[type="text"]:focus,
+/* .info-filter input[type="text"]:focus, */
 .info-search input[type="text"]:focus {
     background-color: #e0e0e0;
     border: 1px solid rgba(51, 181, 229, 0.4);
     box-shadow: inset 0 1px 1px rgba(0, 208, 255, 0.617);
 }
 
-.info-filter input[type="text"],
+/* .info-filter input[type="text"], */
 .info-search input[type="text"] {
     max-width: 30%;
     color: #555;
@@ -722,7 +722,6 @@
     min-height: 15.3125rem;
     box-sizing: border-box;
     background: rgba(11, 11, 11, 0.8);
-    margin-top: 2rem;
     padding: .25rem .3125rem;
     position: fixed;
     top: 60%;
@@ -788,7 +787,7 @@
     text-overflow: ellipsis;
 }
 
-.over-lay-reflow .fragment-control {
+.over-lay-reflow .pager-control {
     margin-top: .25rem;
     text-align: right;
     position: absolute;
@@ -811,8 +810,8 @@
     /* text-shadow: 0 1px 0 #fff; */
 }
 
-.fragment-control .fragment-prev,
-.fragment-control .fragment-next {
+.pager-control .pager-prev,
+.pager-control .pager-next {
     box-sizing: border-box;
     font-size: 1rem;
     outline: none;
@@ -1076,10 +1075,18 @@
 }
 
 
-.comment-box .comment-text {
+.comment-box .comment-info {
     box-sizing: border-box;
-    padding: .875rem .125rem;
+    text-align: left;
+    padding: .875rem .25rem;
     border-bottom: 1px solid rgb(221, 221, 221);
+}
+
+.comment-info .comment-text{
+    box-sizing: border-box;
+    user-select: auto;
+    text-indent: 4rem;
+    padding: 0 .875rem;
 }
 
 .instruction-box {

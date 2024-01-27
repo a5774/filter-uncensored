@@ -8,9 +8,10 @@ const bookmarkers = {
     javdb: new BookMarker('db', DBBOOKMARKPATH),
     javbus: new BookMarker('bus', BUSBOOKMARKPATH)
 }
+let jdb = '_jdb_session=fQwtDq66uFCilV3FGexs99fLwumr5QcMkDyqh5JwpvjJ8j0wSrv88vGfcODhFgDH9Bn8zS1yq5tw086y6w50ZgbvI7hCjctcmXCRsHOD9YNZbPkI8dS4%2By330CfVTi1THVHESUhODxk62mzMcS7DasDL9JF0gZVC8oEpdn2xhQyI2UEsSovTVo3bsmHdgex3TEikfZMAZTfm6DhjL%2FLiNBzelDxA7potFvVRRtX1NVJgj8rQrZvaLbaQiZ0r0khD17oDS7OJaIZU1jL%2FTK8c67tlkQDHKR6EELIoNUEcF04YThUEB70xsF%2BUOpOCWmUq6UGU6%2FDmPTG3rQkSXVxGSy5zQy0DGkZzZ7dhKcCN6XPQM6XNcxK0trUcSN3gkP2Corg%3D--U4H2CaVibv%2FxOm3s--Yz4YOR1znAHCQgjuc0qg3A%3D%3D'
 bookmarkers.javbus.init()
 bookmarkers.javdb.init()
-let auth = '_jdb_session=fQwtDq66uFCilV3FGexs99fLwumr5QcMkDyqh5JwpvjJ8j0wSrv88vGfcODhFgDH9Bn8zS1yq5tw086y6w50ZgbvI7hCjctcmXCRsHOD9YNZbPkI8dS4%2By330CfVTi1THVHESUhODxk62mzMcS7DasDL9JF0gZVC8oEpdn2xhQyI2UEsSovTVo3bsmHdgex3TEikfZMAZTfm6DhjL%2FLiNBzelDxA7potFvVRRtX1NVJgj8rQrZvaLbaQiZ0r0khD17oDS7OJaIZU1jL%2FTK8c67tlkQDHKR6EELIoNUEcF04YThUEB70xsF%2BUOpOCWmUq6UGU6%2FDmPTG3rQkSXVxGSy5zQy0DGkZzZ7dhKcCN6XPQM6XNcxK0trUcSN3gkP2Corg%3D--U4H2CaVibv%2FxOm3s--Yz4YOR1znAHCQgjuc0qg3A%3D%3D'
+
 
 function _ping() {
     this.send(
@@ -85,10 +86,9 @@ async function javbus_(domain, 关键词, 区间, 演员, 类别, 导演, 制作
                     let 牛马的日期 = 牛马们的日期[计数]
                     let 单个搜索 = `${domain}/${牛马}`
                     let 牛马的略缩图 = 略缩图集[计数]
-                    // if (!(牛马的日期.slice(0, 4) >= 时间)) return { n: 牛马, s: 0x04, t: 'expire', extra: { d: 牛马的日期, p: 牛马的略缩图 } }
+                    let pret = { ...recvtemp, df, d: 牛马的日期, f: 单个搜索, p: 牛马的略缩图 }
                     try {
                         // throw  new Error('cust')
-                        let pret = { ...recvtemp, df, d: 牛马的日期, f: 单个搜索, p: 牛马的略缩图 }
                         let _$_ = cheerio.load((await ax.get(单个搜索)).data)
                         let 类别标签 = _$_('.genre label a').map((idx, el) => {
                             return _$_(el).attr('href')
@@ -104,6 +104,7 @@ async function javbus_(domain, 关键词, 区间, 演员, 类别, 导演, 制作
                         let 归属信息 = _$_('.movie .info p:nth-of-type(n+3):nth-of-type(-n+6) a').map((idx, el) => {
                             return { text: _$_(el).text(), href: _$_(el).attr('href') }
                         }).get()
+                        // return { n: 牛马, s: 0x02, t: 'empty', extra: pret }
                         if (磁力参数 == null) return { n: 牛马, s: 0x02, t: 'empty', extra: { ...pret, g: 类别标签, s: 演员列表, i: 预览图集, b: 归属信息 } };
                         let 磁力 = (await ax.get(`${domain}/ajax/uncledatoolsbyajax.php?gid=${磁力参数}&lang=zh&uc=0`, {
                             headers: {
@@ -128,8 +129,9 @@ async function javbus_(domain, 关键词, 区间, 演员, 类别, 导演, 制作
                             m: 磁力列表,
                             u: regx.unc.test(磁力),
                             r: regx.rev.test(磁力),
-                            v: [-1],
+                            l: -1,
                             c: [],
+                            v: [-1]
                         });
                         return { n: 牛马, s: 0x01, t: 'regular' };
                     } catch (err) {
@@ -167,10 +169,10 @@ async function javdb_(domain, 关键词, 区间, 演员, 类别, 导演, 制作�
             关键词 && `${domain}/search?q=${关键词}&lm=v&page=${页面计数}&sb=${dbsorts.dbsortsb}`;
         let full = await ax.get(搜索, {
             headers: {
-                cookie: auth
+                cookie: jdb
             }
         })
-        auth = full.headers['set-cookie']?.map(auth => auth.split(';')[0]).join(';') || auth
+        jdb = full.headers['set-cookie']?.map(jdb => jdb.split(';')[0]).join(';') || jdb
         // ws.write(full.data)
         let $ = cheerio.load(full.data);
         let 牛马们 = $('.movie-list .item .video-title strong').map((idx, el) => {
@@ -204,15 +206,17 @@ async function javdb_(domain, 关键词, 区间, 演员, 类别, 导演, 制作�
                     let 牛马的日期 = 牛马们的日期[计数]
                     let 单个搜索 = 牛马们详细[计数]
                     let 牛马的略缩图 = 略缩图集[计数]
+                    let pret = { ...recvtemp, df, d: 牛马的日期, f: 单个搜索, p: 牛马的略缩图 }
                     try {
                         let _$_ = cheerio.load((await ax.get(单个搜索)).data)
                         let _$_$_ = cheerio.load((await ax.get(`${单个搜索}/reviews/lastest`)).data, {
                             headers: {
-                                cookie: auth
+                                cookie: jdb
                             }
                         })
-                        let 评论预览 = _$_$_('.review-item .content p').map((idx, el) => {
-                            return _$_$_(el).text().replace(regx.emtpy, ' ')
+                        let 评论总数 = _$_('.video-detail .review-tab span').text().match(regx.number)[0]
+                        let 评论预览 = _$_$_('.review-item').map((idx, el) => {
+                            return { text: _$_$_('.content p', el).text().replace(regx.emtpy, ' '), date: _$_$_('.review-item .time', el).text() }
                         }).get()
                         // console.log(评论预览);
                         let 归属信息 = _$_('.video-detail .video-meta-panel .movie-panel-info > .panel-block .value').map((idx, el) => {
@@ -255,8 +259,9 @@ async function javdb_(domain, 关键词, 区间, 演员, 类别, 导演, 制作�
                             b: 归属信息,
                             u: regx.unc.test(磁力),
                             r: regx.rev.test(磁力),
-                            v: 老司机的看法,
-                            c: 评论预览
+                            l: 评论总数,
+                            c: 评论预览,
+                            v: 老司机的看法
                         })
                         return { n: 牛马, s: 0x01, t: 'regular' };
                     } catch (err) {
@@ -264,7 +269,7 @@ async function javdb_(domain, 关键词, 区间, 演员, 类别, 导演, 制作�
                             err: err.message,
                             n: 牛马
                         })
-                        return { n: 牛马, s: 0x03, t: 'error', extra: { d: 牛马的日期, f: 单个搜索, p: 牛马的略缩图 } }
+                        return { n: 牛马, s: 0x03, t: 'error', extra: pret }
                     }
                 })(牛马们[计数], 计数)
             )
@@ -282,7 +287,6 @@ ws_main.addListener('connection', (socket, req) => {
         console.log(`connections:${ws_main.clients.size}`);
     })
     // html5 api 
-    // socket.pong
     _ping.call(socket)
     socket.addEventListener('message', async ({ data }) => {
         let message = JSON.parse(data)

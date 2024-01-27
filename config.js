@@ -25,8 +25,8 @@ const regx = {
     unc: /uncen|\u65E0\u7801\u7834\u89E3|\u7834\u89E3/ig,
     rev: /\u65E0\u7801\u6D41\u51FA/ig,
 }
-const recvtemp = { df:'', d: '', f: '', p: '', g: [], s: [], i: [], b: [], m: [], c: [], v: [-1] }
-// const ws = fs.createWriteStream('./index_full.html');
+const recvtemp = { df: '', d: '', f: '', p: '', l: -1, g: [], s: [], i: [], b: [], m: [], c: [], v: [-1] }
+const ws = fs.createWriteStream('./index_full.html');
 const sslOption = {
     //  key: fs.readFileSync(path.resolve(__dirname, './SSL/knockdoor.top.key'), { encoding: 'utf-8' }),
     //  cert: fs.readFileSync(path.resolve(__dirname, './SSL/knockdoor.top.pem'), { encoding: 'utf-8' })
@@ -100,9 +100,6 @@ class BookMarker {
     }
 
 }
-function temp() {
-    console.log(aa);
-}
 const sleep = async (t) => new Promise(r => setTimeout(() => r(t), t))
 module.exports = {
     domain_bus,
@@ -130,7 +127,7 @@ module.exports = {
     sslOption,
     sleep,
     BookMarker,
-    // ws,
+    ws,
     regx,
     recvtemp
 }

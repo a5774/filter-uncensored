@@ -8,7 +8,6 @@ const serverPort = (process.argv[2] && 80) || 443
 const serverOption = (process.argv[2] && {}) || sslOption
 // let https2Server = http2.createSecureServer(ssl_option, app.callback())
 let httpServer = http.createServer(serverOption, app.callback())
-
 httpServer.addListener('upgrade', (request, socket, head) => {
     if (request.url == '/main') {
         ws_main.handleUpgrade(request, socket, head, websocket => {
@@ -23,7 +22,6 @@ httpServer.addListener('upgrade', (request, socket, head) => {
 })
 
 httpServer.listen(serverPort, '0.0.0.0', ()=> { console.log(httpServer.address().port) })
-
 process.addListener('uncaughtException', (err) => {
     console.log(err);
 });

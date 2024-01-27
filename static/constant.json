@@ -1,8 +1,8 @@
 {
     "dataOptionsNomarl": {
-        "fragment": {
-            "size": 5,
-            "idx": 1
+        "pager": {
+            "fragidx": 1,
+            "fragsize": 5
         },
         "main": {
             "log": "null",
@@ -93,7 +93,6 @@
             "searchSplit": "$",
             "searchPageSplit": "-",
             "logFormat": "<==>",
-            "atniSortFlag": "@",
             "flagLastSuffix": "end-",
             "socketDisconnect": "disconnected",
             "scrollBehavior": "smooth",
@@ -175,7 +174,7 @@
             "format": false,
             "magnet": false,
             "comment": false,
-            "reflow": false,
+            "reflow": true,
             "sidenav": false,
             "proxies": false,
             "history": false,

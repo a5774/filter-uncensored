@@ -72,24 +72,24 @@ attrInject(a_,{y:3},{})
  */
 
 
+// let bk = './static/bus-bookmark.json'
+let bk = './static/db-bookmark.json'
 function convert() {
-    let bm = require('./static/bus-bookmark.json')
+    let bm = require(bk)
     bm = bm.map(item => {
         return { ...item, f: `https://www.javbus.com/${item.n}` }
     })
-    fs.writeFileSync('./static/bus-bookmark.json', JSON.stringify(bm))
+    fs.writeFileSync(bk, JSON.stringify(bm))
 }
 // convert()
 function getAllName() {
-    let bm = JSON.parse(fs.readFileSync('./static/bus-bookmark.json'))
+    let bm = JSON.parse(fs.readFileSync(bk))
     console.log(bm.map(any => any.n).join(','));
 }
 getAllName()
 
-// SDAB-278,MIAA-828,JUKF-093,SSIS-840,CAWD-570,MIAD-954,TENN-006,SSIS-736,MIDV-253,SSIS-862,MUDR-200,MIAA-702
-let bm = require('./static/bus-bookmark.json')
 
-
+let bm = require(bk)
 function sorted(attr, convert, reverse = false) {
     let fn = Function("v", `return v${attr}`)
     let callback = (x, y) => {
@@ -99,37 +99,14 @@ function sorted(attr, convert, reverse = false) {
     let { sort, slice, toSorted } = Array.prototype
     return toSorted?.call(this, callback) || sort.call(slice.call(this), callback)
 }
+
 // let sortd = sorted.call([{ v: [41, 87] }, { v: [74, 57] }], '.v[0]', x => x, false)
 
 // console.log(sortd);
 
-
-let x = {};
-let y = {};
-/* x.fn = ()=>{
-console.log('x');
-}
-y.fn = ()=>{
-console.log('x');
-} */
-
-
-
-let fn = () => {
-
-}
-x = { fn }
-y = { fn }
-
-console.log(x.fn == y.fn);
-
-
-
-/* 
-
-git config --global http.proxy http://127.0.0.1:7890
-git config --global https.proxy https://127.0.0.1:7890 */
-// a ? b : c ? d : e ? f : g ? h : i ? j : k ? l : m ? n : o ? p : q ? r : s ? t : v ? v : w ? x : y ? z : null 
+// git config --global http.proxy http://127.0.0.1:7890
+// git config --global https.proxy https://127.0.0.1:7890
+// a ? b : c ? d : e ? f : g ? h : i ? j : k ? l : m ? n : o ? p : q ? r : s ? t : v ? v : w ? x : y ? z : null
 // git remote set-url origin   https://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@github.com/a5774/realtimeCategory.git
 // git config --global http.proxy http://127.0.0.1:7890
 // git rebase --continue

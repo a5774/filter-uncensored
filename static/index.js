@@ -15,11 +15,11 @@
         let { sort, slice, toSorted } = Array.prototype
         return toSorted?.call(this, callback) || sort.call(slice.call(this), callback)
     }
-    function uniqueObjectsByKey(arrLike, key) {
+    function uniqueKeyByArray(arrLike, key) {
         const s = new Set();
         return arrLike.filter(({ value }) => {
             const n = value[key];
-            return !s.has(n) ? s.add(n) : null
+            return !s.has(n) && s.add(n)
         });
     }
     function debouncefn(fu, delay) {
@@ -107,7 +107,6 @@
     }
     let vm = new Vue({
         data: {
-            stdout: [],
             overlay: {
                 pics: false,
                 error: false,
@@ -122,9 +121,10 @@
                 increment: false,
                 stdout: false
             },
-            fragment: {
-                size: dataOptionsNomarl.fragment.size,
-                idx: dataOptionsNomarl.fragment.idx
+            pager: {
+                reflow: [],
+                fragidx: dataOptionsNomarl.pager.fragidx,
+                fragsize: dataOptionsNomarl.pager.fragsize
             },
             chat: {
                 overlay: {
@@ -148,9 +148,7 @@
                 review: dataOptionsNomarl.main.review,
                 state: dataOptionsNomarl.main.state,
                 error: '',
-                format: '',
                 keyWord: '',
-                filterFactor: '',
                 dbsort: dataOptionsNomarl.main.dbsort,
                 dbsortsb: dataOptionsNomarl.main.dbsortsb,
                 dbsortvst: dataOptionsNomarl.main.dbsortvst,
@@ -159,6 +157,7 @@
                 sliderate: dataOptionsNomarl.main.sliderate,
                 socket: null,
                 reconn: true,
+                reverse: false,
                 reconintval: dataOptionsNomarl.main.reconintval
             },
             manual: {
@@ -204,11 +203,15 @@
                 bookmark: dataOptionsNomarl.resource.bookmark
             },
             dynamiclist: [],
-            magnet: [],
-            comment: [],
-            reflow: [],
-            history: [],
-            proxies: [],
+            reusable: {
+                format: '',
+                magnet: [],
+                stdout: [],
+                history: [],
+                proxies: [],
+                comment: [],
+                comments: -1,
+            },
             sconf: null,
             observer: null,
             debounce: {
@@ -251,7 +254,7 @@
         },
         methods: {
             importFormat() {
-                let matcher = this.main.format.match(/[a-zA-Z]+-\d+/ig)
+                let matcher = this.reusable.format.match(/[a-zA-Z]+-\d+/ig)
                 console.log(matcher);
                 if (matcher) {
                     this.dynamiclist = []
@@ -264,7 +267,7 @@
                 alert(alertString.import)
             },
             exportJson() {
-                let json = JSON.stringify(this.filterRule.map(({ m }) => m))
+                let json = JSON.stringify(this.filterRender.map(({ m }) => m))
                 let raw = new Blob([json], { type: 'application/json' })
                 let body = document.body
                 let el = document.createElement('a')
@@ -309,8 +312,8 @@
                 if (!this.status.isdone) return alert(alertString.search)
                 if (this.main.socket.readyState != WebSocket.OPEN) return this.logReuse(flagString.socketDisconnect)
                 this.lockSyncReuse();
-                this.reflow = [];
                 this.dynamiclist = [];
+                this.pager.reflow = [];
                 this.overlay.history = false;
                 this.description = (this.status.star && 'star') || (this.status.genre && 'genre') || (this.status.studio && 'studio') || (this.status.label && 'label') || (this.status.actors && 'actors') || (this.status.tags && 'tags') || (this.status.directors && 'directors') || (this.status.directors && 'directors') || (this.status.makers && 'makers') || (this.status.publishers && 'publishers') || (this.status.series && 'series') || 'standard'
                 let template = { type: 'SEARCH', star: this.status.star, genre: this.status.genre, director: this.status.director, studio: this.status.studio, label: this.status.label, actors: this.status.actors, tags: this.status.tags, directors: this.status.directors, makers: this.status.makers, publishers: this.status.publishers, series: this.status.series, codes: this.status.codes, deny: this.status.deny, mode: this.manual.mode, dbsorts: { dbsort: this.main.dbsort, dbsortsb: this.main.dbsortsb, dbsortvst: this.main.dbsortvst } };
@@ -339,31 +342,31 @@
                 return null
             },
             batchReflow() {
-                this.reflow.forEach(({ value: { n } }) => {
+                this.pager.reflow.forEach(({ value: { n } }) => {
                     this.appendSearch(n)
                 })
                 this.overlay.reflow = false
                 return null
             },
             clearReflow() {
-                this.reflow = []
+                this.pager.reflow = []
                 this.overlay.reflow = false
                 return null
             },
             pushReflow(n, extra, idx) {
                 this.dynamiclist.push({ n, ...extra })
-                this.reflow.splice(idx, 1)
+                this.pager.reflow.splice(idx, 1)
                 return null
             },
             detectReflow(reflow) {
                 if (reflow.length) {
-                    this.reflow = uniqueObjectsByKey([...this.reflow, ...data.reflow], 'n')
+                    this.pager.reflow = uniqueKeyByArray([...this.pager.reflow, ...reflow], 'n')
                 }
             },
             flushReflow(v) {
-                if (this.reflow.length) {
-                    this.reflow.find(({ value: { n } }, idx) => {
-                        v.n == n && this.reflow.splice(idx, 1)
+                if (this.pager.reflow.length) {
+                    this.pager.reflow.find(({ value: { n } }, idx) => {
+                        v.n == n && this.pager.reflow.splice(idx, 1)
                     })
                 }
             },
@@ -426,7 +429,7 @@
                 this.logReuse(await fetchResource(resourceRouter.updateProxy, 'text', 'error'))
             },
             async flushNewProxy() {
-                this.proxies = snippetArray((await fetchResource(resourceRouter.proxies, 'json', [])).slice(numberSnippet.passProxy), numberSnippet.proxy)
+                this.reusable.proxies = snippetArray((await fetchResource(resourceRouter.proxies, 'json', [])).slice(numberSnippet.passProxy), numberSnippet.proxy)
                 return null
             },
             async switchProxy(idx) {
@@ -442,8 +445,8 @@
                 alert(alertString.proxy)
             },
             openHistory() {
-                this.overlay.history = this.history.length
-                this.history = Object.keys(localStorage).filter(h => h != flagString._data);
+                this.reusable.history = Object.keys(localStorage).filter(h => h != flagString._data);
+                this.overlay.history = this.reusable.history.length
                 return null
             },
             loadHistory(key) {
@@ -503,7 +506,7 @@
                 if (!this.dynamiclist.length) return null;
                 this.lockSyncReuse()
                 let queueViews = []
-                let pending = this.filterRule.filter(({ v }) => v[0] == -1)
+                let pending = this.filterRender.filter(({ v }) => v[0] == -1)
                 this.logReuse(pending.length)
                 let fragment = snippetArray(pending, numberSnippet.views)
                 for (let i = 0; i <= fragment.length - 1; i++) {
@@ -533,7 +536,7 @@
                 this.preview.picsEl = target
                 this.preview.picsEl.classList.add(classString.swipe)
                 await sleep(timer.openSwiperTimeout)
-                this.preview.picsSwipe = this.preview.pics
+                this.preview.picsSwipe = this.preview.pics.length
 
             },
             async closeSwiper() {
@@ -580,12 +583,13 @@
                 }
             },
             expandMagnet(m) {
-                this.magnet = m
+                this.reusable.magnet = m
                 this.overlay.magnet = m.length
                 return null
             },
-            expandComment(c) {
-                this.comment = c
+            expandComment(c, l) {
+                this.reusable.comment = c
+                this.reusable.comments = l
                 this.overlay.comment = c.length
                 return null
             },
@@ -612,7 +616,7 @@
             async flushBookMark(lock) {
                 lock && this.lockSyncReuse()
                 this.resource.bookmark[this.manual.mode] = await fetchResource(resourceRouter.bookmark[this.manual.mode], 'json', [])
-                return !null
+                return lock
             },
             scrollToTop(offset, behavior) {
                 this.$refs.box.scrollTo({
@@ -621,15 +625,13 @@
                 });
                 return null
             },
-            filterCallback() {
+            filterTemp() {
                 let conditions = [];
-                !(this.main.select == 'NONE' && this.main.filterFactor) || (conditions.push('(i.n?.toLocaleLowerCase()?.includes(this.main.filterFactor))'));
-                !(this.main.select == 'TIME' && (this.main.filterFactor.length == 4)) || (conditions.push('(i.d?.slice(0, 4) >= this.main.filterFactor)'));
-                !this.status.single || conditions.push('(i.s?.length || -1) == this.main.actors');
+                !this.status.single || conditions.push('(i.s.length || -1) == this.main.actors');
                 !(this.main.review == 'censored') || conditions.push('i');
-                !(this.main.review == 'uncensored') || conditions.push('i?.u');
-                !(this.main.review == 'revelation') || conditions.push('i?.r');
-                return conditions.join(` && `)
+                !(this.main.review == 'uncensored') || conditions.push('i.u');
+                !(this.main.review == 'revelation') || conditions.push('i.r');
+                return `return i=>${conditions.join(` && `)}`
             },
             visibNavigation() {
                 this.overlay.sidenav = true
@@ -735,12 +737,12 @@
                         // console.log(target, isIntersecting);
                         if (isIntersecting) {
                             !(target.src == target.dataset.src) && target.setAttribute('src', target.dataset.src)
-                            let v = this.status.autoview && this.filterRule[target.dataset.i]
+                            let v = this.status.autoview && this.filterRender[target.dataset.i]
                             if (v && (v['v'][0] == -1)) {
                                 this.logReuse(target.dataset.n)
                                 let views = await this.loadViews(target.dataset.n)
                                 v['v'][0] = views
-                                // vm.$set(this.filterRule[target.dataset.i], 'v',[views] )
+                                // vm.$set(this.filterRender[target.dataset.i], 'v',[views] )
                             }
                             observer.unobserve(target)
                         }
@@ -792,13 +794,12 @@
                                 case 'DONE':
                                     this.logReuse(data.m)
                                     this.unlockSyncReuse()
-                                    this.saveHistory(this.sconf.keyWord)
+                                    this.saveHistory(this.sconf && this.sconf.keyWord)
                                     this.detectReflow(data.reflow)
                                     this.overlay.increment && data.len && this.loadNext()
                                     break;
                                 case 'ERROR':
                                     this.logReuse(data.err)
-
                                     break;
                             }
                         })
@@ -913,7 +914,7 @@
         },
         filters: {
             dataCapacity(v) {
-                return v?.length || -1
+                return v.length || -1
             },
             extractTag(v, o) {
                 v = v && v?.match(/([^\/]+)$/)?.[0]?.split('?')
@@ -921,10 +922,10 @@
                 return o?.[v] ?? v
             },
             getProgress(v) {
-                return v?.filter(({ loaded }) => (loaded == true)).length ?? 0
+                return v.filter(({ loaded }) => (loaded == true)).length || 0
             },
             purgeSuffix(v) {
-                return v?.replace(flagString._data, '') ?? v
+                return v.replace(flagString._data, '') || v
             },
             viemTemplate(v) {
                 return (v == -1 && flagString.viewsEmpty) || v
@@ -1155,7 +1156,7 @@
                             el.touchDeltaY = el.touchStartY - e.touches[0]['clientY'];
                             !el.revealing && (el.slope = el.touchDeltaY / el.touchDeltaX)
                             if ((Math.abs(el.slope) <= numberSnippet.tiltFactor) || el.revealing) {
-                                // vm.stdout.push(el.innerText)
+                                // vm.reusable.stdout.push(el.innerText)
                                 e.preventDefault()
                                 el.revealing = true
                                 el.opacity = ((Math.abs(el.touchDeltaX) * numberSnippet.revealOpacityFactor) / el.__revealY)
@@ -1202,7 +1203,7 @@
         },
         watch: {
             //push > computed > watch> list render(dom)
-            filterRule: {
+            filterRender: {
                 handler(v) {
                     // console.log(this.$refs.monitor.length);//n
                     // dom渲染完成之后，新的事件循环之前(因涉及到dom操作，在list render之前无法获取dom，所以在nextTick中执行上一次watch的回调时的数据(此时dom已经渲染完成可被获取)
@@ -1216,12 +1217,12 @@
                         })
                     }, timer.observerDebounce);
                 },
-                deep: false
+                deep: false,
             },
-            "main.filterFactor": {
+            "pager.fragidx": {
                 handler(v) {
-                    this.main.filterFactor = v.length >= 4 ? this.main.filterFactor.slice(0, 4) : v
-                },
+                    this.pager.fragidx = Math.max(1, Math.min(v, this.pagerSize))
+                }
             },
             "status.star": {
                 handler(v) {
@@ -1243,16 +1244,6 @@
                     v && (this.status.actors = !v)
                 }
             },
-            "preview.picsIndex": {
-                handler(idx) {
-                    // this.preview.picsIndex = idx >= this.preview.pics?.length ? 0 : (idx < 0 ? this.preview.pics?.length - 1 : idx);
-                },
-            },
-            "fragment.idx": {
-                handler(v) {
-                    this.fragment.idx = v > this.totalReflow ? 1 : (v < 1 ? this.totalReflow : v);
-                },
-            },
             "manual.bookmark": {
                 // first init dont emit watch ,sequence:computed > watch 
                 handler(v) {
@@ -1267,12 +1258,11 @@
         },
         computed: {
             // render list
-            filterRule() {
+            filterRender() {
                 console.log('computed');
                 // Function socpe window
-                // let cb = Function(`return function(i){ console.log(this); return ${this.filterCallback()}}`)().bind(this)
                 // generator funcation template
-                let cb = Function(`return i=>${this.filterCallback()}`).call(this)
+                let cb = Function(this.filterTemp()).call(this)
                 if (this.demoDebug.enable) {
                     return render
                 }
@@ -1280,14 +1270,13 @@
                     this.$nextTick(this.scrollToTop)
                     return this.bookmark.filter(cb)
                 }
-                let reverse = this.main.filterFactor.includes(flagString.atniSortFlag)
                 switch (this.main.select) {
                     case "NONE":
                         return this.dynamiclist.filter(cb)
                     case "TIME":
-                        return sorted.call(this.dynamiclist.filter(cb), '.d', x => new Date(x).getTime(), reverse)
+                        return sorted.call(this.dynamiclist.filter(cb), '.d', x => new Date(x).getTime(), this.main.reverse)
                     case "VIEW":
-                        return sorted.call(this.dynamiclist.filter(cb), '.v[0]', x => x, reverse)
+                        return sorted.call(this.dynamiclist.filter(cb), '.v[0]', x => x, this.main.reverse)
                 }
             },
             switchTheme() {
@@ -1307,11 +1296,14 @@
                 })
                 return null
             },
-            sliceReflow() {
-                return this.reflow.slice(this.fragment.size * (this.fragment.idx - 1), this.fragment.idx * this.fragment.size)
+            pagerRender() {
+                return this.pager.reflow.slice(this.pager.fragsize * (this.pager.fragidx - 1), this.pager.fragidx * this.pager.fragsize)
             },
-            totalReflow() {
-                return Math.ceil(this.reflow.length / this.fragment.size)
+            pagerIndex() {
+                return this.pagerSize && this.pager.fragidx
+            },
+            pagerSize() {
+                return Math.ceil(this.pager.reflow.length / this.pager.fragsize)
             },
             modelAttr() {
                 return this.model[this.manual.mode]
