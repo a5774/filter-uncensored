@@ -83,7 +83,6 @@
     overflow: hidden;
     align-content: flex-start;
     /* background-color: transparent !important; */
-
 }
 
 .history-container .history-key {
@@ -184,6 +183,7 @@
     border: none;
     font-size: 1rem;
     vertical-align: middle;
+
 }
 
 .info-filter .select-filter:focus,
@@ -440,7 +440,6 @@
     width: 2.5rem;
     height: 2.5rem;
     margin-bottom: 2rem;
-    text-transform: uppercase;
     border: 1px #a0a4a8 solid;
 
 }
@@ -1082,7 +1081,7 @@
     border-bottom: 1px solid rgb(221, 221, 221);
 }
 
-.comment-info .comment-text{
+.comment-info .comment-text {
     box-sizing: border-box;
     user-select: auto;
     text-indent: 4rem;
@@ -1128,7 +1127,11 @@
 }
 
 
-
+.info-sidenav button,
+.select-filter option,
+.info-filter .connect-view {
+    text-transform: uppercase;
+}
 
 .fade-enter-active,
 .fade-leave-active {

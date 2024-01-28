@@ -105,7 +105,12 @@
             }
         }
     }
+
+
     let vm = new Vue({
+        component: {
+
+        },
         data: {
             overlay: {
                 pics: false,
@@ -125,19 +130,6 @@
                 reflow: [],
                 fragidx: dataOptionsNomarl.pager.fragidx,
                 fragsize: dataOptionsNomarl.pager.fragsize
-            },
-            chat: {
-                overlay: {
-                    textSwitch: false
-                },
-                textMessage: '',
-                group: [],
-                state: dataOptionsNomarl.chat.state,
-                enable: false,
-                session: '',
-                socket: null,
-                mediaRecorder: null,
-                voiceChunks: []
             },
             main: {
                 page: 0,
@@ -255,7 +247,6 @@
         methods: {
             importFormat() {
                 let matcher = this.reusable.format.match(/[a-zA-Z]+-\d+/ig)
-                console.log(matcher);
                 if (matcher) {
                     this.dynamiclist = []
                     this.overlay.format = false
@@ -290,21 +281,6 @@
                     }
                 })
                 return null
-            },
-            recordStart(evt) {
-                this.chat.voiceChunks = []
-                console.log(evt);
-                evt.target.classList.toggle('bgc')
-                this.chat.mediaRecorder.start()
-                this.throttled.press = setTimeout(() => {
-                    this.chat.mediaRecorder.stop()
-                }, 1000 * 60);
-                return null
-            },
-            recordStop(evt) {
-                this.chat.mediaRecorder.stop()
-                evt.target.classList.toggle('bgc')
-                return clearTimeout(this.throttled.press);
             },
             // can be optimized
             search() {
@@ -354,7 +330,7 @@
                 return null
             },
             pushReflow(n, extra, idx) {
-                this.dynamiclist.push({ n, ...extra })
+                this.injectProperty({ n, ...extra })
                 this.pager.reflow.splice(idx, 1)
                 return null
             },
@@ -435,7 +411,7 @@
             async switchProxy(idx) {
                 if (this.status.isdone) {
                     this.lockSyncReuse()
-                    this.overlay.reflow = false; archive
+                    this.overlay.reflow = false;
                     this.overlay.proxies = false;
                     this.logReuse(await fetchResource(`${resourceRouter.toggleProxy}${idx + numberSnippet.passProxy}`, 'text', 'error'))
                     this.flushNewProxy()
@@ -619,7 +595,7 @@
                 return lock
             },
             scrollToTop(offset, behavior) {
-                this.$refs.box.scrollTo({
+                this.$el.scrollTo({
                     top: offset || this.main.offset,
                     behavior: behavior || flagString.scrollBehavior
                 });
@@ -703,12 +679,12 @@
                 this.device.isMobile = /mobile|android|iphone|ipad|ipod|blackberry|windows phone/i.test(userAgent) || navigator.maxTouchPoints
                 this.device.isTablet = /ipad|android/i.test(userAgent) && this.device.isMobile;
                 this.device.isDesktop = !this.device.isMobile && !this.device.isTablet;
-                // this.$refs.box.style.height = `${visualViewport.height}px`
+                // this.$el.style.height = `${visualViewport.height}px`
                 this.device.rootEl = document.documentElement;
                 this.device.viewWidth = window.innerWidth;
                 this.device.viewHeight = window.innerHeight;
                 this.device.fontSize = this.flexible()
-                this.$refs.box.style.height = `${this.device.viewHeight}px`;
+                this.$el.style.height = `${this.device.viewHeight}px`;
                 this.device.rootEl.style.fontSize = `${this.device.fontSize}px`;
                 this.initSwiper()
                 vm.$forceUpdate();
@@ -748,7 +724,7 @@
                         }
                     });
                 }, {
-                    root: this.$refs.box,
+                    root: this.$el,
                     rootMargin: `0px 0px 290px 0px`,
                     threshold: 0
                 })
@@ -816,46 +792,6 @@
 
                 })
             },
-            chatConnect() {
-                return new Promise(r => {
-                    // this.chatDeviceRequest()
-                    this.chat.socket = new WebSocket(`${protocol.includes('https:') ? 'wss' : 'ws'}://${host}${websocket.chat}`)
-                    this.chat.socket.onopen = () => {
-                        r(null)
-                        console.log('WebSocket OPEN');
-                        this.chat.socket.addEventListener('message', async ({ data }) => {
-                            if (data instanceof Blob) {
-                                const remoteAudioBlob = new Blob([data], { type: 'audio/wav' });
-                                const audioBin = URL.createObjectURL(remoteAudioBlob);
-                                const audioElement = new Audio(audioBin);
-                                audioElement.setAttribute('controls', 1)
-                                audioElement.setAttribute('autoplay', 1)
-                                document.body.appendChild(audioElement);
-                                return null
-                            }
-                            let message = JSON.parse(data);
-                            switch (message.type) {
-                                case 'AUTH':
-                                    this.chat.session = message.UUID
-                                    // localStorage.setItem('UUID',message.UUID)
-                                    break;
-                                case 'ONLINE':
-                                    this.chat.group = message.group
-                                    break;
-                                case 'TEXT':
-                            }
-                        })
-                    };
-                    this.chat.socket.onclose = () => {
-                        console.log('WebSocket CLOSE');
-                        this.main.reconn && setTimeout(this.chatConnect, reconintval);
-                    };
-                    this.chat.socket.onerror = (evt) => {
-                        console.log('WebSocket ERROR');
-                        this.chatDisconnect()
-                    };
-                })
-            },
             detectConnect() {
                 setInterval(() => {
                     let { connectState } = websocket
@@ -879,45 +815,15 @@
             disconnect() {
                 this.main.socket && this.main.socket.close();
                 return null
-            },
-            chatDisconnect() {
-                this.chat.socket && this.chat.socket.close();
-                return null
-            },
-            async chatDeviceRequest() {
-                console.log('init');
-                // await this.chatConnect()
-                let stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-                let devices = await navigator.mediaDevices.enumerateDevices()
-                let constraints = await navigator.mediaDevices.getSupportedConstraints();
-                let deviceName = navigator.userAgent;
-                let tracks = stream.getAudioTracks()
-                tracks.forEach(track => {
-                    console.log(track);
-                    let trackInfo = { id: track.id, kind: track.kind, label: track.label, muted: track.muted, enabled: track.enabled, readyState: track.readyState }
-                    // console.log(track.getCapabilities());
-                    // console.log(track.getSettings());
-                    // console.log(track.getConstraints());
-                })
-                this.chat.mediaRecorder = new MediaRecorder(stream);
-                this.chat.mediaRecorder.ondataavailable = (e) => {
-                    (e.data.size > 0) ? this.chat.voiceChunks.push(e.data) : null
-                }
-                this.chat.mediaRecorder.onstop = async () => {
-                    console.log(this.chat.voiceChunks);
-                    const audioBlob = new Blob(this.chat.voiceChunks, { type: 'audio/wav' });
-                    this.chat.socket.send(await audioBlob.arrayBuffer())
-                };
-                return null
-                // this.chat.socket.send(JSON.stringify({ type: 'CODES', deviceName, constraints, devices, tracks, ratio: this.chat.mediaRecorder.audioBitsPerSecond }))
-            },
+            }
         },
         filters: {
             dataCapacity(v) {
                 return v.length || -1
             },
+            // optimization
             extractTag(v, o) {
-                v = v && v?.match(/([^\/]+)$/)?.[0]?.split('?')
+                v = v && v.match(/([^\/]+)$/)?.[0]?.split('?')
                 v = v?.[1] || v?.[0]
                 return o?.[v] ?? v
             },
@@ -1105,8 +1011,8 @@
             },
             swipeToReveal: {
                 bind(el, binding) {
-                    let vm = binding.value;
-                    let data = binding.arg
+                    let vm = binding.arg
+                    let data = binding.value;
                     // directive在渲染中绑定，需要等待渲染完成获取
                     vm.$nextTick(() => {
                         // console.log('swipeToReveal');
@@ -1271,13 +1177,14 @@
                     return this.bookmark.filter(cb)
                 }
                 switch (this.main.select) {
-                    case "NONE":
+                    case "none":
                         return this.dynamiclist.filter(cb)
-                    case "TIME":
+                    case "time":
                         return sorted.call(this.dynamiclist.filter(cb), '.d', x => new Date(x).getTime(), this.main.reverse)
-                    case "VIEW":
+                    case "view":
                         return sorted.call(this.dynamiclist.filter(cb), '.v[0]', x => x, this.main.reverse)
                 }
+                return []
             },
             switchTheme() {
                 let color = themes[this.theme]['color'];
@@ -1342,7 +1249,6 @@
             this.initVueOption(this.$data, data, defaultStroageMeger)
             // init websocket
             await this.connect();
-            // await this.chatConnect();
             this.detectConnect()
             // init query data
             if (v) {
@@ -1354,6 +1260,7 @@
             }
         },
         async mounted() {
+            console.log(this.$listeners);
             console.log('mounted');
             this.listenTouches()
             // init device info 

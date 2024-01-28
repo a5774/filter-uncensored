@@ -9,11 +9,9 @@
     <script src="/vue.js"></script>
     <!-- <script src="/debugger.js"></script> -->
     <link rel="stylesheet" href="/index.css">
-    <!-- <link rel="stylesheet" href="/index.chat.css"> -->
     <!-- <link rel="stylesheet" href="/photoswipe.css"> -->
     <!-- <script type="module" src="/photoswipe.esm.min.js"></script> -->
     <!-- <script type="module" src="/photoswipe-lightbox.esm.min.js"></script> -->
-    <!-- <script src="/flexible.js"></script> -->
     <!-- <script defer src="/index.min.js"></script> -->
     <!-- <script src="/cdn.socket.io_4.4.1_socket.io.min.js"></script> -->
     <!-- <link rel="stylesheet" href="./bootstrap.min.css"> -->
@@ -21,7 +19,7 @@
 </head>
 
 <body>
-    <div id="box" ref="box" @click="visibNavigation" @dblclick.stop.prevent="manual.bookmark=!manual.bookmark"
+    <div id="box" @click="visibNavigation" @dblclick.stop.prevent="manual.bookmark=!manual.bookmark"
         @scroll.passive="loadOnScroll">
         {{switchTheme}}
         <div v-if="overlay.stdout" @click="overlay.stdout=!overlay.stdout" class="debug-stdout">
@@ -38,104 +36,6 @@
                 </div>
             </li>
         </div>
-
-        <div v-if="chat.enable" style="display: none;" :class="{'over-lay-chat-transform':chat.enable}"
-            class="over-lay-chat">
-            <div class="chat-topnav-module">
-                <button style="vertical-align: middle;" @click="chat.enable=!chat.enable">
-                    <svg style="vertical-align: middle;" xmlns="http://www.w3.org/2000/svg" width="1.5rem"
-                        height="1.5rem" viewBox="0 0 24 24">
-                        <!-- <path d="M0 0h24v24H0z" /> -->
-                        <path fill="" d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
-                    </svg>
-                </button>
-                <span>
-                    {{chat.session}}
-                </span>
-                <button>...</button>
-            </div>
-            <div class="chat-message-content">
-                <li class="msg" v-for="i in 10" :class="isOddIndex(i) && 'msg_reverse'">
-                    <p class="img">
-                        avater
-                    </p>
-                    <span class="text_speech">text_speech</span>
-                </li>
-            </div>
-            <div class="chat-post-module">
-                <div class="text-speech-switch">
-                    <button class="text-speech-btn" @click="chat.overlay.textSwitch=!chat.overlay.textSwitch">
-                        <svg v-if="!chat.overlay.textSwitch" viewBox="0 0  1024 1024" width="1.5rem" height="1.5rem"
-                            fill="#000">
-                            <path
-                                d="M512.127968 1023.744064c-282.297426 0-511.872032-229.574606-511.872032-511.872032s229.574606-511.872032 511.872032-511.872032 511.872032 229.574606 511.872032 511.872032-229.574606 511.872032-511.872032 511.872032z m0-965.646588C261.822544 58.097476 58.097476 261.822544 58.097476 512.127968s203.725069 454.030492 454.030492 454.030492S966.15846 762.433392 966.15846 512.127968 762.433392 58.097476 512.127968 58.097476z">
-                            </path>
-                            <path
-                                d="M378.529368 415.384154l-94.696326 97.511622 96.743814 97.511622c50.931267-53.490627 50.931267-141.532617-2.047488-195.023244z m0 0">
-                            </path>
-                            <path
-                                d="M475.017246 319.664084l-47.348163 47.860035c79.596101 80.363909 79.596101 210.379405 0 290.743314l47.348163 47.860035a274.184254 274.184254 0 0 0 0-386.463384z m0 0">
-                            </path>
-                            <path
-                                d="M569.969508 222.152462l-47.348163 47.860035c132.574856 133.854536 132.574856 349.864534 0 483.975006l47.348163 47.860035c159.192202-158.936266 159.192202-418.967258 0-579.695076z m0 0">
-                            </path>
-                        </svg>
-                        <svg v-else viewBox="0 0 1024 1024" fill="#000" width="1.5rem" height="1.5rem">
-                            <path
-                                d="M512 65c246.319 0 446 199.681 446 446S758.319 957 512 957 66 757.319 66 511 265.681 65 512 65z m0 59.773c-213.307 0-386.227 172.92-386.227 386.227S298.693 897.227 512 897.227 898.227 724.307 898.227 511 725.307 124.773 512 124.773z m140.227 549.454c12.702 0 23 10.297 23 23v34.464c0 12.702-10.298 23-23 23H374.072c-12.702 0-23-10.298-23-23v-34.464c0-12.703 10.298-23 23-23h278.155zM466.01 500.655c12.703 0 23 10.297 23 23v64.35c0 12.703-10.297 23-23 23h-66.65c-12.702 0-23-10.297-23-23v-64.35c0-12.703 10.298-23 23-23h66.65z m160.928 0c12.703 0 23 10.297 23 23v64.35c0 12.703-10.297 23-23 23h-66.65c-12.702 0-23-10.297-23-23v-64.35c0-12.703 10.298-23 23-23h66.65z m-324.154-1.15c12.702 0 23 10.298 23 23v64.35c0 12.703-10.298 23-23 23h-66.65c-12.703 0-23-10.297-23-23v-64.35c0-12.702 10.297-23 23-23h66.65z m487.38 0c12.703 0 23 10.298 23 23v64.35c0 12.703-10.297 23-23 23h-66.649c-12.702 0-23-10.297-23-23v-64.35c0-12.702 10.298-23 23-23h66.65zM466.01 339.727c12.703 0 23 10.297 23 23v64.35c0 12.703-10.297 23-23 23h-66.65c-12.702 0-23-10.297-23-23v-64.35c0-12.703 10.298-23 23-23h66.65z m160.928 0c12.703 0 23 10.297 23 23v64.35c0 12.703-10.297 23-23 23h-66.65c-12.702 0-23-10.297-23-23v-64.35c0-12.703 10.298-23 23-23h66.65z m-324.154-1.15c12.702 0 23 10.298 23 23v64.35c0 12.703-10.298 23-23 23h-66.65c-12.703 0-23-10.297-23-23v-64.35c0-12.702 10.297-23 23-23h66.65z m487.38 0c12.703 0 23 10.298 23 23v64.35c0 12.703-10.297 23-23 23h-66.649c-12.702 0-23-10.297-23-23v-64.35c0-12.702 10.298-23 23-23h66.65z">
-                            </path>
-                        </svg>
-                        </svg>
-                    </button>
-
-                </div>
-
-                <!-- <transition name="fade" mode="out-in"> -->
-                <div v-if="chat.overlay.textSwitch" class="speech-message-box">
-                    <button class="speech-message-btn" @touchstart.self="recordStart($event)"
-                        @touchend.self="recordStop($event)">speech</button>
-                </div>
-
-
-
-                <!-- </transition> -->
-                <div v-else class="text-message-box">
-                    <textarea class="text-message-textare" autofocus type="text" rows="1"
-                        v-model="chat.textMessage"></textarea>
-                </div>
-
-
-
-                <div class="sticker-message-box">
-                    <button class="sticker-message-btn">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="1.5rem" height="1.5rem" fill="#000"
-                            viewBox="0 0 16 16">
-                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
-                            <path
-                                d="M4.285 9.567a.5.5 0 0 1 .683.183A3.498 3.498 0 0 0 8 11.5a3.498 3.498 0 0 0 3.032-1.75.5.5 0 1 1 .866.5A4.498 4.498 0 0 1 8 12.5a4.498 4.498 0 0 1-3.898-2.25.5.5 0 0 1 .183-.683zM7 6.5C7 7.328 6.552 8 6 8s-1-.672-1-1.5S5.448 5 6 5s1 .672 1 1.5zm4 0c0 .828-.448 1.5-1 1.5s-1-.672-1-1.5S9.448 5 10 5s1 .672 1 1.5z" />
-                        </svg>
-                    </button>
-                </div>
-
-                <!-- <div v-if="!chat.textMessage" class="more-options-box"> -->
-                <div class="more-options-box" :style="chat.textMessage && {'width':'2rem'}">
-                    <button v-if="!chat.textMessage" class="more-options-btn">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="1.5rem" height="1.5rem" fill="#000"
-                            viewBox="0 0 16 16">
-                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
-                            <path
-                                d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z" />
-                        </svg>
-                    </button>
-                    <div v-else class="post-message-box">
-                        <button class="post-message-btn">发送</button>
-                    </div>
-                </div>
-
-
-            </div>
-        </div>
-
 
         <transition name="fade" mode="out-in">
             <div v-if="overlay.magnet" @click.slef="overlay.magnet=!overlay.magnet" class="over-lay-magnet">
@@ -238,7 +138,7 @@
             </span>
             <span class="status-control">
                 <label for="heartbeat">heartbeat</label><span id="heartbeat">{{main.heartbeat}}</span>
-                <label for="chat">chat</label><input id="chat" type="checkbox" v-model="chat.enable">
+                <label for="stdout">stdout</label><input id="stdout" type="checkbox" v-model="overlay.stdout">
             </span>
             <span class="status-control">
                 <button @click="overlay.format=!overlay.format">import</button>
@@ -250,7 +150,6 @@
                 <button @click="reset">reset</button>
                 <button @click="overlay.proxies=!overlay.proxies">proires</button>
                 <button @click="updateProxy">updproxy</button>
-                <label for="stdout">stdout</label><input id="stdout" type="checkbox" v-model="overlay.stdout">
             </span>
         </div>
 
@@ -378,7 +277,7 @@
                     value="censored" v-model=main.review>
             </div>
             <h2 class="sticky-log">
-                <span> current:{{this.main.log}}</span>
+                <span> current:{{main.log}}</span>
                 <span v-if="status.isdone"> reflow:{{pager.reflow.length}}
                 </span>
                 <p v-if="overlay.error" class="error-full-log">
@@ -388,20 +287,20 @@
             <p class="info-total">total:{{filterRender.length}}</p>
             <div class="info-filter">
                 <select class="select-filter" v-model="main.select">
-                    <option value="NONE">NONE</option>
-                    <option value="TIME">TIME</option>
-                    <option value="VIEW">VIEW</option>
+                    <option value="none">none</option>
+                    <option value="time">time</option>
+                    <option value="view">view</option>
                 </select>
                 <label for="reverse">reverse</label>
                 <input type="checkbox" id="reverse" v-model="main.reverse">
-                <span>{{main.state}}</span>
-                <label for="autoView">autoView</label>
-                <input id="autoView" type="checkbox" v-model=status.autoview>
+                <span class="connect-view">{{main.state}}</span>
+                <label for="autoview">autoview</label>
+                <input id="autoview" type="checkbox" v-model=status.autoview>
             </div>
             <!-- </div> -->
             <ul class="info-content" v-press-auto-scroll="this">
                 <li v-for="(item,index) in filterRender" class="info-contains" :key="index">
-                    <div class="info-swipe-reveal" v-swipe-to-reveal:[item]="$root">
+                    <div class="info-swipe-reveal" v-swipe-to-reveal:[$root]="item">
                         <div class="thumb-item">
                             <!-- v-lazy-load-oberver -->
                             <img @click="expandPicture(item.i)" @load="thumbSucess($event)" @contextmenu.prevent

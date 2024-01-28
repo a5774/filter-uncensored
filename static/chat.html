@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="/vue.js"></script>
+    <link rel="stylesheet" href="/index.chat.css">
+    <title>Document</title>
+</head>
+
+<body>
+    <div id="box">
+        <div v-if="chat.enable" :class="{'over-lay-chat-transform':chat.enable}" class="over-lay-chat">
+            <div class="chat-topnav-module">
+                <button style="vertical-align: middle;" @click="chat.enable=!chat.enable">
+                    <svg style="vertical-align: middle;" xmlns="http://www.w3.org/2000/svg" width="1.5rem"
+                        height="1.5rem" viewBox="0 0 24 24">
+                        <!-- <path d="M0 0h24v24H0z" /> -->
+                        <path fill="" d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
+                    </svg>
+                </button>
+                <span>
+                    {{chat.session}}
+                </span>
+                <button>...</button>
+            </div>
+            <div class="chat-message-content">
+                <li class="msg" v-for="i in chat.messages"
+                    :style="{'flex-direction': chat.session == i.uuid && 'row-reverse'}">
+                    <p class="img">
+                        {{i.uuid}}
+                    </p>
+                    <span class="text_speech">{{i.text}}</span>
+                </li>
+            </div>
+
+
+            <div class="chat-post-module">
+                <div class="text-speech-switch">
+                    <button class="text-speech-btn" @click="chat.overlay.textSwitch=!chat.overlay.textSwitch">
+                        <svg v-if="!chat.overlay.textSwitch" viewBox="0 0  1024 1024" width="1.5rem" height="1.5rem"
+                            fill="#000">
+                            <path
+                                d="M512.127968 1023.744064c-282.297426 0-511.872032-229.574606-511.872032-511.872032s229.574606-511.872032 511.872032-511.872032 511.872032 229.574606 511.872032 511.872032-229.574606 511.872032-511.872032 511.872032z m0-965.646588C261.822544 58.097476 58.097476 261.822544 58.097476 512.127968s203.725069 454.030492 454.030492 454.030492S966.15846 762.433392 966.15846 512.127968 762.433392 58.097476 512.127968 58.097476z">
+                            </path>
+                            <path
+                                d="M378.529368 415.384154l-94.696326 97.511622 96.743814 97.511622c50.931267-53.490627 50.931267-141.532617-2.047488-195.023244z m0 0">
+                            </path>
+                            <path
+                                d="M475.017246 319.664084l-47.348163 47.860035c79.596101 80.363909 79.596101 210.379405 0 290.743314l47.348163 47.860035a274.184254 274.184254 0 0 0 0-386.463384z m0 0">
+                            </path>
+                            <path
+                                d="M569.969508 222.152462l-47.348163 47.860035c132.574856 133.854536 132.574856 349.864534 0 483.975006l47.348163 47.860035c159.192202-158.936266 159.192202-418.967258 0-579.695076z m0 0">
+                            </path>
+                        </svg>
+                        <svg v-else viewBox="0 0 1024 1024" fill="#000" width="1.5rem" height="1.5rem">
+                            <path
+                                d="M512 65c246.319 0 446 199.681 446 446S758.319 957 512 957 66 757.319 66 511 265.681 65 512 65z m0 59.773c-213.307 0-386.227 172.92-386.227 386.227S298.693 897.227 512 897.227 898.227 724.307 898.227 511 725.307 124.773 512 124.773z m140.227 549.454c12.702 0 23 10.297 23 23v34.464c0 12.702-10.298 23-23 23H374.072c-12.702 0-23-10.298-23-23v-34.464c0-12.703 10.298-23 23-23h278.155zM466.01 500.655c12.703 0 23 10.297 23 23v64.35c0 12.703-10.297 23-23 23h-66.65c-12.702 0-23-10.297-23-23v-64.35c0-12.703 10.298-23 23-23h66.65z m160.928 0c12.703 0 23 10.297 23 23v64.35c0 12.703-10.297 23-23 23h-66.65c-12.702 0-23-10.297-23-23v-64.35c0-12.703 10.298-23 23-23h66.65z m-324.154-1.15c12.702 0 23 10.298 23 23v64.35c0 12.703-10.298 23-23 23h-66.65c-12.703 0-23-10.297-23-23v-64.35c0-12.702 10.297-23 23-23h66.65z m487.38 0c12.703 0 23 10.298 23 23v64.35c0 12.703-10.297 23-23 23h-66.649c-12.702 0-23-10.297-23-23v-64.35c0-12.702 10.298-23 23-23h66.65zM466.01 339.727c12.703 0 23 10.297 23 23v64.35c0 12.703-10.297 23-23 23h-66.65c-12.702 0-23-10.297-23-23v-64.35c0-12.703 10.298-23 23-23h66.65z m160.928 0c12.703 0 23 10.297 23 23v64.35c0 12.703-10.297 23-23 23h-66.65c-12.702 0-23-10.297-23-23v-64.35c0-12.703 10.298-23 23-23h66.65z m-324.154-1.15c12.702 0 23 10.298 23 23v64.35c0 12.703-10.298 23-23 23h-66.65c-12.703 0-23-10.297-23-23v-64.35c0-12.702 10.297-23 23-23h66.65z m487.38 0c12.703 0 23 10.298 23 23v64.35c0 12.703-10.297 23-23 23h-66.649c-12.702 0-23-10.297-23-23v-64.35c0-12.702 10.298-23 23-23h66.65z">
+                            </path>
+                        </svg>
+                        </svg>
+                    </button>
+
+                </div>
+
+                <!-- <transition name="fade" mode="out-in"> -->
+                <div v-if="chat.overlay.textSwitch" class="speech-message-box">
+                    <button class="speech-message-btn" @touchstart.self="recordStart($event)" @contextmenu.prevent
+                        @touchend.self="recordStop($event)">speech</button>
+                </div>
+
+
+
+                <!-- </transition> -->
+                <div v-else class="text-message-box">
+                    <textarea class="text-message-textare" autofocus type="text" rows="1"
+                        v-model="chat.textMessage"></textarea>
+                </div>
+
+
+
+                <div class="sticker-message-box">
+                    <button class="sticker-message-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="1.5rem" height="1.5rem" fill="#000"
+                            viewBox="0 0 16 16">
+                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
+                            <path
+                                d="M4.285 9.567a.5.5 0 0 1 .683.183A3.498 3.498 0 0 0 8 11.5a3.498 3.498 0 0 0 3.032-1.75.5.5 0 1 1 .866.5A4.498 4.498 0 0 1 8 12.5a4.498 4.498 0 0 1-3.898-2.25.5.5 0 0 1 .183-.683zM7 6.5C7 7.328 6.552 8 6 8s-1-.672-1-1.5S5.448 5 6 5s1 .672 1 1.5zm4 0c0 .828-.448 1.5-1 1.5s-1-.672-1-1.5S9.448 5 10 5s1 .672 1 1.5z" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- <div v-if="!chat.textMessage" class="more-options-box"> -->
+                <div class="more-options-box" :style="chat.textMessage && {'width':'2rem'}">
+                    <button v-if="!chat.textMessage" class="more-options-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="1.5rem" height="1.5rem" fill="#000"
+                            viewBox="0 0 16 16">
+                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
+                            <path
+                                d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z" />
+                        </svg>
+                    </button>
+                    <div v-else class="post-message-box">
+                        <button class="post-message-btn" @click="sendTextMessage">发送</button>
+                    </div>
+                </div>
+
+
+            </div>
+        </div>
+    </div>
+    <script>
+        let { protocol, host, search, origin } = location
+        let chat = Vue.extend({
+            data() {
+                return {
+                    chat: {
+                        overlay: {
+                            textSwitch: false
+                        },
+                        messages: [],
+                        textMessage: '',
+                        group: [],
+                        state: "CLOSE",
+                        enable: true,
+                        session: '',
+                        socket: null,
+                        mediaRecorder: null,
+                        voiceChunks: []
+                    },
+                    throttled: {
+                        press: null
+                    }
+                }
+            },
+            methods: {
+                recordStart(evt) {
+                    this.chat.voiceChunks = []
+                    evt.target.classList.toggle('bgc')
+                    this.chat.mediaRecorder.start()
+                    this.throttled.press = setTimeout(() => {
+                        this.chat.mediaRecorder.stop()
+                    }, 1000 * 60);
+                    return null
+                },
+                recordStop(evt) {
+                    this.chat.mediaRecorder.stop()
+                    evt.target.classList.toggle('bgc')
+                    return clearTimeout(this.throttled.press);
+                },
+                sendTextMessage() {
+                    let message = { uuid: this.chat.session, text: this.chat.textMessage }
+                    this.chat.messages.push(message)
+                    this.chat.socket.send(JSON.stringify({
+                        type: 'TEXT',
+                        data: message
+                    }))
+                },
+                chatConnect() {
+                    return new Promise(r => {
+                        // this.chatDeviceRequest()
+                        this.chat.socket = new WebSocket(`${protocol.includes('https:') ? 'wss' : 'ws'}://${host}/chat`)
+                        this.chat.socket.onopen = () => {
+                            r(null)
+                            console.log('WebSocket OPEN');
+                            this.chat.socket.addEventListener('message', async ({ data }) => {
+                                console.log(data);
+                                if (data instanceof Blob) {
+                                    const remoteAudioBlob = new Blob([data], { type: 'audio/wav' });
+                                    const audioBin = URL.createObjectURL(remoteAudioBlob);
+                                    const audioElement = new Audio(audioBin);
+                                    audioElement.setAttribute('controls', 1)
+                                    audioElement.setAttribute('autoplay', 1)
+                                    document.body.appendChild(audioElement);
+                                    return null
+                                }
+                                let message = JSON.parse(data);
+                                switch (message.type) {
+                                    case 'AUTH':
+                                        this.chat.session = message.UUID
+                                        // localStorage.setItem('UUID',message.UUID)
+                                        break;
+                                    case 'ONLINE':
+                                        this.chat.group = message.group
+                                        break;
+                                    case 'TEXT':
+                                        console.log(message);
+                                        // let message = { uuid: message.data.uuid, text: message.data.text }
+                                        this.chat.messages.push({ uuid: message.data.uuid, text: message.data.text })
+                                }
+                            })
+                        };
+                        this.chat.socket.onclose = () => {
+                            console.log('WebSocket CLOSE');
+                            this.main.reconn && setTimeout(this.chatConnect, reconintval);
+                        };
+                        this.chat.socket.onerror = (evt) => {
+                            console.log('WebSocket ERROR');
+                            this.chatDisconnect()
+                        };
+                    })
+                },
+                chatDisconnect() {
+                    this.chat.socket && this.chat.socket.close();
+                    return null
+                },
+                async chatDeviceRequest() {
+                    console.log('init');
+                    // await this.chatConnect()
+                    let stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+                    let devices = await navigator.mediaDevices.enumerateDevices()
+                    let constraints = await navigator.mediaDevices.getSupportedConstraints();
+                    let deviceName = navigator.userAgent;
+                    let tracks = stream.getAudioTracks()
+                    tracks.forEach(track => {
+                        console.log(track);
+                        let trackInfo = { id: track.id, kind: track.kind, label: track.label, muted: track.muted, enabled: track.enabled, readyState: track.readyState }
+                        // console.log(track.getCapabilities());
+                        // console.log(track.getSettings());
+                        // console.log(track.getConstraints());
+                    })
+                    this.chat.mediaRecorder = new MediaRecorder(stream);
+                    this.chat.mediaRecorder.ondataavailable = (e) => {
+                        (e.data.size > 0) ? this.chat.voiceChunks.push(e.data) : null
+                    }
+                    this.chat.mediaRecorder.onstop = async () => {
+                        // console.log(this.chat.voiceChunks);
+                        const audioBlob = new Blob(this.chat.voiceChunks, { type: 'audio/wav' });
+                        console.log(audioBlob);
+                        this.chat.socket.send(audioBlob)
+                    };
+                    return null
+                    // this.chat.socket.send(JSON.stringify({ type: 'CODES', deviceName, constraints, devices, tracks, ratio: this.chat.mediaRecorder.audioBitsPerSecond }))
+                },
+            },
+            computed: {
+                isOddIndex() {
+                    return v => !(v % 2)
+                },
+            },
+            async created() {
+                await this.chatConnect()
+                await this.chatDeviceRequest()
+            },
+            mounted() {
+                this.$el.style.height = `${window.innerHeight}px`
+            },
+        })
+        let vm = new chat().$mount('#box')
+    </script>
+</body>
+
+</html>

@@ -26,7 +26,7 @@ const regx = {
     rev: /\u65E0\u7801\u6D41\u51FA/ig,
 }
 const recvtemp = { df: '', d: '', f: '', p: '', l: -1, g: [], s: [], i: [], b: [], m: [], c: [], v: [-1] }
-const ws = fs.createWriteStream('./index_full.html');
+// const ws = fs.createWriteStream('./index_full.html');
 const sslOption = {
     //  key: fs.readFileSync(path.resolve(__dirname, './SSL/knockdoor.top.key'), { encoding: 'utf-8' }),
     //  cert: fs.readFileSync(path.resolve(__dirname, './SSL/knockdoor.top.pem'), { encoding: 'utf-8' })
@@ -127,7 +127,7 @@ module.exports = {
     sslOption,
     sleep,
     BookMarker,
-    ws,
+    // ws,
     regx,
     recvtemp
 }

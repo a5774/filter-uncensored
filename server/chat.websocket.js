@@ -1,5 +1,5 @@
 const { v4 } = require('uuid')
-const {wsOption} = require('../config')
+const { wsOption } = require('../config')
 const { WebSocket, WebSocketServer } = require('ws');
 const ws_chat = new WebSocketServer(wsOption)
 let clientMap = new Map()
@@ -42,7 +42,7 @@ ws_chat.addListener('connection', (socket, req) => {
 
     socket.addEventListener('message', ({ data }) => {
         if (Buffer.isBuffer(data)) {
-            // fs.writeFileSync('./temp.txt',data,{encoding:'utf-8'})
+            console.log('binary');
             Array.from(clientMap.keys()).forEach(client => {
                 if (client != socket && client.readyState == WebSocket.OPEN) {
                     client.send(data, { binary: true })
@@ -56,6 +56,14 @@ ws_chat.addListener('connection', (socket, req) => {
                 fs.writeFileSync(`./static/${Date.now()}.json`, data, { flag: 'w+' })
                 break;
             case 'TEXT':
+                Array.from(clientMap.keys()).forEach(client => {
+                    if (client != socket && client.readyState == WebSocket.OPEN) {
+                        client.send(JSON.stringify({
+                            type: "TEXT",
+                            data: { uuid: message.data.uuid, text: message.data.text }
+                        }))
+                    }
+                })
                 break;
         }
     })

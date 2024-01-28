@@ -6,9 +6,9 @@
         },
         "main": {
             "log": "null",
-            "select": "NONE",
+            "select": "none",
             "review": "censored",
-            "state": "CLOSE",
+            "state": "close",
             "sliderate": 3,
             "reconintval": 100,
             "actors": 1,
@@ -39,19 +39,15 @@
                 "javbus": [],
                 "javdb": []
             }
-        },
-        "chat": {
-            "state": "CLOSE"
         }
     },
     "websocket": {
         "main": "/main",
-        "chat": "/chat",
         "connectState": {
-            "connecting": "CONNECTING",
-            "open": "OPEN",
-            "closing": "CLOSING",
-            "closed": "CLOSED"
+            "connecting": "connecting",
+            "open": "open",
+            "closing": "closing",
+            "closed": "closed"
         }
     },
     "resourceRouter": {
@@ -174,7 +170,7 @@
             "format": false,
             "magnet": false,
             "comment": false,
-            "reflow": true,
+            "reflow": false,
             "sidenav": false,
             "proxies": false,
             "history": false,
