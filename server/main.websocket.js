@@ -214,10 +214,6 @@ async function javdb_(domain, 关键词, 区间, 演员, 类别, 导演, 制作�
                                 cookie: jdb
                             }
                         })
-                        let 评论总数 = _$_('.video-detail .review-tab span').text().match(regx.number)?.[0] ?? -1
-                        let 评论预览 = _$_$_('.review-item').map((idx, el) => {
-                            return { text: _$_$_('.content p', el).text().replace(regx.emtpy, ' '), date: _$_$_('.review-item .time', el).text() }
-                        }).get()
                         // console.log(评论预览);
                         let 归属信息 = _$_('.video-detail .video-meta-panel .movie-panel-info > .panel-block .value').map((idx, el) => {
                             let belong = [_$_('a[href^="/directors/"]', el), _$_('a[href^="/makers/"]', el), _$_('a[href^="/publishers/"]', el), _$_('a[href^="/series/"]', el)]
@@ -246,6 +242,12 @@ async function javdb_(domain, 关键词, 区间, 演员, 类别, 导演, 制作�
                         let 磁力列表 = _$_('.video-panel .message-body .magnet-links .item').map((idx, el) => {
                             return { text: [_$_('.magnet-name a .name', el).text().trim(), _$_('.magnet-name a .meta', el).text().trim(), _$_('.date .time', el).text().trim()], href: _$_('.magnet-name a', el).attr('href') }
                         }).get()
+
+                        let 评论总数 = _$_('.video-detail .review-tab span').text().match(regx.number)?.[0] ?? -1
+
+                        let 评论预览 = _$_$_('.review-item').map((idx, el) => {
+                            return { text: _$_$_('.content p', el).text().replace(regx.emtpy, ' '), date: _$_$_('.review-item .time', el).text() }
+                        }).get()
                         _send.call(socket, 'CENSORED', {
                             df,
                             n: 牛马,
@@ -265,6 +267,7 @@ async function javdb_(domain, 关键词, 区间, 演员, 类别, 导演, 制作�
                         })
                         return { n: 牛马, s: 0x01, t: 'regular' };
                     } catch (err) {
+                        // 优化reflow检测
                         _send.call(socket, 'ERROR', {
                             err: err.message,
                             n: 牛马
