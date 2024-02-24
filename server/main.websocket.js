@@ -8,7 +8,7 @@ const bookmarkers = {
     javdb: new BookMarker('db', DBBOOKMARKPATH),
     javbus: new BookMarker('bus', BUSBOOKMARKPATH)
 }
-let jdb = '_jdb_session=fQwtDq66uFCilV3FGexs99fLwumr5QcMkDyqh5JwpvjJ8j0wSrv88vGfcODhFgDH9Bn8zS1yq5tw086y6w50ZgbvI7hCjctcmXCRsHOD9YNZbPkI8dS4%2By330CfVTi1THVHESUhODxk62mzMcS7DasDL9JF0gZVC8oEpdn2xhQyI2UEsSovTVo3bsmHdgex3TEikfZMAZTfm6DhjL%2FLiNBzelDxA7potFvVRRtX1NVJgj8rQrZvaLbaQiZ0r0khD17oDS7OJaIZU1jL%2FTK8c67tlkQDHKR6EELIoNUEcF04YThUEB70xsF%2BUOpOCWmUq6UGU6%2FDmPTG3rQkSXVxGSy5zQy0DGkZzZ7dhKcCN6XPQM6XNcxK0trUcSN3gkP2Corg%3D--U4H2CaVibv%2FxOm3s--Yz4YOR1znAHCQgjuc0qg3A%3D%3D'
+let jdb = '_jdb_session=JIi%2BG5lhEOIQJ%2FduafDrAjgNZc09nSPLfU33CrKfjZ%2FQzBRgcF7TfSox3cAM9oVtJOU1IrYmbqkliGODNvvm%2BaMvR1Lc4Kcw19Pp92swThHOOwhy757RGqoO2%2FBq6qJIHMsVhl381h%2FovuWtIKKxiTkxqKYiTGMuN9FhYHul5zj%2BJDMTbJw0bTzVT4p5AsAQg%2FFM2DaCYm%2Bx4oojuAKYu2AA16E5B7IUTp7e4CPDkE6weW6im4%2BGt9nRSh8Umyv8lWKQ8DdDPVGxV5F1svRSifkprY%2BEPU5MsMC%2Fryx7IWFZ4Ek42NWvpH81o2fi99wsCgF%2BlhdW%2FeO1B8UMOMgA%2B%2BFNpfc4SnQIW74s1mzKNm1Mr0D4HPD8wcSGcYJrjDMpZH0%3D--CL4r818sxRFwvpjO--T19PGzpD8%2FqQzBR2RH4ZBg%3D%3D'
 bookmarkers.javbus.init()
 bookmarkers.javdb.init()
 
@@ -239,15 +239,13 @@ async function javdb_(domain, 关键词, 区间, 演员, 类别, 导演, 制作�
                         let 磁力列表 = _$_('.video-panel .message-body .magnet-links .item').map((idx, el) => {
                             return { text: [_$_('.magnet-name a .name', el).text().trim(), _$_('.magnet-name a .meta', el).text().trim(), _$_('.date .time', el).text().trim()], href: _$_('.magnet-name a', el).attr('href') }
                         }).get()
-
                         let 评论总数 = _$_('.video-detail .review-tab span').text().match(regx.number)?.[0] ?? -1
-
+                        // console.log(评论总数);
                         let 老司机的看法 = _$_('.video-detail .video-meta-panel .movie-panel-info > .panel-block .has-text-grey').text().match(regx.number) || [-1]
                         // console.log(老司机的看法);
-
                         let 评论预览 = _$_$_('.review-item').map((idx, el) => {
                             return { text: _$_$_('.content p', el).text().replace(regx.emtpy, ' '), date: _$_$_('.review-item .time', el).text() }
-                        }).get()
+                        }).get().slice(0, -1)
                         _send.call(socket, 'CENSORED', {
                             df,
                             n: 牛马,

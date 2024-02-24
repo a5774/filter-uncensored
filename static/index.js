@@ -160,7 +160,7 @@
                 isdone: true,
                 vthumb: true,
                 autoview: false,
-                watchable:false,
+                watchable: false,
                 single: false,
                 star: false,
                 genre: false,
@@ -603,7 +603,8 @@
             },
             filterTemp() {
                 let conditions = [];
-                !this.status.single || conditions.push('(i.s.length || -1) == this.main.actors');
+                !this.status.single || conditions.push('(i.s.length == this.main.actors)');
+                !this.status.watchable || conditions.push('i.m.length');
                 !(this.main.review == 'censored') || conditions.push('i');
                 !(this.main.review == 'uncensored') || conditions.push('i.u');
                 !(this.main.review == 'revelation') || conditions.push('i.r');
@@ -1085,7 +1086,13 @@
                         el.style.transitionDuration = `${timer.revealTransitionTimeout}ms`;
                         if (!el.isOpen && (Math.abs(el.touchDeltaX) >= el.__halfY)) {
                             if ((el.touchDeltaX <= 0)) {
-                                vm.main.keyWord = data.n
+                                vm.main.keyWord = data.n;
+                                vm.manual.bookmark = false;
+                                vm.manual.mode = 'javdb';
+                                vm.$nextTick(()=>{
+                                    vm.search();
+                                })
+
                             }
                             if ((el.touchDeltaX >= 0) && (Math.abs(el.slope) <= numberSnippet.tiltFactor)) {
                                 el.style.opacity = numberSnippet.revealOpacityFactor
@@ -1183,6 +1190,8 @@
                         return sorted.call(this.dynamiclist.filter(cb), '.d', x => new Date(x).getTime(), this.main.reverse)
                     case "view":
                         return sorted.call(this.dynamiclist.filter(cb), '.v[0]', x => x, this.main.reverse)
+                    case "repo":
+                        return sorted.call(this.dynamiclist.filter(cb), '.l', x => x, this.main.reverse)
                 }
                 return []
             },
@@ -1231,6 +1240,7 @@
                 return v => !(v % 2)
             },
             isOnlyOne() {
+                // 柯里化
                 return v => v?.length == 1 || 0
             },
         },
