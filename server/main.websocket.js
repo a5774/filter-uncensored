@@ -1,4 +1,4 @@
-const { wsOption, domain_bus, domain_db, ax, sleep, denyGenre, BookMarker, DBBOOKMARKPATH, BUSBOOKMARKPATH, /* ws ,*/ regx, recvtemp } = require('../config')
+const { wsOption, domain_bus, domain_db, ax, sleep, BookMarker, DBBOOKMARKPATH, BUSBOOKMARKPATH, /* ws ,*/ regx, recvtemp } = require('../config')
 const fs = require('fs')
 const cheerio = require('cheerio')
 const { WebSocketServer } = require('ws');
@@ -44,7 +44,7 @@ function _progress(data) {
     )
 }
 // 函数作用域在定义时被确定在不改变this指向下,全局函数无法访问局部变量
-async function javbus_(domain, 关键词, 区间, 演员, 类别, 导演, 制作商, 发行商, deny, socket, tasks, df) {
+async function javbus_(domain, 关键词, 区间, 演员, 类别, 导演, 制作商, 发行商, socket, tasks, df) {
     let 搜索 = '';
     let 页面计数 = 1;
     let 是否循环 = true;
@@ -93,7 +93,6 @@ async function javbus_(domain, 关键词, 区间, 演员, 类别, 导演, 制作
                         let 类别标签 = _$_('.genre label a').map((idx, el) => {
                             return _$_(el).attr('href')
                         }).get()
-                        if (deny && 类别标签.find(g => denyGenre.some(d => g.includes(d)))) { return { n: 牛马, s: 0x05, t: 'deny', extra: { ...pret, g: 类别标签 } } }
                         let 磁力参数 = _$_('script:not([src]):nth-of-type(3)').text().match(regx.magnet)?.[1]
                         let 预览图集 = _$_('#sample-waterfall .sample-box').map((idx, el) => {
                             return _$_(el).attr('href')
@@ -301,7 +300,7 @@ ws_main.addListener('connection', (socket, req) => {
             case 'SEARCH':
                 socket.abort = false;
                 let tasks = [];
-                let { keyWord, range, star, genre, director, studio, label, deny, mode, actors, tags, directors, makers, publishers, series, codes, dbsorts = { dbsort: 1, dbsortsb: 0, dbsortvst: 1 } } = message
+                let { keyWord, range, star, genre, director, studio, label, mode, actors, tags, directors, makers, publishers, series, codes, dbsorts = { dbsort: 1, dbsortsb: 0, dbsortvst: 1 } } = message
                 if (range.some(p => Number.isNaN(parseInt(p)))) {
                     _progress.call(socket, {
                         m: `e:[k:KEYWORD_OR_RANGE_ERR]`,
@@ -313,7 +312,7 @@ ws_main.addListener('connection', (socket, req) => {
                 })
                 switch (mode) {
                     case 'javbus':
-                        await javbus_(domain_bus, keyWord, range, star, genre, director, studio, label, deny, socket, tasks, mode)
+                        await javbus_(domain_bus, keyWord, range, star, genre, director, studio, label, socket, tasks, mode)
                         break;
                     case 'javdb':
                         await javdb_(domain_db, keyWord, range, actors, tags, directors, makers, publishers, series, codes, dbsorts, socket, tasks, mode)

@@ -160,6 +160,7 @@
                 isdone: true,
                 vthumb: true,
                 autoview: false,
+                watchable:false,
                 single: false,
                 star: false,
                 genre: false,
@@ -173,7 +174,6 @@
                 publishers: false,
                 series: false,
                 codes: false,
-                deny: false,
             },
             preview: {
                 pics: [],
@@ -292,7 +292,7 @@
                 this.pager.reflow = [];
                 this.overlay.history = false;
                 this.description = (this.status.star && 'star') || (this.status.genre && 'genre') || (this.status.studio && 'studio') || (this.status.label && 'label') || (this.status.actors && 'actors') || (this.status.tags && 'tags') || (this.status.directors && 'directors') || (this.status.directors && 'directors') || (this.status.makers && 'makers') || (this.status.publishers && 'publishers') || (this.status.series && 'series') || 'standard'
-                let template = { type: 'SEARCH', star: this.status.star, genre: this.status.genre, director: this.status.director, studio: this.status.studio, label: this.status.label, actors: this.status.actors, tags: this.status.tags, directors: this.status.directors, makers: this.status.makers, publishers: this.status.publishers, series: this.status.series, codes: this.status.codes, deny: this.status.deny, mode: this.manual.mode, dbsorts: { dbsort: this.main.dbsort, dbsortsb: this.main.dbsortsb, dbsortvst: this.main.dbsortvst } };
+                let template = { type: 'SEARCH', star: this.status.star, genre: this.status.genre, director: this.status.director, studio: this.status.studio, label: this.status.label, actors: this.status.actors, tags: this.status.tags, directors: this.status.directors, makers: this.status.makers, publishers: this.status.publishers, series: this.status.series, codes: this.status.codes, mode: this.manual.mode, dbsorts: { dbsort: this.main.dbsort, dbsortsb: this.main.dbsortsb, dbsortvst: this.main.dbsortvst } };
                 if (this.main.keyWord.includes(flagString.searchSplit)) {
                     let [keyWord, range] = this.main.keyWord.split(flagString.searchSplit);
                     range = range.split(flagString.searchPageSplit);

@@ -182,6 +182,7 @@
             "isdone": true,
             "vthumb": true,
             "autoview": false,
+            "watchable":false,
             "single": false,
             "star": false,
             "genre": false,
@@ -194,8 +195,7 @@
             "makers": false,
             "publishers": false,
             "series": false,
-            "codes": false,
-            "deny": false
+            "codes": false
         },
         "preview": {
             "pics": [],

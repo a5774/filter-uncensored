@@ -42,7 +42,6 @@ const proxy = {
     protocol: 'http'
 }
 const wsOption = { noServer: true, perMessageDeflate: true, clientTracking: true }
-const denyGenre = ['3x', '59', 'hk', '40', '2r', '61', '4l', '2f', '55', '56', '4p', '4k', 'k', '15', '4t', '47', '1r', '36', '1a', '5z', '2c', 'es', '81', '7x']
 const noCahce = ['index', 'bookmark', 'debugger', 'constant', 'instruction']
 const app = new Koa()
 const router = new Router()
@@ -119,7 +118,6 @@ module.exports = {
     ax,
     app,
     router,
-    denyGenre,
     viewCacheTimeout,
     fileCacheTimeout,
     noCahce,
