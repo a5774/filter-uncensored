@@ -235,8 +235,6 @@ async function javdb_(domain, 关键词, 区间, 演员, 类别, 导演, 制作�
                             return `${domain}${_$_(el).attr('href')}`
                         }).get()
                         // console.log(类别标签);
-                        let 老司机的看法 = _$_('.video-detail .video-meta-panel .movie-panel-info > .panel-block .has-text-grey').text().match(regx.number) || [-1]
-                        // console.log(老司机的看法);
                         let 磁力 = _$_('.video-panel .message-body .magnet-links').text().replace(regx.emtpy, '')
                         // console.log(磁力);
                         let 磁力列表 = _$_('.video-panel .message-body .magnet-links .item').map((idx, el) => {
@@ -244,6 +242,9 @@ async function javdb_(domain, 关键词, 区间, 演员, 类别, 导演, 制作�
                         }).get()
 
                         let 评论总数 = _$_('.video-detail .review-tab span').text().match(regx.number)?.[0] ?? -1
+
+                        let 老司机的看法 = _$_('.video-detail .video-meta-panel .movie-panel-info > .panel-block .has-text-grey').text().match(regx.number) || [-1]
+                        // console.log(老司机的看法);
 
                         let 评论预览 = _$_$_('.review-item').map((idx, el) => {
                             return { text: _$_$_('.content p', el).text().replace(regx.emtpy, ' '), date: _$_$_('.review-item .time', el).text() }
