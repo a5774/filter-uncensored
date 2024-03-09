@@ -50,7 +50,6 @@ ws_chat.addListener('connection', (socket, req) => {
                 })
                 break;
             case "AUDIO":
-                console.log(message.data.length);
                 Array.from(clientMap.keys()).forEach(client => {
                     if (client != socket && client.readyState == WebSocket.OPEN) {
                         client.send(JSON.stringify({

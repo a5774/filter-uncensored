@@ -87,7 +87,8 @@
                 <label for="isdone">isdone</label><input id="isdone" type="checkbox" v-model="status.isdone">
                 <!-- <label for="vthumb">vthumb</label><input id="vthumb" type="checkbox" v-model="status.vthumb"> -->
                 <label for="single">single</label><input id="single" type="checkbox" v-model="status.single">
-                <label for="watchable">watchable</label><input id="watchable" type="checkbox" v-model="status.watchable">
+                <label for="watchable">watchable</label><input id="watchable" type="checkbox"
+                    v-model="status.watchable">
                 <select class="select-origin" v-model="manual.mode">
                     <option value="javbus">javbus</option>
                     <option value="javdb">javdb</option>
@@ -301,7 +302,7 @@
             <!-- </div> -->
             <ul class="info-content" v-press-auto-scroll="this">
                 <li v-for="(item,index) in filterRender" class="info-contains" :key="index">
-                    <div class="info-swipe-reveal" v-swipe-to-reveal:[$root]="item">
+                    <div class="info-swipe-reveal" v-swipe-to-reveal:[$root]="item" :data-target="item.n">
                         <div class="thumb-item">
                             <!-- v-lazy-load-oberver -->
                             <img @click="expandPicture(item.i)" @load="thumbSucess($event)" @contextmenu.prevent

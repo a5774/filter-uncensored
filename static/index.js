@@ -107,9 +107,8 @@
     }
 
 
-    let vm = new Vue({
+    window.vm = new Vue({
         component: {
-
         },
         data: {
             overlay: {
@@ -377,7 +376,7 @@
             jumpLocation(v, f, m) {
                 return location.href = `${origin}?v=${v}&f=${f}&m=${m}`
             },
-            jumpTag(v, m,) {
+            jumpTag(v, m) {
                 this.throttled.press = setTimeout(() => {
                     v = new URL(v);
                     let paths = v.pathname.split('/');
@@ -865,7 +864,7 @@
                     }
                     el.__autoScroll = ({ touches: [point] }) => {
                         vm.debounce.prefixScroll = setTimeout(() => {
-                            vm.main.offset = Math.floor(vm.$refs.box.scrollTop)
+                            vm.main.offset = Math.floor(vm.$el.scrollTop)
                             let up = point['clientX'] >= window.innerHeight >> 2
                             cancelAnimationFrame(vm.debounce.slide)
                             let animateScroll = () => {
@@ -1012,8 +1011,9 @@
             },
             swipeToReveal: {
                 bind(el, binding) {
+                    console.log(el);
                     let vm = binding.arg
-                    let data = binding.value;
+                    // let data = binding.value;
                     // directive在渲染中绑定，需要等待渲染完成获取
                     vm.$nextTick(() => {
                         // console.log('swipeToReveal');
@@ -1086,13 +1086,7 @@
                         el.style.transitionDuration = `${timer.revealTransitionTimeout}ms`;
                         if (!el.isOpen && (Math.abs(el.touchDeltaX) >= el.__halfY)) {
                             if ((el.touchDeltaX <= 0)) {
-                                vm.main.keyWord = data.n;
-                                vm.manual.bookmark = false;
-                                vm.manual.mode = 'javdb';
-                                vm.$nextTick(()=>{
-                                    vm.search();
-                                })
-
+                                vm.jumpLocation(el.dataset.target, '', 'javdb')
                             }
                             if ((el.touchDeltaX >= 0) && (Math.abs(el.slope) <= numberSnippet.tiltFactor)) {
                                 el.style.opacity = numberSnippet.revealOpacityFactor
@@ -1266,7 +1260,9 @@
                 this.main.keyWord = v
                 this.status[f] = true;
                 // relation websockert 
-                !(this.dynamiclist.length) && this.search()
+                await this.$nextTick(() => {
+                    !(this.dynamiclist.length) && this.search()
+                })
             }
         },
         async mounted() {

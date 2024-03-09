@@ -12,7 +12,6 @@ let jdb = '_jdb_session=JIi%2BG5lhEOIQJ%2FduafDrAjgNZc09nSPLfU33CrKfjZ%2FQzBRgcF
 bookmarkers.javbus.init()
 bookmarkers.javdb.init()
 
-
 function _ping() {
     this.send(
         JSON.stringify(
