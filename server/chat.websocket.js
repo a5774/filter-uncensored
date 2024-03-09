@@ -19,7 +19,6 @@ ws_chat.addListener('connection', (socket, req) => {
                 group: Array.from(clientMap.values())
             }))
         }
-
     })
     socket.addListener('close', (code, reason) => {
         console.log(`code:${code}, reason${reason}`);
@@ -34,22 +33,7 @@ ws_chat.addListener('connection', (socket, req) => {
         })
         clientMap.delete(socket)
     })
-    socket.addListener('error', err => {
-        console.log('error');
-        if (err) console.log(err);
-        socket.close()
-    })
-
     socket.addEventListener('message', ({ data }) => {
-        if (Buffer.isBuffer(data)) {
-            console.log('binary');
-            Array.from(clientMap.keys()).forEach(client => {
-                if (client != socket && client.readyState == WebSocket.OPEN) {
-                    client.send(data, { binary: true })
-                }
-            })
-            return null
-        }
         let message = JSON.parse(data)
         switch (message.type) {
             case 'CODES':
@@ -65,7 +49,23 @@ ws_chat.addListener('connection', (socket, req) => {
                     }
                 })
                 break;
+            case "AUDIO":
+                console.log(message.data.length);
+                Array.from(clientMap.keys()).forEach(client => {
+                    if (client != socket && client.readyState == WebSocket.OPEN) {
+                        client.send(JSON.stringify({
+                            type: 'AUDIO',
+                            data: message.data
+                        }))
+                    }
+                })
+                break;
         }
+    })
+    socket.addListener('error', err => {
+        console.log('error');
+        if (err) console.log(err);
+        socket.close()
     })
 })
 module.exports = {
