@@ -42,6 +42,11 @@ function _progress(data) {
         )
     )
 }
+
+
+function genTargeTrack(){
+    
+}
 // 函数作用域在定义时被确定在不改变this指向下,全局函数无法访问局部变量
 async function javbus_(domain, 关键词, 区间, 演员, 类别, 导演, 制作商, 发行商, socket, tasks, df) {
     let 搜索 = '';

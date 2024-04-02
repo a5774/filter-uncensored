@@ -191,7 +191,7 @@
                     <span style="flex-shrink: 0;">{{n}}</span>
                     <span>{{s}}</span>
                     <span>{{t}}</span>
-                    <span><button @click="appendSearch(n)">reflow</button></span>
+                    <span><button @click="singleSearch(n)">reflow</button></span>
                     <span><button @click="pushReflow(n,extra,idx)">push</button></span>
                 </li>
 
@@ -206,7 +206,7 @@
 
         <div :class="{'over-lay-genre-transform': (status.genre || status.tags) && !main.keyWord}"
             class="over-lay-genre">
-            <li class="genre-key" v-for="(v,k,i) in taglist" @click="fastSearch(k)" :key="i">{{v}}</li>
+            <li class="genre-key" v-for="(v,k,i) in taglist" @click="genreSearch(k)" :key="i">{{v}}</li>
         </div>
 
         <div :class="{'over-lay-pics-transform':overlay.pics}" @click.self="overlay.pics=!overlay.pics"
@@ -302,11 +302,11 @@
             <!-- </div> -->
             <ul class="info-content" v-press-auto-scroll="this">
                 <li v-for="(item,index) in filterRender" class="info-contains" :key="index">
-                    <div class="info-swipe-reveal" v-swipe-to-reveal:[$root]="item" :data-target="item.n">
+                    <div class="info-swipe-reveal" v-swipe-to-reveal:[$root]="item" >
                         <div class="thumb-item">
                             <!-- v-lazy-load-oberver -->
                             <img @click="expandPicture(item.i)" @load="thumbSucess($event)" @contextmenu.prevent
-                                class="thumb lazy-loaded" v-press-auto-scale="$root" ref="monitor" :data-src="item.p"
+                                class="thumb lazy-loaded" v-press-scale-target="$root" ref="monitor" :data-src="item.p"
                                 :data-i="index" :data-n="item.n">
                         </div>
                         <div class="info-item">
@@ -328,13 +328,14 @@
                                 </p>
                             </transition>
                             <p class="info-base">
-                                <a class="info" target="_blank" @click.self="item.gs=!item.gs">{{item.n}}</a>
+                                <a class="info" target="_blank" @click.self="item.gs=!item.gs"
+                                    @touchstart.self="jumpTag(item.n,'javdb')"
+                                    @touchend.self="cancelJump">{{item.n}}</a>
                                 <a class="info" target="_blank"
                                     @click.self="expandComment(item.c,item.l)">{{item.d}}</a>
                                 <button class="info load-view" @click="loadViewsByItem(item)" target="_blank">{{
                                     item.v[0] | viemTemplate }}</button>
                             </p>
-
                             <p class="info-product">
                                 <a class="info" target="_blank" @click.self="expandMagnet(item.m)">MAGNET</a>
                                 <a class="info" target="_blank" @click.self="item.vs=!item.vs">VENDOR</a>
@@ -342,7 +343,7 @@
                             </p>
                             <p class="info-detail">
                                 <a class="info" @contextmenu.prevent :href="item.f" target="_blank">PREVIEW</a>
-                                <a class="info" target="_blank">ACTORC:{{item.s | dataCapacity}}</a>
+                                <a class="info" target="_blank" @dblclick.stop.prevent="reloadItem(item.n)">ACTORC:{{item.s | dataCapacity}}</a>
                                 <a class="info" v-if="isOnlyOne(item.s)" :href="item.s[0].href" target="_blank"
                                     @touchstart.self="jumpTag(item.s[0].href,item.df)"
                                     @touchend.self="cancelJump">{{item.s[0].text}}</a>

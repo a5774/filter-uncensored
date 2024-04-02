@@ -115,7 +115,6 @@ class AnswersCacheFull {
         this.#cache = new Map();
         let raw = await fs.promises.readFile(this.#path, { flag: 'r+' });
         JSON.parse(raw).forEach(old => this.#cache.set(`${old.hashqs}${old.hashas}`, old));
-        console.log(this.#cache.size);
     }
     dump() {
         clearTimeout(this.#timer)
@@ -131,7 +130,7 @@ class AnswersCacheFull {
                 this.#cache.set(hash, diff)
             }
         })
-        console.log(this.#cache.size);
+        
     }
 }
 class AnswersCacheLibs {
@@ -148,7 +147,6 @@ class AnswersCacheLibs {
         this.#cache = new Map();
         let raw = await fs.promises.readFile(this.#path, { flag: 'r+' });
         JSON.parse(raw).forEach(old => this.#cache.set(old.hash, old));
-        console.log(this.#cache.size);
     }
     dump() {
         clearTimeout(this.#timer)
@@ -166,7 +164,6 @@ class AnswersCacheLibs {
                 this.#cache.set(hash, diff)
             }
         })
-        console.log(this.#cache.size);
     }
 }
 const sleep = async (t) => new Promise(r => setTimeout(() => r(t), t))

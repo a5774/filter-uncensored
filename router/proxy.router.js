@@ -5,8 +5,8 @@ const { Buffer } = require('buffer');
 const serializeYML = require('js-yaml');
 const { bodyParser } = require('@koa/bodyparser')
 const { router, sleep, PROXIESPATH, proxy, CLASHYAMLPATH, ax, ef_sub, ANSWERFULLPATH, ANSWERLIBSPATH, AnswersCacheLibs, AnswersCacheFull } = require('../config');
-const full = new AnswersCacheFull('answers', ANSWERFULLPATH)
-const libs = new AnswersCacheLibs('answers_libs', ANSWERLIBSPATH)
+// const full = new AnswersCacheFull('answers', ANSWERFULLPATH,3000)
+// const libs = new AnswersCacheLibs('answers_libs', ANSWERLIBSPATH,3000)
 // full.init();
 // libs.init();
 async function get_trojan() {

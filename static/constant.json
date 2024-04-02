@@ -17,7 +17,7 @@
             "dbsortvst": 1
         },
         "manual": {
-            "mode": "javbus"
+            "mode": "javdb"
         },
         "model": {
             "javbus": [
@@ -160,7 +160,6 @@
         "revealTransitionTimeout": 200,
         "openSwiperTimeout": 300,
         "closeSwiperTimeout": 100,
-        "scaleThumbTimeout": 200,
         "updateBookmarkTimeout": 1500
     },
     "defaultStroageMeger": {

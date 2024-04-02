@@ -1,6 +1,7 @@
 // import constant from '/constant.json' assert { type: 'json' };defaultStroageMeger
 (async () => {
-    let { protocol, host, search, origin } = location
+    let { protocol, host, search, origin, pathname } = location
+    origin = `${origin}${pathname}`;
     let gstyle = document.createElement('style')
     document.body.append(gstyle)
     let { v, f, m } = Object.fromEntries(new URLSearchParams(search))
@@ -209,17 +210,17 @@
                 nav: null,
                 error: null,
                 slide: null,
+                press: null,
                 scroll: null,
                 update: null,
                 observer: null,
                 heartbeat: null,
-                swipeInterval: null,
+                prefixScale: null,
                 prefixScroll: null,
-                prefixScale: null
+                swipeInterval: null,
             },
             throttled: {
                 load: null,
-                press: null,
                 slowSwipe: null,
             },
             demoDebug: {
@@ -250,7 +251,7 @@
                     this.dynamiclist = []
                     this.overlay.format = false
                     this.overlay.reflow = false
-                    matcher.forEach(this.appendSearch)
+                    matcher.forEach(this.singleSearch)
                     this.logReuse(`${flagString.import}:${matcher.length}`)
                     return null
                 }
@@ -306,19 +307,21 @@
                 this.main.socket.send(JSON.stringify(this.sconf))
                 return null
             },
-            fastSearch(v) {
-                this.main.keyWord = v
-                this.search()
+            genreSearch(v) {
+                this.jumpLocation(v, 'genre', this.manual.mode)
                 return null
             },
-            appendSearch(n) {
+            reloadItem(v) {
+                console.log(v);
+            },
+            singleSearch(n) {
                 this.lockSyncReuse()
                 this.main.socket.send(JSON.stringify({ type: 'SEARCH', keyWord: n, mode: this.manual.mode, range: [1] }))
                 return null
             },
             batchReflow() {
                 this.pager.reflow.forEach(({ value: { n } }) => {
-                    this.appendSearch(n)
+                    this.singleSearch(n)
                 })
                 this.overlay.reflow = false
                 return null
@@ -371,21 +374,25 @@
             },
             injectProperty(v) {
                 let inject = { ...v, i: v.i.map(pt => ({ pt, loaded: false })), gs: false, vs: false, as: false }
-                this.dynamiclist.push(inject)
+                this.dynamiclist.push(inject);
             },
             jumpLocation(v, f, m) {
                 return location.href = `${origin}?v=${v}&f=${f}&m=${m}`
             },
             jumpTag(v, m) {
-                this.throttled.press = setTimeout(() => {
-                    v = new URL(v);
-                    let paths = v.pathname.split('/');
-                    v.search && (paths[2] = v.search.match(/([^?]+)$/)[0])
-                    this.jumpLocation(paths[2], paths[1], m)
+                this.debounce.press = setTimeout(() => {
+                    if (v.includes('http')) {
+                        v = new URL(v);
+                        let paths = v.pathname.split('/');
+                        v.search && (paths[2] = v.search.match(/([^?]+)$/)[0])
+                        this.jumpLocation(paths[2], paths[1], m)
+                        return null
+                    }
+                    this.jumpLocation(v, '', m)
                 }, timer.jumpTagTimeout)
             },
             cancelJump() {
-                return clearTimeout(this.throttled.press)
+                return clearTimeout(this.debounce.press)
             },
             logReuse(v) {
                 this.main.log = v
@@ -887,26 +894,26 @@
                     el.removeEventListener("touchcancel", el.__stopScroll)
                 }
             },
-            pressAutoScale: {
+            pressScaleTarget: {
                 bind(el, binding) {
                     let vm = binding.value
-                    el.__startScale = (e) => {
+                    el.__targetScale = (e) => {
                         e.stopPropagation();
                         vm.debounce.prefixScale = setTimeout(() => {
                             el.classList.add(classString.thumbScale)
                         }, timer.scaleThumbTimeout);
                     }
-                    el.__stopScale = () => {
+                    el.__cancelScale = () => {
                         clearTimeout(vm.debounce.prefixScale)
                         el.classList.remove(classString.thumbScale)
                     }
-                    el.addEventListener('touchstart', el.__startScale, { passive: true })
-                    el.addEventListener('touchend', el.__stopScale, { passive: true })
+                    el.addEventListener('touchstart', el.__targetScale, { passive: true })
+                    el.addEventListener('touchend', el.__cancelScale, { passive: true })
                 },
                 unbind(el) {
-                    el.removeEventListener("touchstart", el.__startScale)
-                    el.removeEventListener("touchend", el.__stopScale)
-                    el.removeEventListener("touchcancel", el.__stopScale)
+                    el.removeEventListener("touchstart", el.__targetScale)
+                    el.removeEventListener("touchend", el.__cancelScale)
+                    el.removeEventListener("touchcancel", el.__cancelScale)
                 }
             },
             swipeCarouselPics: {
@@ -1011,7 +1018,7 @@
             },
             swipeToReveal: {
                 bind(el, binding) {
-                    console.log(el);
+                    // console.log(el);
                     let vm = binding.arg
                     // let data = binding.value;
                     // directive在渲染中绑定，需要等待渲染完成获取
@@ -1077,7 +1084,6 @@
                                     // limit offset distance 
                                     el.style.opacity = el.opacityCurrent + el.opacity
                                     el.style.transform = `translate3d(${-el.__revealY - el.touchDeltaX}px,0,0)`
-                                    // el.revealing = true
                                 }
                             }
                         }
@@ -1085,9 +1091,6 @@
                     el.__handleTouchEnd = () => {
                         el.style.transitionDuration = `${timer.revealTransitionTimeout}ms`;
                         if (!el.isOpen && (Math.abs(el.touchDeltaX) >= el.__halfY)) {
-                            if ((el.touchDeltaX <= 0)) {
-                                vm.jumpLocation(el.dataset.target, '', 'javdb')
-                            }
                             if ((el.touchDeltaX >= 0) && (Math.abs(el.slope) <= numberSnippet.tiltFactor)) {
                                 el.style.opacity = numberSnippet.revealOpacityFactor
                                 el.style.transform = `translate3d(${-el.__revealY}px,0,0)`
@@ -1258,7 +1261,7 @@
             if (v) {
                 this.manual.mode = m
                 this.main.keyWord = v
-                this.status[f] = true;
+                f && (this.status[f] = true)
                 // relation websockert 
                 await this.$nextTick(() => {
                     !(this.dynamiclist.length) && this.search()
@@ -1266,7 +1269,7 @@
             }
         },
         async mounted() {
-            console.log(this.$listeners);
+            // console.log(this.$listeners);
             console.log('mounted');
             this.listenTouches()
             // init device info 
