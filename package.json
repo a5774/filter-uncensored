@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@koa/bodyparser": "^5.0.0",
     "axios": "^1.6.3",
     "cheerio": "^1.0.0-rc.12",
     "flexible.js": "^2.0.19",

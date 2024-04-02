@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>scraper</title>
+    <script src="/vue.js"></script>
+    <!-- <script src="/debugger.js"></script> -->
+    <link rel="stylesheet" href="/index.css">
+    <!-- <link rel="stylesheet" href="/photoswipe.css"> -->
+    <!-- <script type="module" src="/photoswipe.esm.min.js"></script> -->
+    <!-- <script type="module" src="/photoswipe-lightbox.esm.min.js"></script> -->
+    <!-- <script defer src="/index.min.js"></script> -->
+    <!-- <script src="/cdn.socket.io_4.4.1_socket.io.min.js"></script> -->
+    <!-- <link rel="stylesheet" href="./bootstrap.min.css"> -->
+    <!-- <script src="/bootstrap.bundle.min.js"></script> -->
+</head>
+
+<body>
+    <div id="box" @click="visibNavigation" @dblclick.stop.prevent="manual.bookmark=!manual.bookmark"
+        @scroll.passive="loadOnScroll">
+        {{switchTheme}}
+        <div v-if="overlay.stdout" @click="overlay.stdout=!overlay.stdout" class="debug-stdout">
+            <p v-for="v in reusable.stdout">{{v}}</p>
+        </div>
+        <div v-if="!filterRender.length" class="instruction-box">
+            <li v-for="({title,details,expand},idx) in resource.instruction" @click="togglePlate(idx)"
+                class="instruction-title-box" :key="idx">
+                <span :style="expand && {'border-bottom':'1px solid #07faca'}">{{title}}</span>
+                <div class="instruction-details-box">
+                    <p v-if="expand" class="instruction-details-entry" v-for="(ct,ix) in details">
+                        {{ix + 1}}:{{ct}}
+                    </p>
+                </div>
+            </li>
+        </div>
+
+        <transition name="fade" mode="out-in">
+            <div v-if="overlay.magnet" @click.slef="overlay.magnet=!overlay.magnet" class="over-lay-magnet">
+                <div class="magnet-box">
+                    <a class="magnet-wake" v-for="(m,idx) in reusable.magnet" :key="idx" :href="m.href">
+                        <span class="magnet-text" v-for="(t,idx) in m.text">{{t}}</span>
+                    </a>
+                </div>
+            </div>
+        </transition>
+
+        <transition name="fade" mode="out-in">
+            <div v-if="overlay.comment" @click.slef="overlay.comment=!overlay.comment" class="over-lay-comment">
+                <div class="comment-box">
+                    <div>comments:{{reusable.comments}}</div>
+                    <div class="comment-info" v-for="(c,idx) in reusable.comment" :key="idx">
+                        <span class="comment-date">{{c.date}}</span>
+                        <p class="comment-text">{{c.text}}</p>
+                    </div>
+                </div>
+            </div>
+        </transition>
+
+
+        <transition name="fade" mode="out-in">
+            <div v-if="overlay.format" @click.self="overlay.format=!overlay.format" class="over-lay-format">
+                <div class="format-box">
+                    <textarea class="format-textarea" placeholder="format" v-model.trim="reusable.format"></textarea>
+                    <p class="format-action">
+                        <button @click="importFormat" class="format-import">import</button>
+                        <button @click="reusable.format = '' " class="format-clear">clear</button>
+                    </p>
+                </div>
+            </div>
+        </transition>
+
+        <div :class="{'over-lay-option-transform':overlay.dashboard && overlay.reflow}" class="over-lay-option">
+            <p class="caption-control">THEME</p>
+            <span class="status-control">
+                <label for="theme-day">day</label> <input type="radio" name="theme" id="theme-day" value="day"
+                    v-model="theme">
+                <label for="theme-night">night</label> <input type="radio" name="theme" id="theme-night" value="night"
+                    v-model="theme">
+                <label for="theme-normal">normal</label> <input type="radio" name="theme" id="theme-normal"
+                    value="normal" v-model="theme">
+            </span>
+            <p class="caption-control">STATUS</p>
+            <span class="status-control">
+                <label for="isdone">isdone</label><input id="isdone" type="checkbox" v-model="status.isdone">
+                <!-- <label for="vthumb">vthumb</label><input id="vthumb" type="checkbox" v-model="status.vthumb"> -->
+                <label for="single">single</label><input id="single" type="checkbox" v-model="status.single">
+                <label for="watchable">watchable</label><input id="watchable" type="checkbox"
+                    v-model="status.watchable">
+                <select class="select-origin" v-model="manual.mode">
+                    <option value="javbus">javbus</option>
+                    <option value="javdb">javdb</option>
+                </select>
+                <!-- <label for="javdb">javdb</label><input id="javdb" type="checkbox" v-model="manual.javdb"> -->
+            </span>
+            <span class="status-control">
+                <label for="codes">codes</label><input id="codes" type="checkbox" v-model="status.codes">
+                <label for="page">page</label><input id="page" class="input-text-control" :disabled="!sconf"
+                    style="width: 1.2rem;" type="text" v-model.number="main.page">
+                <label for="actors">actors</label><input id="actors" class="input-text-control" style="width: 1.2rem;"
+                    type="text" v-model.number="main.actors">
+                <label for="sliderate">sliderate</label><input id="sliderate" class="input-text-control"
+                    style="width: 1.2rem;" type="text" v-model.number="main.sliderate">
+            </span>
+            <template v-if="manual.mode == 'javdb'">
+                <span class="status-control caption-control">dbsort</span>
+                <span class="status-control">
+                    <label for="sort-date">date</label> <input type="radio" name="dbsort" id="sort-date" value="0"
+                        v-model="main.dbsort">
+                    <label for="sort-score">score</label> <input type="radio" name="dbsort" id="sort-score" value="1"
+                        v-model="main.dbsort">
+                    <label for="sort-heat">heat</label> <input type="radio" name="dbsort" id="sort-heat" value="2"
+                        v-model="main.dbsort">
+                    <label for="sort-watch">watch</label> <input type="radio" name="dbsort" id="sort-watch" value="3"
+                        v-model="main.dbsort">
+                    <label for="sort-want">want</label> <input type="radio" name="dbsort" id="sort-want" value="4"
+                        v-model="main.dbsort">
+                </span>
+                <span class="status-control caption-control">sb/vst</span>
+                <span class="status-control">
+                    <label for="sort-related-keyword">related</label> <input type="radio" name="dbsortsb"
+                        id="sort-related-keyword" value="0" v-model="main.dbsortsb">
+                    <label for="sort-release-date-sb">relsbd</label> <input type="radio" name="dbsortsb"
+                        id="sort-release-date-sb" value="1" v-model="main.dbsortsb">
+                    <label for="sort-release-date-vst">relvstd</label> <input type="radio" name="dbsortvst"
+                        id="sort-release-date-vst" value="1" v-model="main.dbsortvst">
+                    <label for="sort-magnet-update">magnet</label> <input type="radio" name="dbsortvst"
+                        id="sort-magnet-update" value="2" v-model="main.dbsortvst">
+                </span>
+            </template>
+
+            <p class="caption-control">OTHER</p>
+            <span class="status-control">
+                <label for="reconintval">reconintval</label><input id="reconintval" class="input-text-control"
+                    style="width: 2.5rem;" type="text" v-model="main.reconintval">
+                <label for="reconn">reconn</label><input id="reconn" type="checkbox" v-model="main.reconn">
+            </span>
+            <span class="status-control">
+                <label for="heartbeat">heartbeat</label><span id="heartbeat">{{main.heartbeat}}</span>
+                <label for="stdout">stdout</label><input id="stdout" type="checkbox" v-model="overlay.stdout">
+            </span>
+            <span class="status-control">
+                <button @click="overlay.format=!overlay.format">import</button>
+                <button @click="exportJson">export</button>
+                <button @click="connect">connect</button>
+                <button @click="disconnect">disconn</button>
+            </span>
+            <span class="status-control">
+                <button @click="reset">reset</button>
+                <button @click="overlay.proxies=!overlay.proxies">proires</button>
+                <button @click="updateProxy">updproxy</button>
+            </span>
+        </div>
+
+
+        <div :class="{'proxies-container-transform': overlay.proxies}" @click.self="overlay.proxies=!overlay.proxies"
+            class="proxies-container">
+            <table class="proxy-table">
+                <tr v-for="(e,idx) in reusable.proxies" :key="idx">
+                    <td class="proxy-switch-td" v-for="(p,idx_) in e" :key="idx_">
+                        <span v-if="p.selected" class="proxy-selected-td"></span>
+                        <button class="proxy-btn-td" @click="!p.selected && switchProxy(idx * e.length + idx_)">
+                            {{p.name}}
+                        </button>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <transition name="fade" mode="out-in">
+            <ul v-if="overlay.reflow" class="over-lay-reflow" @click.self="overlay.reflow=!overlay.reflow">
+                <div class="reflow-action">
+                    <button @click="batchReflow">reflow</button>
+                    <button @click="clearReflow">remove</button>
+                    <label for="dashboard">dashboard</label><input id="dashboard" type="checkbox"
+                        v-model="overlay.dashboard">
+                    <label for="demoDebug">demoDebug</label><input id="demoDebug" type="checkbox"
+                        v-model="demoDebug.enable">
+                </div>
+                <button class="cancel-menu" @click="overlay.reflow=!overlay.reflow">x</button>
+                <div class="reflow-header">
+                    <span style="flex-shrink: 0;">plate</span>
+                    <span>signal</span>
+                    <span>error</span>
+                    <span>reflow</span>
+                    <span>option</span>
+                </div>
+                <li class="reflow-body" v-for="({value:{n,s,t,extra}}, idx) in pagerRender" :key="idx">
+                    <span style="flex-shrink: 0;">{{n}}</span>
+                    <span>{{s}}</span>
+                    <span>{{t}}</span>
+                    <span><button @click="appendSearch(n)">reflow</button></span>
+                    <span><button @click="pushReflow(n,extra,idx)">push</button></span>
+                </li>
+
+                <div class="pager-control">
+                    <span style="float:left;">offset:{{main.offset}}</span>
+                    <button class="pager-prev" @click="pager.fragidx--">prev</button>
+                    <span>{{pagerIndex}}of{{pagerSize}}</span>
+                    <button class="pager-next" @click="pager.fragidx++">next</button>
+                </div>
+            </ul>
+        </transition>
+
+        <div :class="{'over-lay-genre-transform': (status.genre || status.tags) && !main.keyWord}"
+            class="over-lay-genre">
+            <li class="genre-key" v-for="(v,k,i) in taglist" @click="fastSearch(k)" :key="i">{{v}}</li>
+        </div>
+
+        <div :class="{'over-lay-pics-transform':overlay.pics}" @click.self="overlay.pics=!overlay.pics"
+            class="over-lay-pics">
+            <transition name="fade" mode="out-in">
+                <!-- swipe component -->
+                <div v-if="preview.picsSwipe" @mousedown.self="closeSwiper" class="pics-control-swipe">
+                    <button class="pics-previous" @click="prevSwipe"></button>
+                    <button class="pics-next" @click="nextSwipe"></button>
+                    <!-- 动态绑定样式不会被取消,通过null，undefined取消 -->
+                    <div class="pics-wrapper-swipe"
+                        :style="{width:device.isDesktop ? `${device.viewWidth / preview.desktopSwiperScale}px` : null}">
+                        <div class="pics-contains-swipe"
+                            :style="{transform : `translate3d(${preview.picsIndex * preview.picsSwiperSize}px,0,0)`}"
+                            v-swipe-carousel-pics="this">
+                            <div class="pics-swipe-slide" @mousedown.self="closeSwiper">
+                                <img class="img-preview-swipe" draggable="false"
+                                    :src="preview.pics[overlay.pics - 1].pt" alt="">
+                            </div>
+                            <div class="pics-swipe-slide" v-for="(item,index) in preview.pics"
+                                @mousedown.self="closeSwiper">
+                                <img class="img-preview-swipe" draggable="false" :src="item.pt" alt="">
+                            </div>
+                            <div class="pics-swipe-slide" @mousedown.self="closeSwiper">
+                                <img class="img-preview-swipe" draggable="false" :src="preview.pics[0].pt" alt="">
+                            </div>
+                        </div>
+                        <span class="pics-counter-swipe">{{preview.picsIndex}}of{{preview.pics.length}}</span>
+                    </div>
+                </div>
+            </transition>
+            <transition name="fade" mode="out-in">
+                <div v-if="overlay.pics" class="pics-contains-expand" :style="{width: device.isDesktop ? `${device.viewWidth / device.destopExpandWScale}px` : null,
+                    height:device.isDesktop ? `${device.viewHeight / device.destopExpandHScale}px`: null}">
+                    <a class="pics-preview-expand" v-for="(item,index) in preview.pics"
+                        :class="[ isOddIndex(index) ? 'pics-preview-expand-left':'pics-preview-expand-right']">
+                        <img :class="[isOddIndex(index) ? 'swipe-zoomed-origin-left':'swipe-zoomed-origin-right']"
+                            @click="openSwiper(index + 1  ,$event)" class="img-preview-expand"
+                            @load="item.loaded = true" :src="item.pt" :key="index" alt="">
+                    </a>
+                </div>
+            </transition>
+        </div>
+        <div class="info-main" ref="main">
+            <!-- <div class="info-action"> -->
+            <div class="info-search">
+                <!-- mousedown 触发焦点 -->
+                <input type="text" @keydown.enter="search" @dblclick.stop="main.keyWord= '' " @focus="openHistory"
+                    @blur.self="overlay.history=false" placeholder="keyWord" v-model=main.keyWord>
+                <button @click="search">{{searchAction}}</button>
+                <label for="star">star</label><input id="star" type="checkbox" v-model="status[modelAttr[0]]">
+                <label for="genre">genre</label><input id="genre" type="checkbox" v-model="status[modelAttr[1]]">
+                <button @click="home">home</button>
+                <transition name="fade" mode="out-in">
+                    <p v-if="overlay.history" class="history-container" @mousedown.prevent>
+                        <button v-for="(key,idx) in reusable.history" :key="idx" @click.self="loadHistory(key)"
+                            class="history-key">
+                            {{key | purgeSuffix}}
+                        </button>
+                    </p>
+                </transition>
+            </div>
+            <div class="review-switch">
+                <label for="review-revelation">revelation</label> <input id="review-revelation" type="radio"
+                    name="review" value="revelation" v-model=main.review>
+                <label for="review-uncensored">uncensored</label> <input id="review-uncensored" type="radio"
+                    name="review" value="uncensored" v-model=main.review>
+                <label for="review-censored">censored</label> <input id="review-censored" type="radio" name="review"
+                    value="censored" v-model=main.review>
+            </div>
+            <h2 class="sticky-log">
+                <span> current:{{main.log}}</span>
+                <span v-if="status.isdone"> reflow:{{pager.reflow.length}}
+                </span>
+                <p v-if="overlay.error" class="error-full-log">
+                    {{main.error}}
+                </p>
+            </h2>
+            <p class="info-total">total:{{filterRender.length}}</p>
+            <div class="info-filter">
+                <select class="select-filter" v-model="main.select">
+                    <option value="none">none</option>
+                    <option value="time">time</option>
+                    <option value="view">view</option>
+                    <option value="repo">repo</option>
+                </select>
+                <label for="reverse">reverse</label>
+                <input type="checkbox" id="reverse" v-model="main.reverse">
+                <span class="connect-view">{{main.state}}</span>
+                <label for="autoview">autoview</label>
+                <input id="autoview" type="checkbox" v-model=status.autoview>
+            </div>
+            <!-- </div> -->
+            <ul class="info-content" v-press-auto-scroll="this">
+                <li v-for="(item,index) in filterRender" class="info-contains" :key="index">
+                    <div class="info-swipe-reveal" v-swipe-to-reveal:[$root]="item" :data-target="item.n">
+                        <div class="thumb-item">
+                            <!-- v-lazy-load-oberver -->
+                            <img @click="expandPicture(item.i)" @load="thumbSucess($event)" @contextmenu.prevent
+                                class="thumb lazy-loaded" v-press-auto-scale="$root" ref="monitor" :data-src="item.p"
+                                :data-i="index" :data-n="item.n">
+                        </div>
+                        <div class="info-item">
+                            <transition name="fade" mode="out-in">
+                                <p v-if="item.gs" @click.self="item.gs=!item.gs" class="info-genre">
+                                    <a class="info info-gs" v-for="(g,idx) in item.g"
+                                        @touchstart.slef="jumpTag(g,item.df)" @touchend.self="cancelJump" :key="idx">{{g
+                                        | extractTag(taglist)}}</a>
+                                </p>
+                                <p v-if="item.vs" @click.self="item.vs=!item.vs" class="info-vendor">
+                                    <a class="info info-vs" v-for="(b,idx) in item.b"
+                                        @touchstart.slef="jumpTag(b.href,item.df)" @touchend.self="cancelJump"
+                                        :key="idx">{{b.text}}</a>
+                                </p>
+                                <p v-if="item.as" @click.self="item.as=!item.as" class="info-actor">
+                                    <a class="info info-as" v-for="(s,idx) in item.s"
+                                        @touchstart.slef="jumpTag(s.href,item.df)" @touchend.self="cancelJump"
+                                        :key="idx">{{s.text}}</a>
+                                </p>
+                            </transition>
+                            <p class="info-base">
+                                <a class="info" target="_blank" @click.self="item.gs=!item.gs">{{item.n}}</a>
+                                <a class="info" target="_blank"
+                                    @click.self="expandComment(item.c,item.l)">{{item.d}}</a>
+                                <button class="info load-view" @click="loadViewsByItem(item)" target="_blank">{{
+                                    item.v[0] | viemTemplate }}</button>
+                            </p>
+
+                            <p class="info-product">
+                                <a class="info" target="_blank" @click.self="expandMagnet(item.m)">MAGNET</a>
+                                <a class="info" target="_blank" @click.self="item.vs=!item.vs">VENDOR</a>
+                                <a class="info" target="_blank" @click.self="item.as=!item.as">ACTORS</a>
+                            </p>
+                            <p class="info-detail">
+                                <a class="info" @contextmenu.prevent :href="item.f" target="_blank">PREVIEW</a>
+                                <a class="info" target="_blank">ACTORC:{{item.s | dataCapacity}}</a>
+                                <a class="info" v-if="isOnlyOne(item.s)" :href="item.s[0].href" target="_blank"
+                                    @touchstart.self="jumpTag(item.s[0].href,item.df)"
+                                    @touchend.self="cancelJump">{{item.s[0].text}}</a>
+                                <a v-else class="info">null</a>
+
+                                <a class="info info-progress" style="font-weight: bold;">{{ item.i | getProgress}}/{{
+                                    item.i | dataCapacity}}</a>
+
+                                <a class="info info-index" style="font-weight: bold;">{{index |
+                                    flagLast(filterRender.length)}}</a>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="swipe-reveal-action">
+                        <div class="reveal-bookmark-action">
+                            <button class="bookmark-action-btn" @click="updateBookmark(item)">
+                                <svg v-if="manual.bookmark" class="bookmark-action-svg" viewBox="0 0 1024 1024"
+                                    version="1.1" xmlns="http://www.w3.org/2000/svg">
+                                    <path
+                                        d="M840 288H688v-56c0-40-32-72-72-72h-208C368 160 336 192 336 232V288h-152c-12.8 0-24 11.2-24 24s11.2 24 24 24h656c12.8 0 24-11.2 24-24s-11.2-24-24-24zM384 288v-56c0-12.8 11.2-24 24-24h208c12.8 0 24 11.2 24 24V288H384zM758.4 384c-12.8 0-24 11.2-24 24v363.2c0 24-19.2 44.8-44.8 44.8H332.8c-24 0-44.8-19.2-44.8-44.8V408c0-12.8-11.2-24-24-24s-24 11.2-24 24v363.2c0 51.2 41.6 92.8 92.8 92.8h358.4c51.2 0 92.8-41.6 92.8-92.8V408c-1.6-12.8-12.8-24-25.6-24z"
+                                        fill="#000"></path>
+                                    <path
+                                        d="M444.8 744v-336c0-12.8-11.2-24-24-24s-24 11.2-24 24v336c0 12.8 11.2 24 24 24s24-11.2 24-24zM627.2 744v-336c0-12.8-11.2-24-24-24s-24 11.2-24 24v336c0 12.8 11.2 24 24 24s24-11.2 24-24z"
+                                        fill="#000"></path>
+                                </svg>
+                                <svg v-else class="bookmark-action-svg" viewBox="0 0 1024 1024" version="1.1"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path
+                                        d="M744.8 128H279.2c-21.3 0-38.7 17.4-38.7 38.7v690.5c0 13.7 7 26.1 18.8 33.2 11.7 7.1 26 7.5 38.1 1L512 777.7l214.6 113.7c5.7 3 11.9 4.6 18.1 4.6 6.9 0 13.8-1.9 19.9-5.6 11.7-7.1 18.7-19.5 18.7-33.2V166.7c0.2-21.3-17.2-38.7-38.5-38.7z m-12 709.5L530.1 730c-11.3-6-24.9-6-36.2 0L291.2 837.5V178.6h441.7v658.9z"
+                                        fill="#231815" p-id="3964"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <!-- <div class="reveal-remove"></div> -->
+                    </div>
+                </li>
+            </ul>
+        </div>
+        <div class="info-sidenav" :class="{'info-sidenav-transform':overlay.sidenav && !overlay.reflow}">
+            <button @click="scrollToTop">top</button>
+            <button @click="overlay.reflow=!overlay.reflow">menu</button>
+            <button @click="loadViewsByBatch">view</button>
+            <button :class="{'loop-load':overlay.increment}" @click="loadOnIncrement">next</button>
+        </div>
+    </div>
+    <!-- <script src="/index.min.js" type="module"></script> -->
+    <script src="/index.js" type="module"></script>
+</body>
+
+</html>

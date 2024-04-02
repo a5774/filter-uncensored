@@ -3,7 +3,12 @@ const { URL } = require('url');
 const cp = require('child_process');
 const { Buffer } = require('buffer');
 const serializeYML = require('js-yaml');
-const { router,sleep,  PROXIESPATH, proxy, CLASHYAMLPATH,ax ,ef_sub} = require('../config')
+const { bodyParser } = require('@koa/bodyparser')
+const { router, sleep, PROXIESPATH, proxy, CLASHYAMLPATH, ax, ef_sub, ANSWERFULLPATH, ANSWERLIBSPATH, AnswersCacheLibs, AnswersCacheFull } = require('../config');
+const full = new AnswersCacheFull('answers', ANSWERFULLPATH)
+const libs = new AnswersCacheLibs('answers_libs', ANSWERLIBSPATH)
+// full.init();
+// libs.init();
 async function get_trojan() {
     return new Promise((reslove, rej) => {
         let base64_str_full = ''
@@ -110,6 +115,23 @@ router.get('/toggleProxy/:idx', async (ctx, next) => {
         rollback()
         await sysctl('restart', 'clash')
         ctx.body = 'rollback'
+    }
+})
+
+router.post('/sync/:name', bodyParser({ jsonLimit: "10mb" }), async (ctx, next) => {
+    switch (ctx.params.name) {
+        case "answers":
+            full.merge(ctx.request.body)
+            full.dump();
+            ctx.body = { message: 'ok', code: 200 }
+            break;
+        case "answers_libs":
+            libs.merge(ctx.request.body)
+            libs.dump();
+            ctx.body = { message: 'ok', code: 200 }
+            break;
+        default:
+            ctx.body = { message: 'error', code: 201 }
     }
 })
 

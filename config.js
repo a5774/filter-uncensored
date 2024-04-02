@@ -14,6 +14,8 @@ const ef_sub = 'https://efshop.cc/api/v1/client/subscribe?token=df03297a313071d8
 const auth_ = 'cm9vdDozMjI2MDQ0MjE3'
 const BUSBOOKMARKPATH = path.resolve(__dirname, './static/bus-bookmark.json')
 const DBBOOKMARKPATH = path.resolve(__dirname, './static/db-bookmark.json')
+const ANSWERFULLPATH = path.resolve(__dirname, './static/full_answers_libs.json')
+const ANSWERLIBSPATH = path.resolve(__dirname, './static/moblie_libs.json')
 const RECYLEPATH = path.resolve(__dirname, './static/.recyle')
 const ROUTERDIR = path.resolve(__dirname, './router/')
 const STATICDIR = path.resolve(__dirname, './static/')
@@ -99,6 +101,74 @@ class BookMarker {
     }
 
 }
+class AnswersCacheFull {
+    #path = ''
+    #timer = 0
+    #timeout = 0
+    #cache = null
+    constructor(name, path, timeout) {
+        this.name = name
+        this.#path = path
+        this.#timeout = timeout || 500
+    }
+    async init() {
+        this.#cache = new Map();
+        let raw = await fs.promises.readFile(this.#path, { flag: 'r+' });
+        JSON.parse(raw).forEach(old => this.#cache.set(`${old.hashqs}${old.hashas}`, old));
+        console.log(this.#cache.size);
+    }
+    dump() {
+        clearTimeout(this.#timer)
+        this.#timer = setTimeout(() => {
+            let raw_ = JSON.stringify(Array.from(this.#cache.values()))
+            fs.createWriteStream(this.#path).write(raw_)
+        }, this.#timeout);
+    }
+    merge(v) {
+        v.forEach(diff => {
+            let hash = `${diff.hashqs}${diff.hashas}`
+            if (!this.#cache.has(hash)) {
+                this.#cache.set(hash, diff)
+            }
+        })
+        console.log(this.#cache.size);
+    }
+}
+class AnswersCacheLibs {
+    #path = ''
+    #timer = 0
+    #timeout = 0
+    #cache = null
+    constructor(name, path, timeout) {
+        this.name = name
+        this.#path = path
+        this.#timeout = timeout || 500
+    }
+    async init() {
+        this.#cache = new Map();
+        let raw = await fs.promises.readFile(this.#path, { flag: 'r+' });
+        JSON.parse(raw).forEach(old => this.#cache.set(old.hash, old));
+        console.log(this.#cache.size);
+    }
+    dump() {
+        clearTimeout(this.#timer)
+        this.#timer = setTimeout(() => {
+            let raw_ = JSON.stringify(Array.from(this.#cache.values()))
+            fs.createWriteStream(this.#path).write(raw_)
+        }, this.#timeout);
+    }
+    merge(v) {
+        v.forEach(diff => {
+            let hash = diff.hash;
+            if (this.#cache.has(hash)) {
+                let oled = this.#cache.get(hash);
+                diff.answers = [...new Set([...diff.answers, ...oled.answers])]
+                this.#cache.set(hash, diff)
+            }
+        })
+        console.log(this.#cache.size);
+    }
+}
 const sleep = async (t) => new Promise(r => setTimeout(() => r(t), t))
 module.exports = {
     domain_bus,
@@ -112,6 +182,8 @@ module.exports = {
     ROUTERDIR,
     BUSBOOKMARKPATH,
     DBBOOKMARKPATH,
+    ANSWERFULLPATH,
+    ANSWERLIBSPATH,
     RECYLEPATH,
     STATICDIR,
     STATE,
@@ -125,6 +197,8 @@ module.exports = {
     sslOption,
     sleep,
     BookMarker,
+    AnswersCacheLibs,
+    AnswersCacheFull,
     // ws,
     regx,
     recvtemp
